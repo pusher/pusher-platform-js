@@ -18,5 +18,6 @@ The simplest way is to use our CDN to get the bleeding-edge version:
 
 ```bash
 npm install
-npm run build  # see target/pusher-platform.js
+npm run build  # creates target/pusher-platform.js
+npm run test
 ```

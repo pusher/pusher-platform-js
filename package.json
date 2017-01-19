@@ -17,7 +17,8 @@
     "typescript": "^2.0.7"
   },
   "scripts": {
-    "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js --config=webpack.js"
+    "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js --config=webpack.js",
+    "test": "node_modules/webpack/bin/webpack.js --config=webpack.js && node test/test.js"
   },
   "version": "0.0.1"
 }
