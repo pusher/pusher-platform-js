@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = {
-  entry: "./src/index.ts",
+  entry: "./src/pusher-platform.ts",
   output: {
     filename: "target/pusher-platform.js",
     libraryTarget: "umd",

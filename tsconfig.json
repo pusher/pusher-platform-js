@@ -6,6 +6,6 @@
     "lib": ["es6", "dom"]
   },
   "files": [
-    "src/index.ts"
+    "src/pusher-platform.ts"
   ]
 }
