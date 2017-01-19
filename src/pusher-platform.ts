@@ -275,3 +275,103 @@ export class BaseClient {
     return xhr;
   }
 }
+
+interface Authorizer {
+  authorize() : Promise<string>;
+}
+
+export class SimpleTokenAuthorizer implements Authorizer {
+  public jwt : string;
+
+  constructor(jwt : string){
+    this.jwt = jwt;
+  }
+
+  authorize() : Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      resolve(this.jwt);
+    })
+  }
+}
+
+type Response = any;
+
+class FeedsHelper {
+  public app : App;
+  public feedName : string;
+
+  constructor(name : string, app: App){
+    this.feedName = name;
+    this.app = app;
+  }
+
+  append(item : any) : Promise<Response> {
+    var path = "feeds/" + this.feedName;
+    return this.app.request({ method: "APPEND", path: path, body: { items: [item] } });
+  }
+}
+
+
+interface AppOptions {
+  appId: string;
+  cluster?: string;
+  authorizer?: Authorizer;
+  client?: BaseClient;
+  encrypted? : boolean;
+}
+
+export class App {
+  private client : BaseClient;
+  private appId : string;
+  private authorizer : Authorizer;
+
+  constructor(options : AppOptions) {
+    this.appId = options.appId;
+    this.authorizer = options.authorizer;
+
+    this.client = options.client || new BaseClient({
+      cluster: options.cluster || "beta.buildelements.com",
+      encrypted: options.encrypted
+    });
+  }
+
+  request(options : RequestOptions) : Promise<Response> {
+    options.path = this.absPath(options.path);
+
+    if (!options.jwt && this.authorizer) {
+      return this.authorizer.authorize().then((jwt) => {
+        return this.client.request(Object.assign(options, {jwt}));
+      });
+    } else {
+      return this.client.request(options);
+    }
+  }
+
+  subscribe(options : SubscribeOptions) : Subscription {
+    options.path = this.absPath(options.path);
+
+    let subscription : Subscription = this.client.newSubscription(options);
+
+    if (options.jwt) {
+      subscription.open(options.jwt);
+    } else if (this.authorizer) {
+      this.authorizer.authorize().then((jwt) => {
+        subscription.open(jwt);
+      }).catch((err) => {
+        subscription.abort(err);
+      });
+    } else {
+      subscription.open(null);
+    }
+
+    return subscription;
+  }
+
+  feed(name : string) : FeedsHelper {
+    return new FeedsHelper(name, this);
+  }
+
+  private absPath(relativePath: string): string {
+    return `/apps/${this.appId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+  }
+}

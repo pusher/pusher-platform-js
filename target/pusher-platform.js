@@ -271,6 +271,78 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return BaseClient;
 	}());
 	exports.BaseClient = BaseClient;
+	var SimpleTokenAuthorizer = (function () {
+	    function SimpleTokenAuthorizer(jwt) {
+	        this.jwt = jwt;
+	    }
+	    SimpleTokenAuthorizer.prototype.authorize = function () {
+	        var _this = this;
+	        return new Promise(function (resolve, reject) {
+	            resolve(_this.jwt);
+	        });
+	    };
+	    return SimpleTokenAuthorizer;
+	}());
+	exports.SimpleTokenAuthorizer = SimpleTokenAuthorizer;
+	var FeedsHelper = (function () {
+	    function FeedsHelper(name, app) {
+	        this.feedName = name;
+	        this.app = app;
+	    }
+	    FeedsHelper.prototype.append = function (item) {
+	        var path = "feeds/" + this.feedName;
+	        return this.app.request({ method: "APPEND", path: path, body: { items: [item] } });
+	    };
+	    return FeedsHelper;
+	}());
+	var App = (function () {
+	    function App(options) {
+	        this.appId = options.appId;
+	        this.authorizer = options.authorizer;
+	        this.client = options.client || new BaseClient({
+	            cluster: options.cluster || "beta.buildelements.com",
+	            encrypted: options.encrypted
+	        });
+	    }
+	    App.prototype.request = function (options) {
+	        var _this = this;
+	        options.path = this.absPath(options.path);
+	        if (!options.jwt && this.authorizer) {
+	            return this.authorizer.authorize().then(function (jwt) {
+	                return _this.client.request(Object.assign(options, { jwt: jwt }));
+	            });
+	        }
+	        else {
+	            return this.client.request(options);
+	        }
+	    };
+	    App.prototype.subscribe = function (options) {
+	        options.path = this.absPath(options.path);
+	        var subscription = this.client.newSubscription(options);
+	        if (options.jwt) {
+	            subscription.open(options.jwt);
+	        }
+	        else if (this.authorizer) {
+	            this.authorizer.authorize().then(function (jwt) {
+	                subscription.open(jwt);
+	            }).catch(function (err) {
+	                subscription.abort(err);
+	            });
+	        }
+	        else {
+	            subscription.open(null);
+	        }
+	        return subscription;
+	    };
+	    App.prototype.feed = function (name) {
+	        return new FeedsHelper(name, this);
+	    };
+	    App.prototype.absPath = function (relativePath) {
+	        return ("/apps/" + this.appId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
+	    };
+	    return App;
+	}());
+	exports.App = App;
 
 
 /***/ }

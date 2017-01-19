@@ -7,14 +7,23 @@
   <body>
     <h1>Pusher Platform example</h1>
     <p>
-      Open the JavaScript console!
+      This app is the "hello world" of Pusher Platform.
+      View source or see <a href="https://github.com/pusher/pusher-platform-js">the repository</a> for more info.
     </p>
+
     <script src="./target/pusher-platform.js"></script>
     <script>
-      var baseClient = new PusherPlatform.BaseClient({
-        cluster: "js.pusher.com" // This should be updated ...
+      // This token provides full permissions (SUBSCRIBE and POST) for app "cac0d60f-c4a5-4779-9059-31bb072e352a"
+      var authorizer = new PusherPlatform.SimpleTokenAuthorizer("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJjYWMwZDYwZi1jNGE1LTQ3NzktOTA1OS0zMWJiMDcyZTM1MmEiLCJpc3MiOiI4MDc4YjY5MS02ZWJjLTQ0YWEtOTUwMS1jYWIyOWVhZGMyZjUiLCJncmFudHMiOnsiL2FwcHMvY2FjMGQ2MGYtYzRhNS00Nzc5LTkwNTktMzFiYjA3MmUzNTJhLyoqIjpbIioiXX0sImlhdCI6MTQ4NDY1MjUzN30.nzBonj4P9YUNNLUgxH_1-yDXLCXZiYh3LqU753G_4m8");
+
+      var app = new PusherPlatform.App({
+        appId: "cac0d60f-c4a5-4779-9059-31bb072e352a", // an example app provided by Pusher
+        authorizer: authorizer
       });
-      baseClient.request({ method: "GET", path: "/3.2/pusher.min.js" })
+
+      var notificationsFeed = app.feed("notifications");
+
+      notificationsFeed.append("Jim left a comment on your photo")
         .then((response) => console.log("Response:", response))
         .catch((err) => console.error("Error:", err));
     </script>

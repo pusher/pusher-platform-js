@@ -81,13 +81,20 @@ function runTest(responseText, expectedEvents, expectedError) {
     XMLHttpRequest: MockXMLHttpRequest
   });
 
+  var app = new PusherPlatform.App({
+    encrypted: true,
+    cluster: "somecluster:12345",
+    appId: "3",
+    client: baseClient
+  });
+
   var events = [];
 
   var calledOnEnd = false;
   var calledOnError = false;
 
-  var subscription = baseClient.newSubscription({
-    path: "/apps/3/example/sub",
+  var subscription = app.subscribe({
+    path: "example/sub",
     jwt: "foo",
     onOpen: function() {
       // Called after we've created the XHR, called open(), called send(), received headers, and got back a 200 response
@@ -139,7 +146,6 @@ function runTest(responseText, expectedEvents, expectedError) {
       }
     }
   });
-  subscription.open("foo");
 }
 
 /////////////////////////////// UNIT TESTS /////////////////////////////////////
