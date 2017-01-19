@@ -11,7 +11,12 @@
     </p>
     <script src="./target/pusher-platform.js"></script>
     <script>
-      console.log("Should say world:", PusherPlatform.hello);
+      var baseClient = new PusherPlatform.BaseClient({
+        cluster: "js.pusher.com" // This should be updated ...
+      });
+      baseClient.request({ method: "GET", path: "/3.2/pusher.min.js" })
+        .then((response) => console.log("Response:", response))
+        .catch((err) => console.error("Error:", err));
     </script>
   </body>
 </html>

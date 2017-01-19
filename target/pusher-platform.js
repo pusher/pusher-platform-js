@@ -52,10 +52,255 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var base_client_1 = __webpack_require__(1);
+	exports.BaseClient = base_client_1.BaseClient;
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var subscription_1 = __webpack_require__(2);
+	var error_response_1 = __webpack_require__(3);
+	var BaseClient = (function () {
+	    function BaseClient(options) {
+	        this.options = options;
+	        var cluster = options.cluster.replace(/\/$/, '');
+	        this.baseURL = (options.encrypted !== false ? "https" : "http") + "://" + cluster;
+	        this.XMLHttpRequest = options.XMLHttpRequest || window.XMLHttpRequest;
+	    }
+	    BaseClient.prototype.request = function (options) {
+	        var xhr = this.createXHR(this.baseURL, options);
+	        return new Promise(function (resolve, reject) {
+	            xhr.onreadystatechange = function () {
+	                if (xhr.readyState === 4) {
+	                    if (xhr.status === 200) {
+	                        resolve(xhr.responseText);
+	                    }
+	                    else {
+	                        reject(new error_response_1.default(xhr));
+	                    }
+	                }
+	            };
+	            xhr.send(JSON.stringify(options.body));
+	        });
+	    };
+	    BaseClient.prototype.newSubscription = function (subOptions) {
+	        return new subscription_1.default(this.createXHR(this.baseURL, {
+	            method: "SUBSCRIBE",
+	            path: subOptions.path,
+	            headers: subOptions.headers,
+	            body: null,
+	        }), subOptions);
+	    };
+	    BaseClient.prototype.createXHR = function (baseURL, options) {
+	        var XMLHttpRequest = this.XMLHttpRequest;
+	        var xhr = new XMLHttpRequest();
+	        var path = options.path.replace(/^\/+/, "");
+	        var endpoint = baseURL + "/" + path;
+	        xhr.open(options.method.toUpperCase(), endpoint, true);
+	        if (options.body) {
+	            xhr.setRequestHeader("content-type", "application/json");
+	        }
+	        for (var key in options.headers) {
+	            xhr.setRequestHeader(key, options.headers[key]);
+	        }
+	        return xhr;
+	    };
+	    return BaseClient;
+	}());
+	exports.BaseClient = BaseClient;
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var error_response_1 = __webpack_require__(3);
+	// Will call `options.onEvent` 0+ times,
+	// followed by EITHER `options.onEnd` or `options.onError` exactly once.
+	var Subscription = (function () {
+	    function Subscription(xhr, options) {
+	        var _this = this;
+	        this.xhr = xhr;
+	        this.options = options;
+	        this.gotEOS = false;
+	        this.lastNewlineIndex = 0;
+	        this.xhr.onreadystatechange = function () {
+	            if (_this.xhr.readyState === 3) {
+	                // The headers have loaded and we have partial body text.
+	                if (_this.xhr.status === 200) {
+	                    // We've received a successful response header.
+	                    // The partial body text is a partial JSON message stream.
+	                    var err = _this.onChunk();
+	                    if (err != null) {
+	                        _this.xhr.abort();
+	                        // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
+	                        // and so we will not call the event handler again.
+	                        // Finish with options.onError instead of the options.onEnd.
+	                        _this.options.onError(err);
+	                    }
+	                    else {
+	                    }
+	                }
+	                else {
+	                }
+	            }
+	            else if (_this.xhr.readyState === 4) {
+	                // This is the last time onreadystatechange is called.
+	                if (_this.xhr.status === 200) {
+	                    var err = _this.onChunk();
+	                    if (err !== null && err != undefined) {
+	                        _this.options.onError(err);
+	                    }
+	                    else if (!_this.gotEOS) {
+	                        _this.options.onError(new Error("HTTP response ended without receiving EOS message"));
+	                    }
+	                    else {
+	                        // Stream ended normally.
+	                        _this.options.onEnd();
+	                    }
+	                }
+	                else {
+	                    // Either the server responded with a bad status code,
+	                    // or the request errored in some other way (status 0).
+	                    // Finish with an error.
+	                    _this.options.onError(new Error(new error_response_1.default(xhr).toString()));
+	                }
+	            }
+	            else {
+	            }
+	        };
+	    }
+	    Subscription.prototype.open = function (jwt) {
+	        if (jwt) {
+	            this.xhr.setRequestHeader("authorization", "JWT " + jwt);
+	        }
+	        this.xhr.send();
+	    };
+	    // calls options.onEvent 0+ times, then possibly returns an error.
+	    // idempotent.
+	    Subscription.prototype.onChunk = function () {
+	        var response = this.xhr.responseText;
+	        var newlineIndex = response.lastIndexOf("\n");
+	        if (newlineIndex > this.lastNewlineIndex) {
+	            var rawEvents = response.slice(this.lastNewlineIndex, newlineIndex).split("\n");
+	            this.lastNewlineIndex = newlineIndex;
+	            for (var _i = 0, rawEvents_1 = rawEvents; _i < rawEvents_1.length; _i++) {
+	                var rawEvent = rawEvents_1[_i];
+	                if (rawEvent.length === 0) {
+	                    continue; // FIXME why? This should be a protocol error
+	                }
+	                var data = JSON.parse(rawEvent);
+	                var err = this.onMessage(data);
+	                if (err != null) {
+	                    return err;
+	                }
+	            }
+	        }
+	    };
+	    // calls options.onEvent 0+ times, then returns an Error or null
+	    Subscription.prototype.onMessage = function (message) {
+	        if (this.gotEOS) {
+	            return new Error("Got another message after EOS message");
+	        }
+	        if (!Array.isArray(message)) {
+	            return new Error("Message is not an array");
+	        }
+	        if (message.length < 1) {
+	            return new Error("Message is empty array");
+	        }
+	        switch (message[0]) {
+	            case 0:
+	                return null;
+	            case 1:
+	                return this.onEventMessage(message);
+	            case 255:
+	                return this.onEOSMessage(message);
+	            default:
+	                return new Error("Unknown Message: " + JSON.stringify(message));
+	        }
+	    };
+	    // EITHER calls options.onEvent, OR returns an error
+	    Subscription.prototype.onEventMessage = function (eventMessage) {
+	        if (eventMessage.length !== 4) {
+	            return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
+	        }
+	        var _ = eventMessage[0], id = eventMessage[1], headers = eventMessage[2], body = eventMessage[3];
+	        if (typeof id !== "string") {
+	            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
+	        }
+	        if (typeof headers !== "object" || Array.isArray(headers)) {
+	            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
+	        }
+	        this.options.onEvent({ eventId: id, headers: headers, body: body });
+	    };
+	    // calls options.onEvent 0+ times, then possibly returns an error
+	    Subscription.prototype.onEOSMessage = function (eosMessage) {
+	        if (eosMessage.length !== 4) {
+	            return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
+	        }
+	        var _ = eosMessage[0], statusCode = eosMessage[1], headers = eosMessage[2], info = eosMessage[3];
+	        if (typeof statusCode !== "number") {
+	            return new Error("Invalid EOS Status Code");
+	        }
+	        if (typeof headers !== "object" || Array.isArray(headers)) {
+	            return new Error("Invalid EOS Headers");
+	        }
+	        this.gotEOS = true;
+	    };
+	    Subscription.prototype.abort = function (err) {
+	        this.xhr.abort();
+	        if (err) {
+	            this.options.onError(err);
+	        }
+	        else {
+	            this.options.onEnd();
+	        }
+	    };
+	    return Subscription;
+	}());
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Subscription;
+
+
+/***/ },
+/* 3 */
 /***/ function(module, exports) {
 
 	"use strict";
-	exports.hello = "world";
+	function responseHeadersObj(headerStr) {
+	    var headers = {};
+	    if (!headerStr) {
+	        return headers;
+	    }
+	    var headerPairs = headerStr.split('\u000d\u000a');
+	    for (var i = 0; i < headerPairs.length; i++) {
+	        var headerPair = headerPairs[i];
+	        var index = headerPair.indexOf('\u003a\u0020');
+	        if (index > 0) {
+	            var key = headerPair.substring(0, index);
+	            var val = headerPair.substring(index + 2);
+	            headers[key] = val;
+	        }
+	    }
+	    return headers;
+	}
+	var ErrorResponse = (function () {
+	    function ErrorResponse(xhr) {
+	        this.statusCode = xhr.status;
+	        this.headers = responseHeadersObj(xhr.getAllResponseHeaders());
+	        this.info = xhr.responseText;
+	    }
+	    return ErrorResponse;
+	}());
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = ErrorResponse;
 
 
 /***/ }
