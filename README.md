@@ -4,7 +4,7 @@ This is the official Pusher Platform client library for web browsers.
 
 ## Quickstart
 
-See `example.html` for copy-paste code.
+See `example.html` for copy-paste code. [The example is deployed here](https://pusher.github.io/pusher-platform-js/example.html) for you play with.
 
 ## Installation
 
