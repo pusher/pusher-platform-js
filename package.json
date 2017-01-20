@@ -1,5 +1,5 @@
 {
-  "name": "@pusherapp/pusher-platform-js",
+  "name": "pusher-platform-js",
   "description": "Pusher Platform client library for web browsers",
   "author": "Pusher",
   "license": "MIT",
