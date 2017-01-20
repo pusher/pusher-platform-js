@@ -23,16 +23,12 @@
     <!-- change this URL to "./target/pusher-platform.js" for the built version in the repo -->
     <script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
     <script>
-      // This token provides full permissions (SUBSCRIBE and POST) for app "cac0d60f-c4a5-4779-9059-31bb072e352a"
-      var authorizer = new PusherPlatform.SimpleTokenAuthorizer("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJjYWMwZDYwZi1jNGE1LTQ3NzktOTA1OS0zMWJiMDcyZTM1MmEiLCJpc3MiOiI4MDc4YjY5MS02ZWJjLTQ0YWEtOTUwMS1jYWIyOWVhZGMyZjUiLCJncmFudHMiOnsiL2FwcHMvY2FjMGQ2MGYtYzRhNS00Nzc5LTkwNTktMzFiYjA3MmUzNTJhLyoqIjpbIioiXX0sImlhdCI6MTQ4NDY1MjUzN30.nzBonj4P9YUNNLUgxH_1-yDXLCXZiYh3LqU753G_4m8");
-
       var app = new PusherPlatform.App({
-        appId: "cac0d60f-c4a5-4779-9059-31bb072e352a", // an example app provided by Pusher
-        authorizer: authorizer
+        appId: "d41c21c3-549a-4d9d-a368-f2b058e0655b", // an example app provided by Pusher
+        // This token provides full permissions (SUBSCRIBE and POST) for this app ^
+        authorizer: new PusherPlatform.SimpleTokenAuthorizer("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkNDFjMjFjMy01NDlhLTRkOWQtYTM2OC1mMmIwNThlMDY1NWIiLCJpc3MiOiI4MDc4YjY5MS02ZWJjLTQ0YWEtOTUwMS1jYWIyOWVhZGMyZjUiLCJncmFudHMiOnsiL2FwcHMvZDQxYzIxYzMtNTQ5YS00ZDlkLWEzNjgtZjJiMDU4ZTA2NTViLyoqIjpbIioiXX0sImlhdCI6MTQ4NDkyMzIzMH0.rNt_9xqt8kgm0DqTGaXp7ezKYCmFxniilU86PlFooYk")
       });
-
       var notificationsFeed = app.feed("notifications");
-
       notificationsFeed.subscribe({
         lastEventId: "0",
         onOpen: () => {
