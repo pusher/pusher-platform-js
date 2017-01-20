@@ -335,7 +335,7 @@ class FeedsHelper {
 
   append(item : any) : Promise<Response> {
     var path = "feeds/" + this.feedName;
-    return this.app.request({ method: "APPEND", path: path, body: { items: [item] } });
+    return this.app.request({ method: "POST", path: path, body: { items: [item] } });
   }
 }
 

@@ -310,7 +310,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    FeedsHelper.prototype.append = function (item) {
 	        var path = "feeds/" + this.feedName;
-	        return this.app.request({ method: "APPEND", path: path, body: { items: [item] } });
+	        return this.app.request({ method: "POST", path: path, body: { items: [item] } });
 	    };
 	    return FeedsHelper;
 	}());
