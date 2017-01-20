@@ -319,7 +319,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.appId = options.appId;
 	        this.authorizer = options.authorizer;
 	        this.client = options.client || new BaseClient({
-	            cluster: options.cluster || "beta.buildelements.com",
+	            cluster: options.cluster || "api.private-beta-1.pusherplatform.com",
 	            encrypted: options.encrypted
 	        });
 	    }
