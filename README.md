@@ -12,6 +12,7 @@ The simplest way is to use our CDN to get the bleeding-edge version:
 
 ```html
 <script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
+<script src="https://js.pusher.com/platform/latest/pusher-platform.min.js"></script>
 ```
 
 ## Building
