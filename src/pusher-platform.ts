@@ -62,6 +62,14 @@ class ErrorResponse {
 // followed by EITHER `options.onEnd` or `options.onError` exactly once.
 class Subscription {
   private gotEOS : boolean = false;
+  private calledOnOpen : boolean = false;
+
+  private opened() {
+    if (!this.calledOnOpen) {
+      this.options.onOpen();
+      this.calledOnOpen = true;
+    }
+  }
 
   constructor(
       private xhr : XMLHttpRequest,
@@ -73,6 +81,7 @@ class Subscription {
         if (this.xhr.status === 200) {
           // We've received a successful response header.
           // The partial body text is a partial JSON message stream.
+          this.opened();
           let err = this.onChunk();
           if (err != null) {
             this.xhr.abort();
@@ -89,6 +98,7 @@ class Subscription {
       } else if (this.xhr.readyState === 4) {
         // This is the last time onreadystatechange is called.
         if (this.xhr.status === 200) {
+          this.opened();
           let err = this.onChunk();
           if (err !== null && err != undefined) {
             this.options.onError(err);
@@ -296,6 +306,13 @@ export class SimpleTokenAuthorizer implements Authorizer {
 
 type Response = any;
 
+interface FeedSubscribeOptions {
+  lastEventId?: string;
+  onOpen : () => void;
+  onItem : (item: Event) => void;
+  onError : (error: Error) => void;
+}
+
 class FeedsHelper {
   public app : App;
   public feedName : string;
@@ -303,6 +320,17 @@ class FeedsHelper {
   constructor(name : string, app: App){
     this.feedName = name;
     this.app = app;
+  }
+
+  subscribe(options: FeedSubscribeOptions) : Subscription {
+    return this.app.subscribe({
+      path: "feeds/" + this.feedName,
+      headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
+      onOpen: options.onOpen,
+      onEvent: options.onItem,
+      onEnd: () => { options.onError(new Error("Unexpected end to Feed subscription")); },
+      onError: options.onError
+    });
   }
 
   append(item : any) : Promise<Response> {

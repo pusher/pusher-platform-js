@@ -88,6 +88,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.xhr = xhr;
 	        this.options = options;
 	        this.gotEOS = false;
+	        this.calledOnOpen = false;
 	        this.lastNewlineIndex = 0;
 	        this.xhr.onreadystatechange = function () {
 	            if (_this.xhr.readyState === 3) {
@@ -95,6 +96,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (_this.xhr.status === 200) {
 	                    // We've received a successful response header.
 	                    // The partial body text is a partial JSON message stream.
+	                    _this.opened();
 	                    var err = _this.onChunk();
 	                    if (err != null) {
 	                        _this.xhr.abort();
@@ -112,6 +114,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            else if (_this.xhr.readyState === 4) {
 	                // This is the last time onreadystatechange is called.
 	                if (_this.xhr.status === 200) {
+	                    _this.opened();
 	                    var err = _this.onChunk();
 	                    if (err !== null && err != undefined) {
 	                        _this.options.onError(err);
@@ -135,6 +138,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        };
 	    }
+	    Subscription.prototype.opened = function () {
+	        if (!this.calledOnOpen) {
+	            this.options.onOpen();
+	            this.calledOnOpen = true;
+	        }
+	    };
 	    Subscription.prototype.open = function (jwt) {
 	        if (jwt) {
 	            this.xhr.setRequestHeader("authorization", "JWT " + jwt);
@@ -289,6 +298,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.feedName = name;
 	        this.app = app;
 	    }
+	    FeedsHelper.prototype.subscribe = function (options) {
+	        return this.app.subscribe({
+	            path: "feeds/" + this.feedName,
+	            headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
+	            onOpen: options.onOpen,
+	            onEvent: options.onItem,
+	            onEnd: function () { options.onError(new Error("Unexpected end to Feed subscription")); },
+	            onError: options.onError
+	        });
+	    };
 	    FeedsHelper.prototype.append = function (item) {
 	        var path = "feeds/" + this.feedName;
 	        return this.app.request({ method: "APPEND", path: path, body: { items: [item] } });

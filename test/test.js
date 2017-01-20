@@ -90,6 +90,8 @@ function runTest(responseText, expectedEvents, expectedError) {
 
   var events = [];
 
+  var calledOnOpen = false;
+  var calledOnEvent = false;
   var calledOnEnd = false;
   var calledOnError = false;
 
@@ -98,6 +100,11 @@ function runTest(responseText, expectedEvents, expectedError) {
     jwt: "foo",
     onOpen: function() {
       // Called after we've created the XHR, called open(), called send(), received headers, and got back a 200 response
+
+      assertEquals(calledOnEnd, false, "should not call end before open");
+      assertEquals(calledOnEvent, false, "should not call event before open");
+      assertEquals(calledOnError, false, "should not call error before open");
+      calledOnOpen = true;
 
       const expectedHeaders = {
         // "content-type": "application/json",  // there's no request body, so no content-type
@@ -108,18 +115,17 @@ function runTest(responseText, expectedEvents, expectedError) {
 
     },
     onEvent: function(ev) {
-      //console.log("onEvent", ev);
-
-      assertEquals(calledOnEnd, false);
-      assertEquals(calledOnError, false);
+      assertEquals(calledOnOpen, true, "should call open before event");
+      assertEquals(calledOnEnd, false, "should not call event after end");
+      assertEquals(calledOnError, false, "should not call event after error");
+      calledOnEvent = true;
 
       events.push(ev);
     },
     onEnd: function() {
-      //console.log("onEnd");
-
-      assertEquals(calledOnEnd, false);
-      assertEquals(calledOnError, false);
+      assertEquals(calledOnOpen, true, "should call open before end");
+      assertEquals(calledOnEnd, false, "should not call end twice");
+      assertEquals(calledOnError, false, "should not call end after error");
       calledOnEnd = true;
 
       assertEquals(aborted, false, "Library should not have aborted the XHR");
@@ -133,8 +139,8 @@ function runTest(responseText, expectedEvents, expectedError) {
     onError: function(err) {
       // console.log("onError", err);
 
-      assertEquals(calledOnEnd, false);
-      assertEquals(calledOnError, false);
+      assertEquals(calledOnEnd, false, "should not call error after end");
+      assertEquals(calledOnError, false, "should not call error twice");
       calledOnError = true;
 
       assertEquals(aborted, false, "Library should not have aborted the XHR");

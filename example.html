@@ -8,8 +8,17 @@
     <h1>Pusher Platform example</h1>
     <p>
       This app is the "hello world" of Pusher Platform.
+      The app subscribes to a feed.
+      The latest items are shown below.
+      You can append things to the feed using the form below it.
       View source or see <a href="https://github.com/pusher/pusher-platform-js">the repository</a> for more info.
     </p>
+
+    <ol id="feed_items">
+    </ol>
+
+    <input type="text" id="item_val"/>
+    <button id="append_item">Append</button>
 
     <script src="./target/pusher-platform.js"></script>
     <script>
@@ -23,9 +32,27 @@
 
       var notificationsFeed = app.feed("notifications");
 
-      notificationsFeed.append("Jim left a comment on your photo")
-        .then((response) => console.log("Response:", response))
-        .catch((err) => console.error("Error:", err));
+      notificationsFeed.subscribe({
+        lastEventId: "0",
+        onOpen: () => {
+          console.log("Subscription opened");
+        },
+        onItem: (item) => {
+          var itemEl = document.createElement("li");
+          itemEl.innerText = JSON.stringify(item);
+          document.getElementById("feed_items").appendChild(itemEl);
+        },
+        onError: (err) => {
+          console.error("Error subscribing to notifications:", err);
+        }
+      });
+
+      // Using the same feed as above we can append any value:
+      document.getElementById("append_item").addEventListener("click", () => {
+        notificationsFeed.append(document.getElementById("item_val").value)
+          .then((response) => console.log("Success response when appending:", response))
+          .catch((err) => console.error("Error:", err));
+      });
     </script>
   </body>
 </html>
