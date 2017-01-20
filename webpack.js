@@ -1,6 +1,10 @@
 "use strict";
 
-module.exports = {
+const _ = require('lodash');
+const webpack = require('webpack');
+
+
+const baseConfig = {
   entry: "./src/pusher-platform.ts",
   output: {
     filename: "target/pusher-platform.js",
@@ -16,3 +20,20 @@ module.exports = {
     ]
   }
 };
+
+const minifiedOutput = _.extend({}, baseConfig.output, {
+  filename: "target/pusher-platform.min.js"
+});
+
+const minifiedConfig = _.extend({}, baseConfig, {
+  output: minifiedOutput,
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin()
+  ]
+});
+
+
+module.exports = [
+  baseConfig,
+  minifiedConfig
+];
