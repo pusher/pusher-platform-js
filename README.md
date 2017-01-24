@@ -95,6 +95,12 @@ The simplest way is to use our CDN to get the bleeding-edge version:
 <script src="https://js.pusher.com/platform/latest/pusher-platform.min.js"></script>
 ```
 
+You can also use NPM:
+
+```bash
+npm install --save pusher-platform-js
+```
+
 ## Building
 
 ```bash
