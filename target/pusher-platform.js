@@ -158,7 +158,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Subscription.prototype.open = function (jwt) {
 	        if (jwt) {
-	            this.xhr.setRequestHeader("authorization", "JWT " + jwt);
+	            this.xhr.setRequestHeader("authorization", "Bearer " + jwt);
 	        }
 	        this.xhr.send();
 	    };

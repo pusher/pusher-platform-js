@@ -122,7 +122,7 @@ class Subscription {
 
   open(jwt: string) {
     if (jwt) {
-      this.xhr.setRequestHeader("authorization", `JWT ${jwt}`);
+      this.xhr.setRequestHeader("authorization", `Bearer ${jwt}`);
     }
 
     this.xhr.send();
