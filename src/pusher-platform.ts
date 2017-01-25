@@ -13,17 +13,17 @@ interface RequestOptions {
   path : string;
   jwt? : string;
   headers? : Headers;
-  body ?: any;
+  body? : any;
 }
 
 interface SubscribeOptions {
   path : string;
   jwt? : string;
   headers? : Headers;
-  onOpen : () => void;
-  onEvent : (event: Event) => void;
-  onEnd : () => void;
-  onError : (error: Error) => void;
+  onOpen? : () => void;
+  onEvent? : (event: Event) => void;
+  onEnd? : () => void;
+  onError? : (error: Error) => void;
 }
 
 function responseHeadersObj(headerStr : string) : Headers {
@@ -66,7 +66,7 @@ class Subscription {
 
   private opened() {
     if (!this.calledOnOpen) {
-      this.options.onOpen();
+      if (this.options.onOpen) { this.options.onOpen(); }
       this.calledOnOpen = true;
     }
   }
@@ -88,7 +88,7 @@ class Subscription {
             // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
             // and so we will not call the event handler again.
             // Finish with options.onError instead of the options.onEnd.
-            this.options.onError(err);
+            if (this.options.onError) { this.options.onError(err); }
           } else {
             // We consumed some response text, and all's fine. We expect more text.
           }
@@ -101,18 +101,18 @@ class Subscription {
           this.opened();
           let err = this.onChunk();
           if (err !== null && err != undefined) {
-            this.options.onError(err);
+            if (this.options.onError) { this.options.onError(err); }
           } else if (!this.gotEOS) {
-            this.options.onError(new Error("HTTP response ended without receiving EOS message"));
+            if (this.options.onError) { this.options.onError(new Error("HTTP response ended without receiving EOS message")); }
           } else {
             // Stream ended normally.
-            this.options.onEnd();
+            if (this.options.onEnd) { this.options.onEnd(); }
           }
         } else {
           // Either the server responded with a bad status code,
           // or the request errored in some other way (status 0).
           // Finish with an error.
-          this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+          if (this.options.onError) { this.options.onError(new Error(new ErrorResponse(xhr).toString())); }
         }
       } else {
         // States 0, 1 or 2. Too early for us to do anything. Wait for a 3 or 4.
@@ -190,7 +190,7 @@ class Subscription {
     if (typeof headers !== "object" || Array.isArray(headers)) {
       return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
     }
-    this.options.onEvent({ eventId: id, headers: headers, body: body });
+    if (this.options.onEvent) { this.options.onEvent({ eventId: id, headers: headers, body: body }); }
   }
 
   // calls options.onEvent 0+ times, then possibly returns an error
@@ -211,9 +211,9 @@ class Subscription {
   abort(err: Error) {
     this.xhr.abort();
     if (err) {
-      this.options.onError(err);
+      if (this.options.onError) { this.options.onError(err); }
     } else {
-      this.options.onEnd();
+      if (this.options.onEnd) { this.options.onEnd(); }
     }
   }
 }
@@ -308,9 +308,9 @@ type Response = any;
 
 interface FeedSubscribeOptions {
   lastEventId?: string;
-  onOpen : () => void;
-  onItem : (item: Event) => void;
-  onError : (error: Error) => void;
+  onOpen? : () => void;
+  onItem? : (item: Event) => void;
+  onError? : (error: Error) => void;
 }
 
 class FeedsHelper {

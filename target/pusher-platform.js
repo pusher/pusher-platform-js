@@ -103,7 +103,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
 	                        // and so we will not call the event handler again.
 	                        // Finish with options.onError instead of the options.onEnd.
-	                        _this.options.onError(err);
+	                        if (_this.options.onError) {
+	                            _this.options.onError(err);
+	                        }
 	                    }
 	                    else {
 	                    }
@@ -117,21 +119,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    _this.opened();
 	                    var err = _this.onChunk();
 	                    if (err !== null && err != undefined) {
-	                        _this.options.onError(err);
+	                        if (_this.options.onError) {
+	                            _this.options.onError(err);
+	                        }
 	                    }
 	                    else if (!_this.gotEOS) {
-	                        _this.options.onError(new Error("HTTP response ended without receiving EOS message"));
+	                        if (_this.options.onError) {
+	                            _this.options.onError(new Error("HTTP response ended without receiving EOS message"));
+	                        }
 	                    }
 	                    else {
 	                        // Stream ended normally.
-	                        _this.options.onEnd();
+	                        if (_this.options.onEnd) {
+	                            _this.options.onEnd();
+	                        }
 	                    }
 	                }
 	                else {
 	                    // Either the server responded with a bad status code,
 	                    // or the request errored in some other way (status 0).
 	                    // Finish with an error.
-	                    _this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+	                    if (_this.options.onError) {
+	                        _this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+	                    }
 	                }
 	            }
 	            else {
@@ -140,7 +150,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Subscription.prototype.opened = function () {
 	        if (!this.calledOnOpen) {
-	            this.options.onOpen();
+	            if (this.options.onOpen) {
+	                this.options.onOpen();
+	            }
 	            this.calledOnOpen = true;
 	        }
 	    };
@@ -205,7 +217,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (typeof headers !== "object" || Array.isArray(headers)) {
 	            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
 	        }
-	        this.options.onEvent({ eventId: id, headers: headers, body: body });
+	        if (this.options.onEvent) {
+	            this.options.onEvent({ eventId: id, headers: headers, body: body });
+	        }
 	    };
 	    // calls options.onEvent 0+ times, then possibly returns an error
 	    Subscription.prototype.onEOSMessage = function (eosMessage) {
@@ -224,10 +238,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Subscription.prototype.abort = function (err) {
 	        this.xhr.abort();
 	        if (err) {
-	            this.options.onError(err);
+	            if (this.options.onError) {
+	                this.options.onError(err);
+	            }
 	        }
 	        else {
-	            this.options.onEnd();
+	            if (this.options.onEnd) {
+	                this.options.onEnd();
+	            }
 	        }
 	    };
 	    return Subscription;
