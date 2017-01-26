@@ -286,7 +286,7 @@ export class BaseClient {
   }
 }
 
-interface Authorizer {
+export interface Authorizer {
   authorize() : Promise<string>;
 }
 
@@ -299,12 +299,16 @@ export class SimpleTokenAuthorizer implements Authorizer {
   }
 }
 
+function base64UrlDecode(encoded: string): string {
+  return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
+}
+
 export class AuthServerAuthorizer implements Authorizer {
   private accessToken : string = null;
   constructor(private authServerUrl: string) { }
   authorize() : Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (this.accessToken != null && Date.now() < JSON.parse(atob(this.accessToken.split(".")[1]))["exp"]*1000) {
+      if (this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(this.accessToken.split(".")[1]))["exp"]*1000) {
         resolve(this.accessToken);
       } else {
         let xhr : XMLHttpRequest = new XMLHttpRequest();

@@ -1,10 +1,8 @@
 "use strict";
 
-const _ = require('lodash');
 const webpack = require('webpack');
 
-
-const baseConfig = {
+const pusherPlatformJsConfig = {
   entry: "./src/pusher-platform.ts",
   output: {
     filename: "target/pusher-platform.js",
@@ -21,19 +19,44 @@ const baseConfig = {
   }
 };
 
-const minifiedOutput = _.extend({}, baseConfig.output, {
-  filename: "target/pusher-platform.min.js"
-});
-
-const minifiedConfig = _.extend({}, baseConfig, {
-  output: minifiedOutput,
+const pusherPlatformMinJsConfig = Object.assign({}, pusherPlatformJsConfig, {
+  output: Object.assign({}, pusherPlatformJsConfig.output, {
+    filename: "target/pusher-platform.min.js"
+  }),
   plugins: [
     new webpack.optimize.UglifyJsPlugin()
   ]
 });
 
+const pusherPlatformSecretAuthorizerJsConfig = {
+  entry: "./src/pusher-platform-secret-authorizer.ts",
+  output: {
+    filename: "target/pusher-platform-secret-authorizer.js",
+    libraryTarget: "umd",
+    library: "PusherPlatformSecretAuthorizer"
+  },
+  resolve: {
+    extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
+  },
+  module: {
+    loaders: [
+      { test: /\.ts$/, loader: "ts-loader" }
+    ]
+  }
+};
+
+const pusherPlatformSecretAuthorizerMinJsConfig = Object.assign({}, pusherPlatformSecretAuthorizerJsConfig, {
+  output: Object.assign({}, pusherPlatformSecretAuthorizerJsConfig.output, {
+    filename: "target/pusher-platform-secret-authorizer.min.js"
+  }),
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin()
+  ]
+});
 
 module.exports = [
-  baseConfig,
-  minifiedConfig
+  pusherPlatformJsConfig,
+  pusherPlatformMinJsConfig,
+  pusherPlatformSecretAuthorizerJsConfig,
+  pusherPlatformSecretAuthorizerMinJsConfig
 ];

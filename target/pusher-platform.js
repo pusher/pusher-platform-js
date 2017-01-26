@@ -311,6 +311,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return SimpleTokenAuthorizer;
 	}());
 	exports.SimpleTokenAuthorizer = SimpleTokenAuthorizer;
+	function base64UrlDecode(encoded) {
+	    return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
+	}
 	var AuthServerAuthorizer = (function () {
 	    function AuthServerAuthorizer(authServerUrl) {
 	        this.authServerUrl = authServerUrl;
@@ -319,7 +322,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    AuthServerAuthorizer.prototype.authorize = function () {
 	        var _this = this;
 	        return new Promise(function (resolve, reject) {
-	            if (_this.accessToken != null && Date.now() < JSON.parse(atob(_this.accessToken.split(".")[1]))["exp"] * 1000) {
+	            if (_this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(_this.accessToken.split(".")[1]))["exp"] * 1000) {
 	                resolve(_this.accessToken);
 	            }
 	            else {

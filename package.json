@@ -13,7 +13,6 @@
     "url": "git+https://github.com/pusher/pusher-platform-js.git"
   },
   "devDependencies": {
-    "lodash": "^4.17.4",
     "ts-loader": "^1.3.3",
     "typescript": "^2.0.7",
     "webpack": "^1.9.5"
@@ -22,5 +21,8 @@
     "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js --config=webpack.js",
     "test": "node_modules/webpack/bin/webpack.js --config=webpack.js && node test/test.js"
   },
-  "version": "0.0.2"
+  "version": "0.0.2",
+  "dependencies": {
+    "jwt-simple": "^0.5.1"
+  }
 }

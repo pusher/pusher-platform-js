@@ -21,12 +21,17 @@
     <button id="append_item">Append</button>
 
     <!-- change this URL to "./target/pusher-platform.js" for the built version in the repo -->
-    <script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
+    <script src="./target/pusher-platform.js"></script>
+    <script src="./target/pusher-platform-secret-authorizer.js"></script>
     <script>
       var app = new PusherPlatform.App({
-        appId: "d41c21c3-549a-4d9d-a368-f2b058e0655b", // an example app provided by Pusher
-        // This token provides full permissions (SUBSCRIBE and POST) for this app ^
-        authorizer: new PusherPlatform.SimpleTokenAuthorizer("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkNDFjMjFjMy01NDlhLTRkOWQtYTM2OC1mMmIwNThlMDY1NWIiLCJpc3MiOiI4MDc4YjY5MS02ZWJjLTQ0YWEtOTUwMS1jYWIyOWVhZGMyZjUiLCJncmFudHMiOnsiL2FwcHMvZDQxYzIxYzMtNTQ5YS00ZDlkLWEzNjgtZjJiMDU4ZTA2NTViLyoqIjpbIioiXX0sImlhdCI6MTQ4NDkyMzIzMH0.rNt_9xqt8kgm0DqTGaXp7ezKYCmFxniilU86PlFooYk")
+        appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+        authorizer: new PusherPlatformSecretAuthorizer.SecretAuthorizer({
+          appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+          issuerKey: "cfabdc6f-c256-4a93-be36-c2a945eb1253",
+          secretKey: "Io263YG8mt3GCTH7Cr9j1vCUTpmmqFkFbeDL+ZEsg2M=",
+          userId: "jim"
+        })
       });
       var notificationsFeed = app.feed("notifications");
       notificationsFeed.subscribe({
