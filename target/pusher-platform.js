@@ -311,6 +311,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return SimpleTokenAuthorizer;
 	}());
 	exports.SimpleTokenAuthorizer = SimpleTokenAuthorizer;
+	function base64UrlDecode(encoded) {
+	    return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
+	}
+	var AuthServerAuthorizer = (function () {
+	    function AuthServerAuthorizer(authServerUrl) {
+	        this.authServerUrl = authServerUrl;
+	        this.accessToken = null;
+	    }
+	    AuthServerAuthorizer.prototype.authorize = function () {
+	        var _this = this;
+	        return new Promise(function (resolve, reject) {
+	            if (_this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(_this.accessToken.split(".")[1]))["exp"] * 1000) {
+	                resolve(_this.accessToken);
+	            }
+	            else {
+	                var xhr_1 = new XMLHttpRequest();
+	                xhr_1.onreadystatechange = function () {
+	                    if (xhr_1.readyState === 4) {
+	                        if (200 <= xhr_1.status && xhr_1.status < 300) {
+	                            _this.accessToken = JSON.parse(xhr_1.responseText)["access_token"];
+	                            resolve(_this.accessToken);
+	                        }
+	                        else {
+	                            reject(new Error("Unexpected status code in response from auth server: " + xhr_1.status));
+	                        }
+	                    }
+	                };
+	                xhr_1.open("POST", _this.authServerUrl, true);
+	                xhr_1.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	                xhr_1.send("grant_type=client_credentials&credentials=jim"); // FIXME credentials should come from a session cookie or similar
+	            }
+	        });
+	    };
+	    return AuthServerAuthorizer;
+	}());
+	exports.AuthServerAuthorizer = AuthServerAuthorizer;
 	var FeedsHelper = (function () {
 	    function FeedsHelper(name, app) {
 	        this.feedName = name;

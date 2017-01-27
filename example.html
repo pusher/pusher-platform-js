@@ -21,10 +21,18 @@
     <button id="append_item">Append</button>
 
     <!-- change this URL to "./target/pusher-platform.js" for the built version in the repo -->
-    <script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
+    <script src="./target/pusher-platform.js"></script>
+    <script src="./target/pusher-platform-secret-authorizer.js"></script>
     <script>
       var app = new PusherPlatform.App({
         appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+        // This authorizer is obviously insecure! You should keep your secrets secret!
+        authorizer: new PusherPlatformSecretAuthorizer.SecretAuthorizer({
+          appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+          issuerKey: "cfabdc6f-c256-4a93-be36-c2a945eb1253",
+          secretKey: "Io263YG8mt3GCTH7Cr9j1vCUTpmmqFkFbeDL+ZEsg2M=",
+          userId: "jim"
+        })
       });
       var notificationsFeed = app.feed("notifications");
       notificationsFeed.subscribe({
