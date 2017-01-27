@@ -278,6 +278,10 @@ export class BaseClient {
       xhr.setRequestHeader("content-type", "application/json");
     }
 
+    if (options.jwt) {
+      xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
+    }
+
     for (let key in options.headers) {
       xhr.setRequestHeader(key, options.headers[key]);
     }
