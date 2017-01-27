@@ -2,24 +2,23 @@
 
 This is the official Pusher Platform client library for web browsers.
 
-## Copy-paste!
+## Installation
 
-```js
-var app = new PusherPlatform.App({
-  appId: "d41c21c3-549a-4d9d-a368-f2b058e0655b",
-  authorizer: new PusherPlatform.SimpleTokenAuthorizer("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJkNDFjMjFjMy01NDlhLTRkOWQtYTM2OC1mMmIwNThlMDY1NWIiLCJpc3MiOiI4MDc4YjY5MS02ZWJjLTQ0YWEtOTUwMS1jYWIyOWVhZGMyZjUiLCJncmFudHMiOnsiL2FwcHMvZDQxYzIxYzMtNTQ5YS00ZDlkLWEzNjgtZjJiMDU4ZTA2NTViLyoqIjpbIioiXX0sImlhdCI6MTQ4NDkyMzIzMH0.rNt_9xqt8kgm0DqTGaXp7ezKYCmFxniilU86PlFooYk")
-});
-var notificationsFeed = app.feed("notifications");
-notificationsFeed.subscribe({
-  lastEventId: "0",
-  onOpen: () => { console.log("Subscription opened"); },
-  onItem: (item) => { console.log("received feed item", item); },
-  onError: (err) => { console.error("Error subscribing to notifications:", err); }
-});
-notificationsFeed.append(document.getElementById("item_val").value)
-  .then((response) => console.log("Success response when appending:", response))
-  .catch((err) => console.error("Error:", err));
+The simplest way is to use our CDN to get the bleeding-edge version:
+
+```html
+<script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
+<script src="https://js.pusher.com/platform/latest/pusher-platform.min.js"></script>
 ```
+
+You can also use NPM:
+
+```bash
+npm install --save pusher-platform-js
+```
+
+We have a 4 steps quick start guide available in [our documentation](https://github.com/pusher/feeds-api/wiki/Getting-Started-%5BJavascript%5D) (and in our dashboard).
+
 
 ## Walk-through
 
@@ -28,18 +27,7 @@ Let's walk through the "hello world" of Pusher Platform: an event log. If you ju
 To initialize the library, we write:
 
 ```js
-var app = new PusherPlatform.App({ appId: "TODO GET THIS FROM YOUR DASHBOARD", authorizer: /* TODO */ });
-```
-
-We need to fill in those two arguments. To get your App ID, sign in to https://dash.pusher.com/. Your App ID is a UUID which is part of the URL, like this: `https://dash.pusher.com/apps/abcdefgh-ijkl-mnop-qrst-uvwxyz012345/feeds/getting-started`. Copy-paste your App ID from the URL.
-
-The `authorizer` is a _token source_; it gives your app "tokens" to allow it to use Pusher services. Tokens are strings. You can find one on your dashboard under "Tokens". For our `authorizer`, we'll just use a `SimpleTokenAuthorizer` which always returns this same token. Now we have:
-
-```js
-var app = new PusherPlatform.App({
-  appId: "abcdefgh-ijkl-mnop-qrst-uvwxyz012345",  // from your dashboard
-  authorizer: new PusherPlatform.SimpleTokenAuthorizer("j75wh53t43t...u75eyw53t") // from your dashboard
-});
+var app = new PusherPlatform.App({ appId: "yourAppId" // Get this from your dashboard });
 ```
 
 An `App` object provides access to Pusher Platform's many APIs. Our event log app will use the Feeds API. Feeds is a pub-sub service with history. Each of your feeds has a name, like `"notifications"`, `"users-jim"`, or `"order-progress-825435"`. To access a single feed, we write:
@@ -86,20 +74,6 @@ notificationsFeed.append("Jim added you as a friend")
   .catch((err) => console.error("Error:", err));
 ```
 
-## Installation
-
-The simplest way is to use our CDN to get the bleeding-edge version:
-
-```html
-<script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
-<script src="https://js.pusher.com/platform/latest/pusher-platform.min.js"></script>
-```
-
-You can also use NPM:
-
-```bash
-npm install --save pusher-platform-js
-```
 
 ## Building
 
