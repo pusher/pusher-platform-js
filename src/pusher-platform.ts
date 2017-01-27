@@ -343,6 +343,11 @@ interface FeedSubscribeOptions {
   onError? : (error: Error) => void;
 }
 
+export interface FeedsGetOptions {
+  fromId?: string;
+  limit?: number;
+}
+
 class FeedsHelper {
   public app : App;
   public feedName : string;
@@ -360,6 +365,33 @@ class FeedsHelper {
       onEvent: options.onItem,
       onEnd: () => { options.onError(new Error("Unexpected end to Feed subscription")); },
       onError: options.onError
+    });
+  }
+
+  get(options? : FeedsGetOptions) : Promise<any> {
+    var path = "feeds/" + this.feedName;
+
+    var queryString = "";
+    var queryParams: string[] = [];
+    if (options && options.fromId) { queryParams.push("from_id=" + options.fromId); }
+    if (options && options.limit) { queryParams.push("limit=" + options.limit); }
+
+    if (queryParams.length > 0) { queryString = "?" + queryParams.join("&"); }
+
+    var pathWithQuery = path + queryString;
+
+    return new Promise((resolve, reject) => {
+      this.app.request({ method: "GET", path: pathWithQuery })
+        .then((responseBody) => {
+          try {
+            resolve(JSON.parse(responseBody));
+          } catch (e) {
+            reject(e);
+          }
+        })
+        .catch((error) => {
+          reject(error);
+        });
     });
   }
 

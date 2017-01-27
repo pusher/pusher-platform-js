@@ -20,9 +20,15 @@
     <input type="text" id="item_val"/>
     <button id="append_item">Append</button>
 
+    <ol id="page_items">
+    </ol>
+    <input type="text" id="page_boundary"/>
+    <button id="fetch_page">Fetch page from</button>
+
+
     <!-- change this URL to "./target/pusher-platform.js" for the built version in the repo -->
-    <script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
-    <script src="https://js.pusher.com/platform/latest/pusher-platform-secret-authorizer.js"></script>
+    <script src="./target/pusher-platform.js"></script>
+    <script src="./target/pusher-platform-secret-authorizer.js"></script>
     <script>
       var app = new PusherPlatform.App({
         appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
@@ -44,11 +50,28 @@
         }
       });
 
+      document.getElementById("fetch_page").addEventListener("click", () => {
+        document.getElementById("page_items").innerText = "";
+        notificationsFeed.get({
+          fromId: document.getElementById("page_boundary").value,
+          limit: 50
+        }).then((response) => {
+          console.log("Got page", response);
+          for (var i = 0; i < response.items.length; i++) {
+            var item = response.items[i];
+            var itemEl = document.createElement("li");
+            itemEl.innerText = JSON.stringify(item);
+            document.getElementById("page_items").appendChild(itemEl);
+          }
+        })
+        .catch((error) => { console.error("Could not get page:", error); });
+      })
+
       // Using the same feed as above we can append any value:
       document.getElementById("append_item").addEventListener("click", () => {
         notificationsFeed.append(document.getElementById("item_val").value)
           .then((response) => console.log("Success response when appending:", response))
-          .catch((err) => console.error("Error:", err));
+          .catch((err) => console.error("Could not append:", err));
       });
     </script>
   </body>

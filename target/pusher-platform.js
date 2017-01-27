@@ -365,6 +365,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	            onError: options.onError
 	        });
 	    };
+	    FeedsHelper.prototype.get = function (options) {
+	        var _this = this;
+	        var path = "feeds/" + this.feedName;
+	        var queryString = "";
+	        var queryParams = [];
+	        if (options && options.fromId) {
+	            queryParams.push("from_id=" + options.fromId);
+	        }
+	        if (options && options.limit) {
+	            queryParams.push("limit=" + options.limit);
+	        }
+	        if (queryParams.length > 0) {
+	            queryString = "?" + queryParams.join("&");
+	        }
+	        var pathWithQuery = path + queryString;
+	        return new Promise(function (resolve, reject) {
+	            _this.app.request({ method: "GET", path: pathWithQuery })
+	                .then(function (responseBody) {
+	                try {
+	                    resolve(JSON.parse(responseBody));
+	                }
+	                catch (e) {
+	                    reject(e);
+	                }
+	            })
+	                .catch(function (error) {
+	                reject(error);
+	            });
+	        });
+	    };
 	    FeedsHelper.prototype.append = function (item) {
 	        var path = "feeds/" + this.feedName;
 	        return this.app.request({ method: "POST", path: path, body: { items: [item] } });
