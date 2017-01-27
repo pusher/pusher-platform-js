@@ -290,6 +290,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (options.body) {
 	            xhr.setRequestHeader("content-type", "application/json");
 	        }
+	        if (options.jwt) {
+	            xhr.setRequestHeader("authorization", "Bearer " + options.jwt);
+	        }
 	        for (var key in options.headers) {
 	            xhr.setRequestHeader(key, options.headers[key]);
 	        }

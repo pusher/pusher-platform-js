@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var payload = {
 	                "iat": currentTimeUnixSecs,
 	                "exp": currentTimeUnixSecs + (60 * 60 * 24),
-	                "iss": "keys/" + _this.options.issuerKey,
+	                "iss": _this.options.issuerKey,
 	                "app": _this.options.appId,
 	                "sub": _this.options.userId
 	            };

@@ -24,7 +24,7 @@ export class SecretAuthorizer implements Authorizer {
       let payload = {
         "iat": currentTimeUnixSecs,
         "exp": currentTimeUnixSecs + (60 * 60 * 24),
-        "iss": "keys/" + this.options.issuerKey,
+        "iss": this.options.issuerKey,
         "app": this.options.appId,
         "sub": this.options.userId
       };
