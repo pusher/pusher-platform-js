@@ -2,6 +2,20 @@
 
 This is the official Pusher Platform client library for web browsers.
 
+## Installation
+
+The simplest way is to use our CDN to get the bleeding-edge version:
+
+```html
+<script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
+```
+
+You can also use NPM:
+
+```bash
+npm install --save pusher-platform-js
+```
+
 ## Copy-paste!
 
 ```js
@@ -84,27 +98,4 @@ notificationsFeed.subscribe({
 notificationsFeed.append("Jim added you as a friend")
   .then((response) => console.log("Success response when appending:", response))
   .catch((err) => console.error("Error:", err));
-```
-
-## Installation
-
-The simplest way is to use our CDN to get the bleeding-edge version:
-
-```html
-<script src="https://js.pusher.com/platform/latest/pusher-platform.js"></script>
-<script src="https://js.pusher.com/platform/latest/pusher-platform.min.js"></script>
-```
-
-You can also use NPM:
-
-```bash
-npm install --save pusher-platform-js
-```
-
-## Building
-
-```bash
-npm install
-npm run build  # creates target/pusher-platform.js
-npm run test
 ```
