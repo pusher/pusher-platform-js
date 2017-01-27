@@ -27,7 +27,7 @@ Let's walk through the "hello world" of Pusher Platform: an event log. If you ju
 To initialize the library, we write:
 
 ```js
-var app = new PusherPlatform.App({ appId: "yourAppId" // Get this from your dashboard });
+var app = new PusherPlatform.App({ appId: "yourAppId" /* Get this from your dashboard */ });
 ```
 
 An `App` object provides access to Pusher Platform's many APIs. Our event log app will use the Feeds API. Feeds is a pub-sub service with history. Each of your feeds has a name, like `"notifications"`, `"users-jim"`, or `"order-progress-825435"`. To access a single feed, we write:
@@ -73,6 +73,22 @@ notificationsFeed.append("Jim added you as a friend")
   .then((response) => console.log("Success response when appending:", response))
   .catch((err) => console.error("Error:", err));
 ```
+
+
+## Auth walk-through
+
+The instructions above work for a "public" app. In your dashboard, you can switch your app to "private", at which point all requests need to be authorized. For your web app to authorize, it must fetch a _token_ from your server and then present this to Pusher in each request. You provide this token source when creating the `App` object:
+
+```js
+var app = new PusherPlatform.App({
+  appId: "yourAppId",
+  authorizer: new PusherPlatform.AuthServerAuthorizer("https://your-auth-server.example.com/pusherplatform/authorize")
+});
+```
+
+This app will use your auth server at `https://your-auth-server.example.com/pusherplatform/authorize` as its source of access tokens. [An example auth server is here](https://github.com/pusher/pusher-platform-auth-server-example) and [it's deployed here](https://platform-example-authorizer.herokuapp.com/pusherplatform/authorize).
+
+If your server uses NodeJS, you can use [pusher-platform-nodejs](https://github.com/pusher/pusher-platform-nodejs) to add an auth endpoint to your server.
 
 
 ## Building
