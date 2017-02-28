@@ -82,7 +82,10 @@ The instructions above work for a "public" app. In your dashboard, you can switc
 ```js
 var app = new PusherPlatform.App({
   appId: "yourAppId",
-  authorizer: new PusherPlatform.AuthServerAuthorizer("https://your-auth-server.example.com/pusherplatform/authorize")
+  authorizer: new PusherPlatform.AuthServerAuthorizer(
+    "https://your-auth-server.example.com/pusherplatform/authorize",
+    "u65ei8ro99osntg3atvvarc3at5bwu6by43232543w7e6487n8e7645w3"  // a proof of identity, e.g. session cookie
+  )
 });
 ```
 
