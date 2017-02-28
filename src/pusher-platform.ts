@@ -309,7 +309,7 @@ function base64UrlDecode(encoded: string): string {
 
 export class AuthServerAuthorizer implements Authorizer {
   private accessToken : string = null;
-  constructor(private authServerUrl: string) { }
+  constructor(private authServerUrl: string, private credentials?: string) { }
   authorize() : Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(this.accessToken.split(".")[1]))["exp"]*1000) {
@@ -328,7 +328,10 @@ export class AuthServerAuthorizer implements Authorizer {
         };
         xhr.open("POST", this.authServerUrl, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.send("grant_type=client_credentials&credentials=jim");  // FIXME credentials should come from a session cookie or similar
+        xhr.send(
+          "grant_type=client_credentials" +
+          (this.credentials ? "&credentials=" + encodeURIComponent(this.credentials) : "")
+        );
       }
     });
   }

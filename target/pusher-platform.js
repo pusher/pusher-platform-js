@@ -318,8 +318,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
 	}
 	var AuthServerAuthorizer = (function () {
-	    function AuthServerAuthorizer(authServerUrl) {
+	    function AuthServerAuthorizer(authServerUrl, credentials) {
 	        this.authServerUrl = authServerUrl;
+	        this.credentials = credentials;
 	        this.accessToken = null;
 	    }
 	    AuthServerAuthorizer.prototype.authorize = function () {
@@ -343,7 +344,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                };
 	                xhr_1.open("POST", _this.authServerUrl, true);
 	                xhr_1.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	                xhr_1.send("grant_type=client_credentials&credentials=jim"); // FIXME credentials should come from a session cookie or similar
+	                xhr_1.send("grant_type=client_credentials" +
+	                    (_this.credentials ? "&credentials=" + encodeURIComponent(_this.credentials) : ""));
 	            }
 	        });
 	    };
