@@ -108,7 +108,7 @@ function runTest(responseText, expectedEvents, expectedError) {
 
       const expectedHeaders = {
         // "content-type": "application/json",  // there's no request body, so no content-type
-        "authorization": "JWT foo"
+        "authorization": "Bearer foo"
       };
 
       assertEquals(JSON.stringify(createdXMLHttpRequest.headers), JSON.stringify(expectedHeaders), "should send json request with auth token");
