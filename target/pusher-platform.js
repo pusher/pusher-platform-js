@@ -55,6 +55,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	"use strict";
+	function assert(p) {
+	    if (!p) {
+	        throw Error("Assertion error");
+	    }
+	}
+	;
 	function responseHeadersObj(headerStr) {
 	    var headers = {};
 	    if (!headerStr) {
@@ -80,29 +86,63 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return ErrorResponse;
 	}());
-	// Will call `options.onEvent` 0+ times,
-	// followed by EITHER `options.onEnd` or `options.onError` exactly once.
+	// Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+	var XhrReadyState;
+	(function (XhrReadyState) {
+	    XhrReadyState[XhrReadyState["UNSENT"] = 0] = "UNSENT";
+	    XhrReadyState[XhrReadyState["OPENED"] = 1] = "OPENED";
+	    XhrReadyState[XhrReadyState["HEADERS_RECEIVED"] = 2] = "HEADERS_RECEIVED";
+	    XhrReadyState[XhrReadyState["LOADING"] = 3] = "LOADING";
+	    XhrReadyState[XhrReadyState["DONE"] = 4] = "DONE";
+	})(XhrReadyState || (XhrReadyState = {}));
+	var SubscriptionState;
+	(function (SubscriptionState) {
+	    SubscriptionState[SubscriptionState["UNOPENED"] = 0] = "UNOPENED";
+	    SubscriptionState[SubscriptionState["OPENING"] = 1] = "OPENING";
+	    SubscriptionState[SubscriptionState["OPEN"] = 2] = "OPEN";
+	    SubscriptionState[SubscriptionState["ENDING"] = 3] = "ENDING";
+	    SubscriptionState[SubscriptionState["ENDED"] = 4] = "ENDED"; // called onEnd() or onError(err)
+	})(SubscriptionState || (SubscriptionState = {}));
+	// Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
+	// A call to `unsubscribe()` will call `options.onEnd()`;
+	// a call to `unsubscribe(someError)` will call `options.onError(someError)`.
 	var Subscription = (function () {
 	    function Subscription(xhr, options) {
 	        var _this = this;
 	        this.xhr = xhr;
 	        this.options = options;
+	        this.state = SubscriptionState.UNOPENED;
 	        this.gotEOS = false;
-	        this.calledOnOpen = false;
 	        this.lastNewlineIndex = 0;
 	        this.xhr.onreadystatechange = function () {
-	            if (_this.xhr.readyState === 3) {
+	            if (_this.xhr.readyState === XhrReadyState.UNSENT ||
+	                _this.xhr.readyState === XhrReadyState.OPENED ||
+	                _this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED) {
+	                // Too early for us to do anything.
+	                assert(_this.state === SubscriptionState.OPENING);
+	            }
+	            else if (_this.xhr.readyState === XhrReadyState.LOADING) {
 	                // The headers have loaded and we have partial body text.
+	                // We can get this one multiple times.
+	                assert(_this.state === SubscriptionState.OPENING || _this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
 	                if (_this.xhr.status === 200) {
 	                    // We've received a successful response header.
 	                    // The partial body text is a partial JSON message stream.
-	                    _this.opened();
-	                    var err = _this.onChunk();
+	                    if (_this.state === SubscriptionState.OPENING) {
+	                        _this.state = SubscriptionState.OPEN;
+	                        if (_this.options.onOpen) {
+	                            _this.options.onOpen();
+	                        }
+	                    }
+	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
+	                    var err = _this.onChunk(); // might transition our state from OPEN -> ENDING
+	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
 	                    if (err != null) {
 	                        _this.xhr.abort();
 	                        // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
 	                        // and so we will not call the event handler again.
 	                        // Finish with options.onError instead of the options.onEnd.
+	                        _this.state = SubscriptionState.ENDED;
 	                        if (_this.options.onError) {
 	                            _this.options.onError(err);
 	                        }
@@ -111,19 +151,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    }
 	                }
 	                else {
+	                    // Error response. Wait until the response completes (state 4) before erroring.
+	                    assert(_this.state === SubscriptionState.OPENING);
 	                }
 	            }
-	            else if (_this.xhr.readyState === 4) {
+	            else if (_this.xhr.readyState === XhrReadyState.DONE) {
 	                // This is the last time onreadystatechange is called.
 	                if (_this.xhr.status === 200) {
-	                    _this.opened();
+	                    if (_this.state === SubscriptionState.OPENING) {
+	                        _this.state = SubscriptionState.OPEN;
+	                        if (_this.options.onOpen) {
+	                            _this.options.onOpen();
+	                        }
+	                    }
+	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
 	                    var err = _this.onChunk();
-	                    if (err !== null && err != undefined) {
+	                    if (err !== null && err !== undefined) {
+	                        _this.state = SubscriptionState.ENDED;
 	                        if (_this.options.onError) {
 	                            _this.options.onError(err);
 	                        }
 	                    }
-	                    else if (!_this.gotEOS) {
+	                    else if (_this.state !== SubscriptionState.ENDING) {
 	                        if (_this.options.onError) {
 	                            _this.options.onError(new Error("HTTP response ended without receiving EOS message"));
 	                        }
@@ -136,27 +185,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    }
 	                }
 	                else {
-	                    // Either the server responded with a bad status code,
-	                    // or the request errored in some other way (status 0).
+	                    // The server responded with a bad status code (finish with onError).
 	                    // Finish with an error.
-	                    if (_this.options.onError) {
-	                        _this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+	                    assert(_this.state === SubscriptionState.OPENING || _this.state == SubscriptionState.OPEN || _this.state === SubscriptionState.ENDED);
+	                    if (_this.state === SubscriptionState.ENDED) {
+	                    }
+	                    else {
+	                        // The server
+	                        if (_this.options.onError) {
+	                            _this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+	                        }
 	                    }
 	                }
 	            }
-	            else {
-	            }
 	        };
 	    }
-	    Subscription.prototype.opened = function () {
-	        if (!this.calledOnOpen) {
-	            if (this.options.onOpen) {
-	                this.options.onOpen();
-	            }
-	            this.calledOnOpen = true;
-	        }
-	    };
 	    Subscription.prototype.open = function (jwt) {
+	        if (this.state !== SubscriptionState.UNOPENED) {
+	            throw new Error("Called .open() on Subscription object in unexpected state: " + this.state);
+	        }
+	        this.state = SubscriptionState.OPENING;
 	        if (jwt) {
 	            this.xhr.setRequestHeader("authorization", "Bearer " + jwt);
 	        }
@@ -165,6 +213,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // calls options.onEvent 0+ times, then possibly returns an error.
 	    // idempotent.
 	    Subscription.prototype.onChunk = function () {
+	        assert(this.state === SubscriptionState.OPEN);
 	        var response = this.xhr.responseText;
 	        var newlineIndex = response.lastIndexOf("\n");
 	        if (newlineIndex > this.lastNewlineIndex) {
@@ -185,6 +234,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // calls options.onEvent 0+ times, then returns an Error or null
 	    Subscription.prototype.onMessage = function (message) {
+	        assert(this.state === SubscriptionState.OPEN);
 	        if (this.gotEOS) {
 	            return new Error("Got another message after EOS message");
 	        }
@@ -207,6 +257,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // EITHER calls options.onEvent, OR returns an error
 	    Subscription.prototype.onEventMessage = function (eventMessage) {
+	        assert(this.state === SubscriptionState.OPEN);
 	        if (eventMessage.length !== 4) {
 	            return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
 	        }
@@ -223,6 +274,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // calls options.onEvent 0+ times, then possibly returns an error
 	    Subscription.prototype.onEOSMessage = function (eosMessage) {
+	        assert(this.state === SubscriptionState.OPEN);
 	        if (eosMessage.length !== 4) {
 	            return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
 	        }
@@ -233,9 +285,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (typeof headers !== "object" || Array.isArray(headers)) {
 	            return new Error("Invalid EOS Headers");
 	        }
-	        this.gotEOS = true;
+	        this.state = SubscriptionState.ENDING;
 	    };
-	    Subscription.prototype.abort = function (err) {
+	    Subscription.prototype.unsubscribe = function (err) {
+	        this.state = SubscriptionState.ENDED;
 	        this.xhr.abort();
 	        if (err) {
 	            if (this.options.onError) {
@@ -363,7 +416,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
 	            onOpen: options.onOpen,
 	            onEvent: options.onItem,
-	            onEnd: function () { options.onError(new Error("Unexpected end to Feed subscription")); },
+	            onEnd: options.onEnd,
 	            onError: options.onError
 	        });
 	    };
@@ -434,7 +487,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.authorizer.authorize().then(function (jwt) {
 	                subscription.open(jwt);
 	            }).catch(function (err) {
-	                subscription.abort(err);
+	                subscription.unsubscribe(err);
 	            });
 	        }
 	        else {
