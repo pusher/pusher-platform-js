@@ -55,6 +55,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
 	function assert(p) {
 	    if (!p) {
 	        throw Error("Assertion error");
@@ -148,6 +149,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        }
 	                    }
 	                    else {
+	                        // We consumed some response text, and all's fine. We expect more text.
 	                    }
 	                }
 	                else {
@@ -189,6 +191,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    // Finish with an error.
 	                    assert(_this.state === SubscriptionState.OPENING || _this.state == SubscriptionState.OPEN || _this.state === SubscriptionState.ENDED);
 	                    if (_this.state === SubscriptionState.ENDED) {
+	                        // We aborted the request deliberately, and called onError/onEnd elsewhere.
 	                    }
 	                    else {
 	                        // The server
