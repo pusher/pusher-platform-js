@@ -413,7 +413,7 @@ interface FeedSubscribeOptions {
 }
 
 export interface FeedsGetOptions {
-  fromId?: string;
+  id?: string;
   limit?: number;
 }
 
@@ -437,12 +437,12 @@ class FeedsHelper {
     });
   }
 
-  get(options? : FeedsGetOptions) : Promise<any> {
+  fetchOlderThan(options? : FeedsGetOptions) : Promise<any> {
     var path = "feeds/" + this.feedName;
 
     var queryString = "";
     var queryParams: string[] = [];
-    if (options && options.fromId) { queryParams.push("from_id=" + options.fromId); }
+    if (options && options.id) { queryParams.push("from_id=" + options.id); }
     if (options && options.limit) { queryParams.push("limit=" + options.limit); }
 
     if (queryParams.length > 0) { queryString = "?" + queryParams.join("&"); }

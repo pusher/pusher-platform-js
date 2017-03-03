@@ -420,13 +420,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            onError: options.onError
 	        });
 	    };
-	    FeedsHelper.prototype.get = function (options) {
+	    FeedsHelper.prototype.fetchOlderThan = function (options) {
 	        var _this = this;
 	        var path = "feeds/" + this.feedName;
 	        var queryString = "";
 	        var queryParams = [];
-	        if (options && options.fromId) {
-	            queryParams.push("from_id=" + options.fromId);
+	        if (options && options.id) {
+	            queryParams.push("from_id=" + options.id);
 	        }
 	        if (options && options.limit) {
 	            queryParams.push("limit=" + options.limit);

@@ -64,8 +64,8 @@
 
       document.getElementById("fetch_page").addEventListener("click", () => {
         document.getElementById("page_items").innerText = "";
-        notificationsFeed.get({
-          fromId: document.getElementById("page_boundary").value,
+        notificationsFeed.fetchOlderThan({
+          id: document.getElementById("page_boundary").value,
           limit: 50
         }).then((response) => {
           console.log("Got page", response);
