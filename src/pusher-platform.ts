@@ -26,6 +26,12 @@ interface SubscribeOptions {
   onError? : (error: Error) => void;
 }
 
+function assert(p) {
+  if (!p) {
+    throw Error("Assertion error");
+  }
+};
+
 function responseHeadersObj(headerStr : string) : Headers {
   var headers : Headers = {};
   if (!headerStr) {
@@ -58,69 +64,118 @@ class ErrorResponse {
   }
 }
 
-// Will call `options.onEvent` 0+ times,
-// followed by EITHER `options.onEnd` or `options.onError` exactly once.
-class Subscription {
-  private gotEOS : boolean = false;
-  private calledOnOpen : boolean = false;
+// Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+enum XhrReadyState {
+  UNSENT = 0,
+  OPENED = 1,
+  HEADERS_RECEIVED = 2,
+  LOADING = 3,
+  DONE = 4
+}
 
-  private opened() {
-    if (!this.calledOnOpen) {
-      if (this.options.onOpen) { this.options.onOpen(); }
-      this.calledOnOpen = true;
-    }
-  }
+enum SubscriptionState {
+  UNOPENED = 0, // haven't called xhr.send()
+  OPENING,      // called xhr.send(); not yet received response headers
+  OPEN,         // received response headers; called onOpen(); expecting message
+  ENDING,       // received EOS message; response not yet finished
+  ENDED         // called onEnd() or onError(err)
+}
+
+// Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
+// A call to `unsubscribe()` will call `options.onEnd()`;
+// a call to `unsubscribe(someError)` will call `options.onError(someError)`.
+class Subscription {
+  private state : SubscriptionState = SubscriptionState.UNOPENED;
+
+  private gotEOS : boolean = false;
 
   constructor(
       private xhr : XMLHttpRequest,
       private options : SubscribeOptions
   ) {
     this.xhr.onreadystatechange = () => {
-      if (this.xhr.readyState === 3) {
+      if (
+        this.xhr.readyState === XhrReadyState.UNSENT ||
+        this.xhr.readyState === XhrReadyState.OPENED ||
+        this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED
+        ) {
+        // Too early for us to do anything.
+        assert(this.state === SubscriptionState.OPENING);
+      }
+      else if (this.xhr.readyState === XhrReadyState.LOADING) {
         // The headers have loaded and we have partial body text.
+        // We can get this one multiple times.
+        assert(this.state === SubscriptionState.OPENING || this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+
         if (this.xhr.status === 200) {
           // We've received a successful response header.
           // The partial body text is a partial JSON message stream.
-          this.opened();
-          let err = this.onChunk();
+
+          if (this.state === SubscriptionState.OPENING) {
+            this.state = SubscriptionState.OPEN;
+            if (this.options.onOpen) { this.options.onOpen(); }
+          }
+
+          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+          let err = this.onChunk();  // might transition our state from OPEN -> ENDING
+          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+
           if (err != null) {
             this.xhr.abort();
             // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
             // and so we will not call the event handler again.
             // Finish with options.onError instead of the options.onEnd.
+
+            this.state = SubscriptionState.ENDED;
             if (this.options.onError) { this.options.onError(err); }
           } else {
             // We consumed some response text, and all's fine. We expect more text.
           }
         } else {
           // Error response. Wait until the response completes (state 4) before erroring.
+          assert(this.state === SubscriptionState.OPENING);
         }
-      } else if (this.xhr.readyState === 4) {
+      } else if (this.xhr.readyState === XhrReadyState.DONE) {
         // This is the last time onreadystatechange is called.
         if (this.xhr.status === 200) {
-          this.opened();
+          if (this.state === SubscriptionState.OPENING) {
+            this.state = SubscriptionState.OPEN;
+            if (this.options.onOpen) { this.options.onOpen(); }
+          }
+          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+
           let err = this.onChunk();
-          if (err !== null && err != undefined) {
+          if (err !== null && err !== undefined) {
+            this.state = SubscriptionState.ENDED;
             if (this.options.onError) { this.options.onError(err); }
-          } else if (!this.gotEOS) {
+          } else if (this.state !== SubscriptionState.ENDING) {
             if (this.options.onError) { this.options.onError(new Error("HTTP response ended without receiving EOS message")); }
           } else {
             // Stream ended normally.
             if (this.options.onEnd) { this.options.onEnd(); }
           }
         } else {
-          // Either the server responded with a bad status code,
-          // or the request errored in some other way (status 0).
+          // The server responded with a bad status code (finish with onError).
           // Finish with an error.
-          if (this.options.onError) { this.options.onError(new Error(new ErrorResponse(xhr).toString())); }
+          assert(this.state === SubscriptionState.OPENING || this.state == SubscriptionState.OPEN || this.state === SubscriptionState.ENDED);
+          if (this.state === SubscriptionState.ENDED) {
+            // We aborted the request deliberately, and called onError/onEnd elsewhere.
+          } else {
+            // The server
+            if (this.options.onError) { this.options.onError(new Error(new ErrorResponse(xhr).toString())); }
+          }
         }
-      } else {
-        // States 0, 1 or 2. Too early for us to do anything. Wait for a 3 or 4.
       }
     };
   }
 
   open(jwt: string) {
+    if (this.state !== SubscriptionState.UNOPENED) {
+      throw new Error("Called .open() on Subscription object in unexpected state: " + this.state);
+    }
+
+    this.state = SubscriptionState.OPENING;
+
     if (jwt) {
       this.xhr.setRequestHeader("authorization", `Bearer ${jwt}`);
     }
@@ -133,6 +188,8 @@ class Subscription {
   // calls options.onEvent 0+ times, then possibly returns an error.
   // idempotent.
   onChunk(): Error {
+    assert(this.state === SubscriptionState.OPEN);
+
     let response = this.xhr.responseText;
 
     let newlineIndex = response.lastIndexOf("\n");
@@ -156,6 +213,8 @@ class Subscription {
 
   // calls options.onEvent 0+ times, then returns an Error or null
   private onMessage(message : any[]): Error {
+    assert(this.state === SubscriptionState.OPEN);
+
     if (this.gotEOS) {
       return new Error("Got another message after EOS message");
     }
@@ -180,6 +239,8 @@ class Subscription {
 
   // EITHER calls options.onEvent, OR returns an error
   private onEventMessage(eventMessage: any[]): Error {
+    assert(this.state === SubscriptionState.OPEN);
+
     if (eventMessage.length !== 4) {
       return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
     }
@@ -195,6 +256,8 @@ class Subscription {
 
   // calls options.onEvent 0+ times, then possibly returns an error
   private onEOSMessage(eosMessage: any[]): Error {
+    assert(this.state === SubscriptionState.OPEN);
+
     if (eosMessage.length !== 4) {
       return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
     }
@@ -205,10 +268,12 @@ class Subscription {
     if (typeof headers !== "object" || Array.isArray(headers)) {
       return new Error("Invalid EOS Headers");
     }
-    this.gotEOS = true;
+
+    this.state = SubscriptionState.ENDING;
   }
 
-  abort(err: Error) {
+  unsubscribe(err?: Error) {
+    this.state = SubscriptionState.ENDED;
     this.xhr.abort();
     if (err) {
       if (this.options.onError) { this.options.onError(err); }
@@ -343,6 +408,7 @@ interface FeedSubscribeOptions {
   lastEventId?: string;
   onOpen? : () => void;
   onItem? : (item: Event) => void;
+  onEnd? : () => void;
   onError? : (error: Error) => void;
 }
 
@@ -366,7 +432,7 @@ class FeedsHelper {
       headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
       onOpen: options.onOpen,
       onEvent: options.onItem,
-      onEnd: () => { options.onError(new Error("Unexpected end to Feed subscription")); },
+      onEnd: options.onEnd,
       onError: options.onError
     });
   }
@@ -451,7 +517,7 @@ export class App {
       this.authorizer.authorize().then((jwt) => {
         subscription.open(jwt);
       }).catch((err) => {
-        subscription.abort(err);
+        subscription.unsubscribe(err);
       });
     } else {
       subscription.open(null);
