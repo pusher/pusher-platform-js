@@ -187,7 +187,7 @@ class Subscription {
 
   // calls options.onEvent 0+ times, then possibly returns an error.
   // idempotent.
-  onChunk(): Error {
+  private onChunk(): Error {
     assert(this.state === SubscriptionState.OPEN);
 
     let response = this.xhr.responseText;
@@ -283,6 +283,35 @@ class Subscription {
   }
 }
 
+interface ResumableSubscribeOptions {
+  path : string;
+  headers? : Headers;
+  authorizer?: Authorizer;
+  onOpening? : () => void;
+  onOpen? : () => void;
+  onEvent? : (event: Event) => void;
+  onEnd? : () => void;
+  onError? : (error: Error) => void;
+}
+
+// pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
+class ResumableSubscription {
+  constructor(
+    private xhrSource: () => XMLHttpRequest,
+    private options: ResumableSubscribeOptions
+  ) {
+    // TODO
+  }
+
+  open() : void {
+    // TODO
+  }
+
+  unsubscribe(err?: Error) {
+    // TODO
+  }
+}
+
 interface BaseClientOptions {
   cluster: string;
   encrypted?: boolean;
@@ -331,6 +360,20 @@ export class BaseClient {
     );
   }
 
+  newResumableSubscription(subOptions: ResumableSubscribeOptions) : ResumableSubscription {
+    return new ResumableSubscription(
+      () => {
+        return this.createXHR(this.baseURL, {
+          method: "SUBSCRIBE",
+          path: subOptions.path,
+          headers: subOptions.headers,
+          body: null,
+        });
+      },
+      subOptions
+    );
+  }
+
   private createXHR(baseURL : string, options : RequestOptions) : XMLHttpRequest {
     let XMLHttpRequest: any = this.XMLHttpRequest;
     let xhr = new XMLHttpRequest();
@@ -354,6 +397,7 @@ export class BaseClient {
     return xhr;
   }
 }
+
 
 export interface Authorizer {
   authorize() : Promise<string>;
@@ -406,6 +450,7 @@ type Response = any;
 
 interface FeedSubscribeOptions {
   lastEventId?: string;
+  onOpening? : () => void;
   onOpen? : () => void;
   onItem? : (item: Event) => void;
   onEnd? : () => void;
@@ -426,10 +471,11 @@ class FeedsHelper {
     this.app = app;
   }
 
-  subscribe(options: FeedSubscribeOptions) : Subscription {
-    return this.app.subscribe({
+  subscribe(options: FeedSubscribeOptions) : ResumableSubscription {
+    return this.app.resumableSubscribe({
       path: "feeds/" + this.feedName,
       headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
+      onOpening: options.onOpening,
       onOpen: options.onOpen,
       onEvent: options.onItem,
       onEnd: options.onEnd,
@@ -524,6 +570,17 @@ export class App {
     }
 
     return subscription;
+  }
+
+  resumableSubscribe(options: ResumableSubscribeOptions) : ResumableSubscription {
+    options.path = this.absPath(options.path);
+    options.authorizer = this.authorizer;
+
+    let resumableSubscription : ResumableSubscription = this.client.newResumableSubscription(options);
+
+    resumableSubscription.open();
+
+    return resumableSubscription;
   }
 
   feed(name : string) : FeedsHelper {
