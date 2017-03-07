@@ -343,7 +343,6 @@ class ResumableSubscription {
           console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
         },
         onEnd: () => {
-          // TODO
           this.state = ResumableSubscriptionState.ENDED;
           if (this.options.onEnd) { this.options.onEnd(); }
         },
@@ -386,7 +385,7 @@ class ResumableSubscription {
   }
 
   unsubscribe() {
-    // TODO
+    this.subscription.unsubscribe(); // We'll get onEnd and bubble this up
   }
 }
 

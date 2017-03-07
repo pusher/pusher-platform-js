@@ -356,7 +356,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                console.log("Set lastEventIdReceived to " + _this.lastEventIdReceived);
 	            },
 	            onEnd: function () {
-	                // TODO
 	                _this.state = ResumableSubscriptionState.ENDED;
 	                if (_this.options.onEnd) {
 	                    _this.options.onEnd();
@@ -404,7 +403,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return error.message === "resumable"; // TODO this is a horrible way to represent resumableness
 	    };
 	    ResumableSubscription.prototype.unsubscribe = function () {
-	        // TODO
+	        this.subscription.unsubscribe(); // We'll get onEnd and bubble this up
 	    };
 	    return ResumableSubscription;
 	}());
