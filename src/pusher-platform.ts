@@ -19,7 +19,7 @@ interface RequestOptions {
 interface SubscribeOptions {
   path : string;
   jwt? : string;
-  headers? : Headers;
+  lastEventId? : string;
   onOpen? : () => void;
   onEvent? : (event: Event) => void;
   onEnd? : () => void;
@@ -93,6 +93,9 @@ class Subscription {
       private xhr : XMLHttpRequest,
       private options : SubscribeOptions
   ) {
+    if (options.lastEventId) {
+      this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
+    }
     this.xhr.onreadystatechange = () => {
       if (
         this.xhr.readyState === XhrReadyState.UNSENT ||
@@ -162,10 +165,14 @@ class Subscription {
             // We aborted the request deliberately, and called onError/onEnd elsewhere.
           } else {
             // The server
-            if (this.options.onError) { this.options.onError(new Error(new ErrorResponse(xhr).toString())); }
+            if (this.options.onError) { this.options.onError(new Error("error from server: " + this.xhr.responseText)); }
           }
         }
       }
+    };
+
+    xhr.onerror = () => {
+      if (this.options.onError) { this.options.onError(new Error("resumable")); }
     };
   }
 
@@ -285,7 +292,7 @@ class Subscription {
 
 interface ResumableSubscribeOptions {
   path : string;
-  headers? : Headers;
+  lastEventId? : string;
   authorizer?: Authorizer;
   onOpening? : () => void;
   onOpen? : () => void;
@@ -294,20 +301,91 @@ interface ResumableSubscribeOptions {
   onError? : (error: Error) => void;
 }
 
+enum ResumableSubscriptionState {
+    UNOPENED = 0,
+    OPENING,      // can be visited multiple times
+    OPEN,         // called onOpen(); expecting message
+    ENDING,       // received EOS message; response not yet finished
+    ENDED         // called onEnd() or onError(err)
+}
+
 // pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
 class ResumableSubscription {
+
+  private state : ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
+  private subscription : Subscription;
+  private lastEventIdReceived : string = null;
+  private delayMillis : number = 0;
+
   constructor(
     private xhrSource: () => XMLHttpRequest,
     private options: ResumableSubscribeOptions
   ) {
-    // TODO
+    this.lastEventIdReceived = options.lastEventId;
   }
 
-  open() : void {
-    // TODO
+  tryNow() : void {
+    this.state = ResumableSubscriptionState.OPENING;
+    let newXhr = this.xhrSource();
+    this.subscription = new Subscription(newXhr, {
+        path: this.options.path,
+        lastEventId: this.lastEventIdReceived,
+        onOpen: () => {
+          assert(this.state === ResumableSubscriptionState.OPENING);
+          this.state = ResumableSubscriptionState.OPEN;
+          if (this.options.onOpen) { this.options.onOpen(); }
+        },
+        onEvent: (event: Event) => {
+          assert(this.state === ResumableSubscriptionState.OPEN);
+          if (this.options.onEvent) { this.options.onEvent(event); }
+          assert(this.lastEventIdReceived === null || parseInt(event.eventId) > parseInt(this.lastEventIdReceived));
+          this.lastEventIdReceived = event.eventId;
+          console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
+        },
+        onEnd: () => {
+          // TODO
+          this.state = ResumableSubscriptionState.ENDED;
+          if (this.options.onEnd) { this.options.onEnd(); }
+        },
+        onError: (error: Error) => {
+          if (this.isResumableError(error)) {
+            this.state = ResumableSubscriptionState.OPENING;
+            if (this.options.onOpening) { this.options.onOpening(); }
+            this.backoff();
+          } else {
+            this.state = ResumableSubscriptionState.ENDED;
+            if (this.options.onError) { this.options.onError(error); }
+          }
+        },
+    });
+    if (this.options.authorizer) {
+      this.options.authorizer.authorize().then((jwt) => {
+        this.subscription.open(jwt);
+      }).catch((err) => {
+        // This is a resumable error?
+        console.log("Error getting auth token; backing off");
+        this.backoff();
+      });
+    } else {
+      this.subscription.open(null);
+    }
   }
 
-  unsubscribe(err?: Error) {
+  backoff(): void {
+    this.delayMillis = this.delayMillis*2 + 1000;
+    console.log("Trying reconnect in " + this.delayMillis + " ms.");
+    window.setTimeout(() => { this.tryNow(); }, this.delayMillis);
+  }
+
+  open(): void {
+    this.tryNow();
+  }
+
+  private isResumableError(error: Error) {
+    return error.message === "resumable"; // TODO this is a horrible way to represent resumableness
+  }
+
+  unsubscribe() {
     // TODO
   }
 }
@@ -353,7 +431,7 @@ export class BaseClient {
       this.createXHR(this.baseURL, {
         method: "SUBSCRIBE",
         path: subOptions.path,
-        headers: subOptions.headers,
+        headers: {},
         body: null,
       }),
       subOptions
@@ -366,7 +444,7 @@ export class BaseClient {
         return this.createXHR(this.baseURL, {
           method: "SUBSCRIBE",
           path: subOptions.path,
-          headers: subOptions.headers,
+          headers: {},
           body: null,
         });
       },
@@ -474,7 +552,7 @@ class FeedsHelper {
   subscribe(options: FeedSubscribeOptions) : ResumableSubscription {
     return this.app.resumableSubscribe({
       path: "feeds/" + this.feedName,
-      headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
+      lastEventId: options.lastEventId,
       onOpening: options.onOpening,
       onOpen: options.onOpen,
       onEvent: options.onItem,
