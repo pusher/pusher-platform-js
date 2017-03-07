@@ -115,6 +115,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.state = SubscriptionState.UNOPENED;
 	        this.gotEOS = false;
 	        this.lastNewlineIndex = 0;
+	        if (options.lastEventId) {
+	            this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
+	        }
 	        this.xhr.onreadystatechange = function () {
 	            if (_this.xhr.readyState === XhrReadyState.UNSENT ||
 	                _this.xhr.readyState === XhrReadyState.OPENED ||
@@ -196,10 +199,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    else {
 	                        // The server
 	                        if (_this.options.onError) {
-	                            _this.options.onError(new Error(new ErrorResponse(xhr).toString()));
+	                            _this.options.onError(new Error("error from server: " + _this.xhr.responseText));
 	                        }
 	                    }
 	                }
+	            }
+	        };
+	        xhr.onerror = function () {
+	            if (_this.options.onError) {
+	                _this.options.onError(new Error("resumable"));
 	            }
 	        };
 	    }
@@ -306,6 +314,99 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    return Subscription;
 	}());
+	var ResumableSubscriptionState;
+	(function (ResumableSubscriptionState) {
+	    ResumableSubscriptionState[ResumableSubscriptionState["UNOPENED"] = 0] = "UNOPENED";
+	    ResumableSubscriptionState[ResumableSubscriptionState["OPENING"] = 1] = "OPENING";
+	    ResumableSubscriptionState[ResumableSubscriptionState["OPEN"] = 2] = "OPEN";
+	    ResumableSubscriptionState[ResumableSubscriptionState["ENDING"] = 3] = "ENDING";
+	    ResumableSubscriptionState[ResumableSubscriptionState["ENDED"] = 4] = "ENDED"; // called onEnd() or onError(err)
+	})(ResumableSubscriptionState || (ResumableSubscriptionState = {}));
+	// pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
+	var ResumableSubscription = (function () {
+	    function ResumableSubscription(xhrSource, options) {
+	        this.xhrSource = xhrSource;
+	        this.options = options;
+	        this.state = ResumableSubscriptionState.UNOPENED;
+	        this.lastEventIdReceived = null;
+	        this.delayMillis = 0;
+	        this.lastEventIdReceived = options.lastEventId;
+	    }
+	    ResumableSubscription.prototype.tryNow = function () {
+	        var _this = this;
+	        this.state = ResumableSubscriptionState.OPENING;
+	        var newXhr = this.xhrSource();
+	        this.subscription = new Subscription(newXhr, {
+	            path: this.options.path,
+	            lastEventId: this.lastEventIdReceived,
+	            onOpen: function () {
+	                assert(_this.state === ResumableSubscriptionState.OPENING);
+	                _this.state = ResumableSubscriptionState.OPEN;
+	                if (_this.options.onOpen) {
+	                    _this.options.onOpen();
+	                }
+	            },
+	            onEvent: function (event) {
+	                assert(_this.state === ResumableSubscriptionState.OPEN);
+	                if (_this.options.onEvent) {
+	                    _this.options.onEvent(event);
+	                }
+	                assert(_this.lastEventIdReceived === null || parseInt(event.eventId) > parseInt(_this.lastEventIdReceived));
+	                _this.lastEventIdReceived = event.eventId;
+	                console.log("Set lastEventIdReceived to " + _this.lastEventIdReceived);
+	            },
+	            onEnd: function () {
+	                _this.state = ResumableSubscriptionState.ENDED;
+	                if (_this.options.onEnd) {
+	                    _this.options.onEnd();
+	                }
+	            },
+	            onError: function (error) {
+	                if (_this.isResumableError(error)) {
+	                    _this.state = ResumableSubscriptionState.OPENING;
+	                    if (_this.options.onOpening) {
+	                        _this.options.onOpening();
+	                    }
+	                    _this.backoff();
+	                }
+	                else {
+	                    _this.state = ResumableSubscriptionState.ENDED;
+	                    if (_this.options.onError) {
+	                        _this.options.onError(error);
+	                    }
+	                }
+	            },
+	        });
+	        if (this.options.authorizer) {
+	            this.options.authorizer.authorize().then(function (jwt) {
+	                _this.subscription.open(jwt);
+	            }).catch(function (err) {
+	                // This is a resumable error?
+	                console.log("Error getting auth token; backing off");
+	                _this.backoff();
+	            });
+	        }
+	        else {
+	            this.subscription.open(null);
+	        }
+	    };
+	    ResumableSubscription.prototype.backoff = function () {
+	        var _this = this;
+	        this.delayMillis = this.delayMillis * 2 + 1000;
+	        console.log("Trying reconnect in " + this.delayMillis + " ms.");
+	        window.setTimeout(function () { _this.tryNow(); }, this.delayMillis);
+	    };
+	    ResumableSubscription.prototype.open = function () {
+	        this.tryNow();
+	    };
+	    ResumableSubscription.prototype.isResumableError = function (error) {
+	        return error.message === "resumable"; // TODO this is a horrible way to represent resumableness
+	    };
+	    ResumableSubscription.prototype.unsubscribe = function () {
+	        this.subscription.unsubscribe(); // We'll get onEnd and bubble this up
+	    };
+	    return ResumableSubscription;
+	}());
 	var BaseClient = (function () {
 	    function BaseClient(options) {
 	        this.options = options;
@@ -333,9 +434,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return new Subscription(this.createXHR(this.baseURL, {
 	            method: "SUBSCRIBE",
 	            path: subOptions.path,
-	            headers: subOptions.headers,
+	            headers: {},
 	            body: null,
 	        }), subOptions);
+	    };
+	    BaseClient.prototype.newResumableSubscription = function (subOptions) {
+	        var _this = this;
+	        return new ResumableSubscription(function () {
+	            return _this.createXHR(_this.baseURL, {
+	                method: "SUBSCRIBE",
+	                path: subOptions.path,
+	                headers: {},
+	                body: null,
+	            });
+	        }, subOptions);
 	    };
 	    BaseClient.prototype.createXHR = function (baseURL, options) {
 	        var XMLHttpRequest = this.XMLHttpRequest;
@@ -414,9 +526,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.app = app;
 	    }
 	    FeedsHelper.prototype.subscribe = function (options) {
-	        return this.app.subscribe({
+	        return this.app.resumableSubscribe({
 	            path: "feeds/" + this.feedName,
-	            headers: options.lastEventId ? { "Last-Event-Id": options.lastEventId } : {},
+	            lastEventId: options.lastEventId,
+	            onOpening: options.onOpening,
 	            onOpen: options.onOpen,
 	            onEvent: options.onItem,
 	            onEnd: options.onEnd,
@@ -497,6 +610,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            subscription.open(null);
 	        }
 	        return subscription;
+	    };
+	    App.prototype.resumableSubscribe = function (options) {
+	        options.path = this.absPath(options.path);
+	        options.authorizer = this.authorizer;
+	        var resumableSubscription = this.client.newResumableSubscription(options);
+	        resumableSubscription.open();
+	        return resumableSubscription;
 	    };
 	    App.prototype.feed = function (name) {
 	        return new FeedsHelper(name, this);
