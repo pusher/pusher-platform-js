@@ -664,6 +664,22 @@ export class App {
     return new FeedsHelper(name, this);
   }
 
+  listFeeds() : Promise<Array<string>> {
+    return new Promise((resolve, reject) => {
+      this.request({ method: "GET", path: "feeds" })
+        .then((responseBody) => {
+          try {
+            resolve(JSON.parse(responseBody));
+          } catch (e) {
+            reject(e);
+          }
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+
   private absPath(relativePath: string): string {
     return `/apps/${this.appId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
   }

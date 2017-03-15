@@ -14,20 +14,27 @@
       View source or see <a href="https://github.com/pusher/pusher-platform-js">the repository</a> for more info.
     </p>
 
+    <h2>Items in the <code>notifications</code> feed</h2>
     <ol id="feed_items">
     </ol>
 
+    <h2>Append a new item to the <code>notifications</code> feed</h2>
     <input type="text" id="item_val"/>
     <button id="append_item">Append</button>
 
+    <h2>Historical items</h2>
     <ol id="page_items">
     </ol>
     <input type="text" id="page_boundary"/>
     <button id="fetch_page">Fetch page from</button>
 
+    <h2>Status</h2>
     <p>Status: <span id="feed_status">page loaded</span></p>
     <button id="unsubscribe">Unsubscribe</button>
 
+    <h2>All feeds in this Pusher Platform app</h2>
+    <ol id="all_feeds">
+    </ol>
 
     <!-- change this URL to "./target/pusher-platform.js" for the built version in the repo -->
     <script src="./target/pusher-platform.js"></script>
@@ -90,6 +97,17 @@
         document.getElementById("feed_status").innerText = "unsubscribing";
         notificationsSubscription.unsubscribe();
       });
+
+      app.listFeeds()
+        .then((feeds) => {
+          for (var i = 0; i < feeds.length; i++) {
+            var feedInfo = feeds[i];
+            var listEl = document.createElement("li");
+            listEl.appendChild(document.createTextNode(JSON.stringify(feedInfo)));
+            document.getElementById("all_feeds").appendChild(listEl);
+          }
+        })
+        .catch((err) => console.error("Could not fetch list of feeds: ", err));
     </script>
   </body>
 </html>

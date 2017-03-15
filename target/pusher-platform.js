@@ -621,6 +621,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    App.prototype.feed = function (name) {
 	        return new FeedsHelper(name, this);
 	    };
+	    App.prototype.listFeeds = function () {
+	        var _this = this;
+	        return new Promise(function (resolve, reject) {
+	            _this.request({ method: "GET", path: "feeds" })
+	                .then(function (responseBody) {
+	                try {
+	                    resolve(JSON.parse(responseBody));
+	                }
+	                catch (e) {
+	                    reject(e);
+	                }
+	            })
+	                .catch(function (error) {
+	                reject(error);
+	            });
+	        });
+	    };
 	    App.prototype.absPath = function (relativePath) {
 	        return ("/apps/" + this.appId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
 	    };
