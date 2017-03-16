@@ -26,12 +26,6 @@ interface SubscribeOptions {
   onError? : (error: Error) => void;
 }
 
-function assert(p) {
-  if (!p) {
-    throw Error("Assertion error");
-  }
-};
-
 function responseHeadersObj(headerStr : string) : Headers {
   var headers : Headers = {};
   if (!headerStr) {
@@ -81,11 +75,24 @@ enum SubscriptionState {
   ENDED         // called onEnd() or onError(err)
 }
 
+// Asserts that the subscription state is one of the specified values,
+// otherwise logs the current value.
+function assertState (stateEnum, states = []) {
+  const check = states.some(state => stateEnum[state] === this.state);
+  const expected = states.join(', ');
+  const actual = stateEnum[this.state];
+  console.assert(check, `Expected this.state to be ${expected} but it is ${actual}`);
+  if (!check) {
+    console.trace();
+  }
+};
+
 // Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
 // A call to `unsubscribe()` will call `options.onEnd()`;
 // a call to `unsubscribe(someError)` will call `options.onError(someError)`.
 class Subscription {
   private state : SubscriptionState = SubscriptionState.UNOPENED;
+  private assertState: Function;
 
   private gotEOS : boolean = false;
 
@@ -93,6 +100,7 @@ class Subscription {
       private xhr : XMLHttpRequest,
       private options : SubscribeOptions
   ) {
+    this.assertState = assertState.bind(this, SubscriptionState);
     if (options.lastEventId) {
       this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
     }
@@ -103,12 +111,12 @@ class Subscription {
         this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED
         ) {
         // Too early for us to do anything.
-        assert(this.state === SubscriptionState.OPENING);
+        this.assertState(['OPENING']);
       }
       else if (this.xhr.readyState === XhrReadyState.LOADING) {
         // The headers have loaded and we have partial body text.
         // We can get this one multiple times.
-        assert(this.state === SubscriptionState.OPENING || this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+        this.assertState(['OPENING', 'OPEN', 'ENDING']);
 
         if (this.xhr.status === 200) {
           // We've received a successful response header.
@@ -119,9 +127,9 @@ class Subscription {
             if (this.options.onOpen) { this.options.onOpen(); }
           }
 
-          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+          this.assertState(['OPEN', 'ENDING']);
           let err = this.onChunk();  // might transition our state from OPEN -> ENDING
-          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+          this.assertState(['OPEN', 'ENDING']);
 
           if (err != null) {
             this.xhr.abort();
@@ -136,7 +144,7 @@ class Subscription {
           }
         } else {
           // Error response. Wait until the response completes (state 4) before erroring.
-          assert(this.state === SubscriptionState.OPENING);
+          this.assertState(['OPENING']);
         }
       } else if (this.xhr.readyState === XhrReadyState.DONE) {
         // This is the last time onreadystatechange is called.
@@ -145,7 +153,7 @@ class Subscription {
             this.state = SubscriptionState.OPEN;
             if (this.options.onOpen) { this.options.onOpen(); }
           }
-          assert(this.state === SubscriptionState.OPEN || this.state === SubscriptionState.ENDING);
+          this.assertState(['OPEN', 'ENDING']);
 
           let err = this.onChunk();
           if (err !== null && err !== undefined) {
@@ -160,7 +168,7 @@ class Subscription {
         } else {
           // The server responded with a bad status code (finish with onError).
           // Finish with an error.
-          assert(this.state === SubscriptionState.OPENING || this.state == SubscriptionState.OPEN || this.state === SubscriptionState.ENDED);
+          this.assertState(['OPENING', 'OPEN', 'ENDED']);
           if (this.state === SubscriptionState.ENDED) {
             // We aborted the request deliberately, and called onError/onEnd elsewhere.
           } else {
@@ -195,7 +203,7 @@ class Subscription {
   // calls options.onEvent 0+ times, then possibly returns an error.
   // idempotent.
   private onChunk(): Error {
-    assert(this.state === SubscriptionState.OPEN);
+    this.assertState(['OPEN']);
 
     let response = this.xhr.responseText;
 
@@ -220,7 +228,7 @@ class Subscription {
 
   // calls options.onEvent 0+ times, then returns an Error or null
   private onMessage(message : any[]): Error {
-    assert(this.state === SubscriptionState.OPEN);
+    this.assertState(['OPEN']);
 
     if (this.gotEOS) {
       return new Error("Got another message after EOS message");
@@ -246,7 +254,7 @@ class Subscription {
 
   // EITHER calls options.onEvent, OR returns an error
   private onEventMessage(eventMessage: any[]): Error {
-    assert(this.state === SubscriptionState.OPEN);
+    this.assertState(['OPEN']);
 
     if (eventMessage.length !== 4) {
       return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
@@ -263,7 +271,7 @@ class Subscription {
 
   // calls options.onEvent 0+ times, then possibly returns an error
   private onEOSMessage(eosMessage: any[]): Error {
-    assert(this.state === SubscriptionState.OPEN);
+    this.assertState(['OPEN']);
 
     if (eosMessage.length !== 4) {
       return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
@@ -313,6 +321,7 @@ enum ResumableSubscriptionState {
 class ResumableSubscription {
 
   private state : ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
+  private assertState: Function;
   private subscription : Subscription;
   private lastEventIdReceived : string = null;
   private delayMillis : number = 0;
@@ -321,6 +330,7 @@ class ResumableSubscription {
     private xhrSource: () => XMLHttpRequest,
     private options: ResumableSubscribeOptions
   ) {
+    this.assertState(this, ResumableSubscriptionState);
     this.lastEventIdReceived = options.lastEventId;
   }
 
@@ -331,14 +341,18 @@ class ResumableSubscription {
         path: this.options.path,
         lastEventId: this.lastEventIdReceived,
         onOpen: () => {
-          assert(this.state === ResumableSubscriptionState.OPENING);
+          this.assertState(['OPENING']);
           this.state = ResumableSubscriptionState.OPEN;
           if (this.options.onOpen) { this.options.onOpen(); }
         },
         onEvent: (event: Event) => {
-          assert(this.state === ResumableSubscriptionState.OPEN);
+          this.assertState(['OPEN']);
           if (this.options.onEvent) { this.options.onEvent(event); }
-          assert(this.lastEventIdReceived === null || parseInt(event.eventId) > parseInt(this.lastEventIdReceived));
+          console.assert(
+            this.lastEventIdReceived === null ||
+            parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
+            'Expected the current event id to be larger than the previous one'
+          );
           this.lastEventIdReceived = event.eventId;
           console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
         },
