@@ -55,12 +55,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	"use strict";
-	function assert(p) {
-	    if (!p) {
-	        throw Error("Assertion error");
-	    }
-	}
-	;
 	function responseHeadersObj(headerStr) {
 	    var headers = {};
 	    if (!headerStr) {
@@ -103,6 +97,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	    SubscriptionState[SubscriptionState["ENDING"] = 3] = "ENDING";
 	    SubscriptionState[SubscriptionState["ENDED"] = 4] = "ENDED"; // called onEnd() or onError(err)
 	})(SubscriptionState || (SubscriptionState = {}));
+	// Asserts that the subscription state is one of the specified values,
+	// otherwise logs the current value.
+	function assertState(stateEnum, states) {
+	    var _this = this;
+	    if (states === void 0) { states = []; }
+	    var check = states.some(function (state) { return stateEnum[state] === _this.state; });
+	    var expected = states.join(', ');
+	    var actual = stateEnum[this.state];
+	    console.assert(check, "Expected this.state to be " + expected + " but it is " + actual);
+	    if (!check) {
+	        console.trace();
+	    }
+	}
+	;
 	// Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
 	// A call to `unsubscribe()` will call `options.onEnd()`;
 	// a call to `unsubscribe(someError)` will call `options.onError(someError)`.
@@ -114,6 +122,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.state = SubscriptionState.UNOPENED;
 	        this.gotEOS = false;
 	        this.lastNewlineIndex = 0;
+	        this.assertState = assertState.bind(this, SubscriptionState);
 	        if (options.lastEventId) {
 	            this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
 	        }
@@ -122,12 +131,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                _this.xhr.readyState === XhrReadyState.OPENED ||
 	                _this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED) {
 	                // Too early for us to do anything.
-	                assert(_this.state === SubscriptionState.OPENING);
+	                _this.assertState(['OPENING']);
 	            }
 	            else if (_this.xhr.readyState === XhrReadyState.LOADING) {
 	                // The headers have loaded and we have partial body text.
 	                // We can get this one multiple times.
-	                assert(_this.state === SubscriptionState.OPENING || _this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
+	                _this.assertState(['OPENING', 'OPEN', 'ENDING']);
 	                if (_this.xhr.status === 200) {
 	                    // We've received a successful response header.
 	                    // The partial body text is a partial JSON message stream.
@@ -137,9 +146,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            _this.options.onOpen();
 	                        }
 	                    }
-	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
+	                    _this.assertState(['OPEN', 'ENDING']);
 	                    var err = _this.onChunk(); // might transition our state from OPEN -> ENDING
-	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
+	                    _this.assertState(['OPEN', 'ENDING']);
 	                    if (err != null) {
 	                        _this.xhr.abort();
 	                        // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
@@ -155,7 +164,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	                else {
 	                    // Error response. Wait until the response completes (state 4) before erroring.
-	                    assert(_this.state === SubscriptionState.OPENING);
+	                    _this.assertState(['OPENING']);
 	                }
 	            }
 	            else if (_this.xhr.readyState === XhrReadyState.DONE) {
@@ -167,7 +176,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            _this.options.onOpen();
 	                        }
 	                    }
-	                    assert(_this.state === SubscriptionState.OPEN || _this.state === SubscriptionState.ENDING);
+	                    _this.assertState(['OPEN', 'ENDING']);
 	                    var err = _this.onChunk();
 	                    if (err !== null && err !== undefined) {
 	                        _this.state = SubscriptionState.ENDED;
@@ -190,7 +199,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                else {
 	                    // The server responded with a bad status code (finish with onError).
 	                    // Finish with an error.
-	                    assert(_this.state === SubscriptionState.OPENING || _this.state == SubscriptionState.OPEN || _this.state === SubscriptionState.ENDED);
+	                    _this.assertState(['OPENING', 'OPEN', 'ENDED']);
 	                    if (_this.state === SubscriptionState.ENDED) {
 	                    }
 	                    else {
@@ -221,7 +230,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // calls options.onEvent 0+ times, then possibly returns an error.
 	    // idempotent.
 	    Subscription.prototype.onChunk = function () {
-	        assert(this.state === SubscriptionState.OPEN);
+	        this.assertState(['OPEN']);
 	        var response = this.xhr.responseText;
 	        var newlineIndex = response.lastIndexOf("\n");
 	        if (newlineIndex > this.lastNewlineIndex) {
@@ -242,7 +251,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // calls options.onEvent 0+ times, then returns an Error or null
 	    Subscription.prototype.onMessage = function (message) {
-	        assert(this.state === SubscriptionState.OPEN);
+	        this.assertState(['OPEN']);
 	        if (this.gotEOS) {
 	            return new Error("Got another message after EOS message");
 	        }
@@ -265,7 +274,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // EITHER calls options.onEvent, OR returns an error
 	    Subscription.prototype.onEventMessage = function (eventMessage) {
-	        assert(this.state === SubscriptionState.OPEN);
+	        this.assertState(['OPEN']);
 	        if (eventMessage.length !== 4) {
 	            return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
 	        }
@@ -282,7 +291,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    // calls options.onEvent 0+ times, then possibly returns an error
 	    Subscription.prototype.onEOSMessage = function (eosMessage) {
-	        assert(this.state === SubscriptionState.OPEN);
+	        this.assertState(['OPEN']);
 	        if (eosMessage.length !== 4) {
 	            return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
 	        }
@@ -327,6 +336,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.state = ResumableSubscriptionState.UNOPENED;
 	        this.lastEventIdReceived = null;
 	        this.delayMillis = 0;
+	        this.assertState(this, ResumableSubscriptionState);
 	        this.lastEventIdReceived = options.lastEventId;
 	    }
 	    ResumableSubscription.prototype.tryNow = function () {
@@ -337,18 +347,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	            path: this.options.path,
 	            lastEventId: this.lastEventIdReceived,
 	            onOpen: function () {
-	                assert(_this.state === ResumableSubscriptionState.OPENING);
+	                _this.assertState(['OPENING']);
 	                _this.state = ResumableSubscriptionState.OPEN;
 	                if (_this.options.onOpen) {
 	                    _this.options.onOpen();
 	                }
 	            },
 	            onEvent: function (event) {
-	                assert(_this.state === ResumableSubscriptionState.OPEN);
+	                _this.assertState(['OPEN']);
 	                if (_this.options.onEvent) {
 	                    _this.options.onEvent(event);
 	                }
-	                assert(_this.lastEventIdReceived === null || parseInt(event.eventId) > parseInt(_this.lastEventIdReceived));
+	                console.assert(_this.lastEventIdReceived === null ||
+	                    parseInt(event.eventId) > parseInt(_this.lastEventIdReceived), 'Expected the current event id to be larger than the previous one');
 	                _this.lastEventIdReceived = event.eventId;
 	                console.log("Set lastEventIdReceived to " + _this.lastEventIdReceived);
 	            },
