@@ -10,7 +10,7 @@
       This app is the "hello world" of Pusher Platform.
       The app subscribes to a feed.
       The latest items are shown below.
-      You can append things to the feed using the form below it.
+      You can publish things to the feed using the form below it.
       View source or see <a href="https://github.com/pusher/pusher-platform-js">the repository</a> for more info.
     </p>
 
@@ -18,9 +18,9 @@
     <ol id="feed_items">
     </ol>
 
-    <h2>Append a new item to the <code>notifications</code> feed</h2>
+    <h2>Publish a new item to the <code>notifications</code> feed</h2>
     <input type="text" id="item_val"/>
-    <button id="append_item">Append</button>
+    <button id="publish_item">Publish</button>
 
     <h2>Historical items</h2>
     <ol id="page_items">
@@ -86,11 +86,11 @@
         .catch((error) => { console.error("Could not get page:", error); });
       })
 
-      // Using the same feed as above we can append any value:
-      document.getElementById("append_item").addEventListener("click", () => {
-        notificationsFeed.append(document.getElementById("item_val").value)
-          .then((response) => console.log("Success response when appending:", response))
-          .catch((err) => console.error("Could not append:", err));
+      // Using the same feed as above we can publish any value:
+      document.getElementById("publish_item").addEventListener("click", () => {
+        notificationsFeed.publish(document.getElementById("item_val").value)
+          .then((response) => console.log("Success response when publishing:", response))
+          .catch((err) => console.error("Could not publish:", err));
       });
 
       document.getElementById("unsubscribe").addEventListener("click", () => {
