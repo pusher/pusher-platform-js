@@ -55,6 +55,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
 	function responseHeadersObj(headerStr) {
 	    var headers = {};
 	    if (!headerStr) {
@@ -160,6 +161,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        }
 	                    }
 	                    else {
+	                        // We consumed some response text, and all's fine. We expect more text.
 	                    }
 	                }
 	                else {
@@ -201,6 +203,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    // Finish with an error.
 	                    _this.assertState(['OPENING', 'OPEN', 'ENDED']);
 	                    if (_this.state === SubscriptionState.ENDED) {
+	                        // We aborted the request deliberately, and called onError/onEnd elsewhere.
 	                    }
 	                    else {
 	                        // The server
