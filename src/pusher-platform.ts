@@ -330,7 +330,7 @@ class ResumableSubscription {
     private xhrSource: () => XMLHttpRequest,
     private options: ResumableSubscribeOptions
   ) {
-    this.assertState(this, ResumableSubscriptionState);
+    this.assertState = assertState.bind(this, ResumableSubscriptionState);
     this.lastEventIdReceived = options.lastEventId;
   }
 
