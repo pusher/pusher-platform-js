@@ -601,7 +601,7 @@ class FeedsHelper {
     });
   }
 
-  append(item : any) : Promise<Response> {
+  publish(item : any) : Promise<Response> {
     var path = "feeds/" + this.feedName;
     return this.app.request({ method: "POST", path: path, body: { items: [item] } });
   }

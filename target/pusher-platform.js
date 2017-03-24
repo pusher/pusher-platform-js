@@ -574,7 +574,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 	        });
 	    };
-	    FeedsHelper.prototype.append = function (item) {
+	    FeedsHelper.prototype.publish = function (item) {
 	        var path = "feeds/" + this.feedName;
 	        return this.app.request({ method: "POST", path: path, body: { items: [item] } });
 	    };

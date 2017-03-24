@@ -42,13 +42,13 @@ Creating the `notificationsFeed` object doesn't do anything by itself; it's just
 notificationsFeed.subscribe({ onItem: (item) => { console.log("received feed item", item); } });
 ```
 
-This subscriber will only receive new items when they are appended to the feed. This is done with the second Feeds API call, `append`:
+This subscriber will only receive new items when they are published to the feed. This is done with the second Feeds API call, `publish`:
 
 ```js
-notificationsFeed.append("Jim added you as a friend");
+notificationsFeed.publish("Jim added you as a friend");
 ```
 
-When an item is appended to a feed, all subscribers at that time will receive it. So far, this is a standard pub-sub service. But Feeds also has history: as well as distributing the item to subscribers, Feeds also _appends_ it to the stored feed. Subscribers can access historical items when subscribing, by passing in the _event id_ of the last seen item. This "event id" is a property of each item passed to `onItem`.
+When an item is published to a feed, all subscribers at that time will receive it. So far, this is a standard pub-sub service. But Feeds also has history: as well as distributing the item to subscribers, Feeds also _publishes_ it to the stored feed. Subscribers can access historical items when subscribing, by passing in the _event id_ of the last seen item. This "event id" is a property of each item passed to `onItem`.
 
 ```js
 notificationsFeed.subscribe({
@@ -57,9 +57,9 @@ notificationsFeed.subscribe({
 });
 ```
 
-The historical items will come through in the subscription in exactly the same way as new items. All items will come through in the order they were appended.
+The historical items will come through in the subscription in exactly the same way as new items. All items will come through in the order they were published.
 
-The `subscribe` and `append` calls accept other callbacks. You can use these for debugging and to inform your user of important events. Here is a full example:
+The `subscribe` and `publish` calls accept other callbacks. You can use these for debugging and to inform your user of important events. Here is a full example:
 
 ```js
 notificationsFeed.subscribe({
@@ -69,8 +69,8 @@ notificationsFeed.subscribe({
   onError: (err) => { console.error("Error subscribing to notifications:", err); }
 });
 
-notificationsFeed.append("Jim added you as a friend")
-  .then((response) => console.log("Success response when appending:", response))
+notificationsFeed.publish("Jim added you as a friend")
+  .then((response) => console.log("Success response when publishing:", response))
   .catch((err) => console.error("Error:", err));
 ```
 
