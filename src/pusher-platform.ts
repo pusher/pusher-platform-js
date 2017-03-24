@@ -555,11 +555,11 @@ export interface FeedsGetOptions {
 
 class FeedsHelper {
   public app : App;
-  public feedName : string;
+  public feedId : string;
   readonly serviceName : string = "feeds-service";
 
-  constructor(name : string, app: App){
-    this.feedName = name;
+  constructor(feedId : string, app: App){
+    this.feedId = feedId;
     this.app = app;
   }
 
@@ -609,7 +609,7 @@ class FeedsHelper {
   }
 
   private feedItemsPath(): string {
-    return `${this.serviceName}/feeds/${this.feedName}/items`;
+    return `${this.serviceName}/feeds/${this.feedId}/items`;
   }
 }
 
@@ -680,8 +680,8 @@ export class App {
     return resumableSubscription;
   }
 
-  feed(name : string) : FeedsHelper {
-    return new FeedsHelper(name, this);
+  feed(feedID : string) : FeedsHelper {
+    return new FeedsHelper(feedID, this);
   }
 
   listFeeds() : Promise<Array<string>> {

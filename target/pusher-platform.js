@@ -532,9 +532,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}());
 	exports.AuthServerAuthorizer = AuthServerAuthorizer;
 	var FeedsHelper = (function () {
-	    function FeedsHelper(name, app) {
+	    function FeedsHelper(feedId, app) {
 	        this.serviceName = "feeds-service";
-	        this.feedName = name;
+	        this.feedId = feedId;
 	        this.app = app;
 	    }
 	    FeedsHelper.prototype.subscribe = function (options) {
@@ -585,7 +585,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    };
 	    FeedsHelper.prototype.feedItemsPath = function () {
-	        return this.serviceName + "/feeds/" + this.feedName + "/items";
+	        return this.serviceName + "/feeds/" + this.feedId + "/items";
 	    };
 	    return FeedsHelper;
 	}());
@@ -635,8 +635,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        resumableSubscription.open();
 	        return resumableSubscription;
 	    };
-	    App.prototype.feed = function (name) {
-	        return new FeedsHelper(name, this);
+	    App.prototype.feed = function (feedID) {
+	        return new FeedsHelper(feedID, this);
 	    };
 	    App.prototype.listFeeds = function () {
 	        var _this = this;
