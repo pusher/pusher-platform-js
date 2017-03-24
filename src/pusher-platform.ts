@@ -556,6 +556,7 @@ export interface FeedsGetOptions {
 class FeedsHelper {
   public app : App;
   public feedName : string;
+  readonly serviceName : string = "feeds-service";
 
   constructor(name : string, app: App){
     this.feedName = name;
@@ -564,7 +565,7 @@ class FeedsHelper {
 
   subscribe(options: FeedSubscribeOptions) : ResumableSubscription {
     return this.app.resumableSubscribe({
-      path: "feeds/" + this.feedName,
+      path: this.feedItemsPath(),
       lastEventId: options.lastEventId,
       onOpening: options.onOpening,
       onOpen: options.onOpen,
@@ -575,8 +576,6 @@ class FeedsHelper {
   }
 
   fetchOlderThan(options? : FeedsGetOptions) : Promise<any> {
-    var path = "feeds/" + this.feedName;
-
     var queryString = "";
     var queryParams: string[] = [];
     if (options && options.id) { queryParams.push("from_id=" + options.id); }
@@ -584,7 +583,7 @@ class FeedsHelper {
 
     if (queryParams.length > 0) { queryString = "?" + queryParams.join("&"); }
 
-    var pathWithQuery = path + queryString;
+    var pathWithQuery = this.feedItemsPath() + queryString;
 
     return new Promise((resolve, reject) => {
       this.app.request({ method: "GET", path: pathWithQuery })
@@ -602,8 +601,15 @@ class FeedsHelper {
   }
 
   publish(item : any) : Promise<Response> {
-    var path = "feeds/" + this.feedName;
-    return this.app.request({ method: "POST", path: path, body: { items: [item] } });
+    return this.app.request({
+      method: "POST",
+      path: this.feedItemsPath(),
+      body: { items: [item] }
+    });
+  }
+
+  private feedItemsPath(): string {
+    return `${this.serviceName}/feeds/${this.feedName}/items`;
   }
 }
 

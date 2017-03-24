@@ -533,12 +533,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.AuthServerAuthorizer = AuthServerAuthorizer;
 	var FeedsHelper = (function () {
 	    function FeedsHelper(name, app) {
+	        this.serviceName = "feeds-service";
 	        this.feedName = name;
 	        this.app = app;
 	    }
 	    FeedsHelper.prototype.subscribe = function (options) {
 	        return this.app.resumableSubscribe({
-	            path: "feeds/" + this.feedName,
+	            path: this.feedItemsPath(),
 	            lastEventId: options.lastEventId,
 	            onOpening: options.onOpening,
 	            onOpen: options.onOpen,
@@ -549,7 +550,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    FeedsHelper.prototype.fetchOlderThan = function (options) {
 	        var _this = this;
-	        var path = "feeds/" + this.feedName;
 	        var queryString = "";
 	        var queryParams = [];
 	        if (options && options.id) {
@@ -561,7 +561,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (queryParams.length > 0) {
 	            queryString = "?" + queryParams.join("&");
 	        }
-	        var pathWithQuery = path + queryString;
+	        var pathWithQuery = this.feedItemsPath() + queryString;
 	        return new Promise(function (resolve, reject) {
 	            _this.app.request({ method: "GET", path: pathWithQuery })
 	                .then(function (responseBody) {
@@ -578,8 +578,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    };
 	    FeedsHelper.prototype.publish = function (item) {
-	        var path = "feeds/" + this.feedName;
-	        return this.app.request({ method: "POST", path: path, body: { items: [item] } });
+	        return this.app.request({
+	            method: "POST",
+	            path: this.feedItemsPath(),
+	            body: { items: [item] }
+	        });
+	    };
+	    FeedsHelper.prototype.feedItemsPath = function () {
+	        return this.serviceName + "/feeds/" + this.feedName + "/items";
 	    };
 	    return FeedsHelper;
 	}());
