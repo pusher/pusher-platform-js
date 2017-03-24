@@ -339,7 +339,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.state = ResumableSubscriptionState.UNOPENED;
 	        this.lastEventIdReceived = null;
 	        this.delayMillis = 0;
-	        this.assertState(this, ResumableSubscriptionState);
+	        this.assertState = assertState.bind(this, ResumableSubscriptionState);
 	        this.lastEventIdReceived = options.lastEventId;
 	    }
 	    ResumableSubscription.prototype.tryNow = function () {
