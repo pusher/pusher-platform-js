@@ -1,33 +1,36 @@
+import { Authorizer } from './authorizer'
+import { BaseClient } from './base-client'
+
 type Headers = {
-  [key : string]: string;
+  [key: string]: string;
 }
 
-interface Event {
-  eventId : string;
+export interface Event {
+  eventId: string;
   headers: Headers;
   body: any;
 }
 
-interface RequestOptions {
-  method : string;
-  path : string;
-  jwt? : string;
-  headers? : Headers;
-  body? : any;
+export interface RequestOptions {
+  method: string;
+  path: string;
+  jwt?: string;
+  headers?: Headers;
+  body?: any;
 }
 
-interface SubscribeOptions {
-  path : string;
-  jwt? : string;
-  lastEventId? : string;
-  onOpen? : () => void;
-  onEvent? : (event: Event) => void;
-  onEnd? : () => void;
-  onError? : (error: Error) => void;
+export interface SubscribeOptions {
+  path: string;
+  jwt?: string;
+  lastEventId?: string;
+  onOpen?: () => void;
+  onEvent?: (event: Event) => void;
+  onEnd?: () => void;
+  onError?: (error: Error) => void;
 }
 
-function responseHeadersObj(headerStr : string) : Headers {
-  var headers : Headers = {};
+function responseHeadersObj(headerStr: string): Headers {
+  var headers: Headers = {};
   if (!headerStr) {
     return headers;
   }
@@ -46,12 +49,12 @@ function responseHeadersObj(headerStr : string) : Headers {
   return headers;
 }
 
-class ErrorResponse {
+export class ErrorResponse {
   public statusCode: number;
   public headers: Headers;
   public info: any;
 
-  constructor(xhr : XMLHttpRequest) {
+  constructor(xhr: XMLHttpRequest) {
     this.statusCode = xhr.status;
     this.headers = responseHeadersObj(xhr.getAllResponseHeaders());
     this.info = xhr.responseText;
@@ -77,7 +80,7 @@ enum SubscriptionState {
 
 // Asserts that the subscription state is one of the specified values,
 // otherwise logs the current value.
-function assertState (stateEnum, states = []) {
+function assertState(stateEnum, states = []) {
   const check = states.some(state => stateEnum[state] === this.state);
   const expected = states.join(', ');
   const actual = stateEnum[this.state];
@@ -90,15 +93,15 @@ function assertState (stateEnum, states = []) {
 // Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
 // A call to `unsubscribe()` will call `options.onEnd()`;
 // a call to `unsubscribe(someError)` will call `options.onError(someError)`.
-class Subscription {
-  private state : SubscriptionState = SubscriptionState.UNOPENED;
+export class Subscription {
+  private state: SubscriptionState = SubscriptionState.UNOPENED;
   private assertState: Function;
 
-  private gotEOS : boolean = false;
+  private gotEOS: boolean = false;
 
   constructor(
-      private xhr : XMLHttpRequest,
-      private options : SubscribeOptions
+    private xhr: XMLHttpRequest,
+    private options: SubscribeOptions
   ) {
     this.assertState = assertState.bind(this, SubscriptionState);
     if (options.lastEventId) {
@@ -109,7 +112,7 @@ class Subscription {
         this.xhr.readyState === XhrReadyState.UNSENT ||
         this.xhr.readyState === XhrReadyState.OPENED ||
         this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED
-        ) {
+      ) {
         // Too early for us to do anything.
         this.assertState(['OPENING']);
       }
@@ -198,7 +201,7 @@ class Subscription {
     this.xhr.send();
   }
 
-  private lastNewlineIndex : number = 0;
+  private lastNewlineIndex: number = 0;
 
   // calls options.onEvent 0+ times, then possibly returns an error.
   // idempotent.
@@ -227,20 +230,20 @@ class Subscription {
   }
 
   // calls options.onEvent 0+ times, then returns an Error or null
-  private onMessage(message : any[]): Error {
+  private onMessage(message: any[]): Error {
     this.assertState(['OPEN']);
 
     if (this.gotEOS) {
       return new Error("Got another message after EOS message");
     }
     if (!Array.isArray(message)) {
-       return new Error("Message is not an array");
+      return new Error("Message is not an array");
     }
     if (message.length < 1) {
       return new Error("Message is empty array");
     }
 
-    switch(message[0]) {
+    switch (message[0]) {
       case 0:
         return null;
       case 1:
@@ -298,33 +301,33 @@ class Subscription {
   }
 }
 
-interface ResumableSubscribeOptions {
-  path : string;
-  lastEventId? : string;
+export interface ResumableSubscribeOptions {
+  path: string;
+  lastEventId?: string;
   authorizer?: Authorizer;
-  onOpening? : () => void;
-  onOpen? : () => void;
-  onEvent? : (event: Event) => void;
-  onEnd? : () => void;
-  onError? : (error: Error) => void;
+  onOpening?: () => void;
+  onOpen?: () => void;
+  onEvent?: (event: Event) => void;
+  onEnd?: () => void;
+  onError?: (error: Error) => void;
 }
 
 enum ResumableSubscriptionState {
-    UNOPENED = 0,
-    OPENING,      // can be visited multiple times
-    OPEN,         // called onOpen(); expecting message
-    ENDING,       // received EOS message; response not yet finished
-    ENDED         // called onEnd() or onError(err)
+  UNOPENED = 0,
+  OPENING,      // can be visited multiple times
+  OPEN,         // called onOpen(); expecting message
+  ENDING,       // received EOS message; response not yet finished
+  ENDED         // called onEnd() or onError(err)
 }
 
 // pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
-class ResumableSubscription {
+export class ResumableSubscription {
 
-  private state : ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
+  private state: ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
   private assertState: Function;
-  private subscription : Subscription;
-  private lastEventIdReceived : string = null;
-  private delayMillis : number = 0;
+  private subscription: Subscription;
+  private lastEventIdReceived: string = null;
+  private delayMillis: number = 0;
 
   constructor(
     private xhrSource: () => XMLHttpRequest,
@@ -334,42 +337,42 @@ class ResumableSubscription {
     this.lastEventIdReceived = options.lastEventId;
   }
 
-  tryNow() : void {
+  tryNow(): void {
     this.state = ResumableSubscriptionState.OPENING;
     let newXhr = this.xhrSource();
     this.subscription = new Subscription(newXhr, {
-        path: this.options.path,
-        lastEventId: this.lastEventIdReceived,
-        onOpen: () => {
-          this.assertState(['OPENING']);
-          this.state = ResumableSubscriptionState.OPEN;
-          if (this.options.onOpen) { this.options.onOpen(); }
-        },
-        onEvent: (event: Event) => {
-          this.assertState(['OPEN']);
-          if (this.options.onEvent) { this.options.onEvent(event); }
-          console.assert(
-            this.lastEventIdReceived === null ||
-            parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
-            'Expected the current event id to be larger than the previous one'
-          );
-          this.lastEventIdReceived = event.eventId;
-          console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
-        },
-        onEnd: () => {
+      path: this.options.path,
+      lastEventId: this.lastEventIdReceived,
+      onOpen: () => {
+        this.assertState(['OPENING']);
+        this.state = ResumableSubscriptionState.OPEN;
+        if (this.options.onOpen) { this.options.onOpen(); }
+      },
+      onEvent: (event: Event) => {
+        this.assertState(['OPEN']);
+        if (this.options.onEvent) { this.options.onEvent(event); }
+        console.assert(
+          this.lastEventIdReceived === null ||
+          parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
+          'Expected the current event id to be larger than the previous one'
+        );
+        this.lastEventIdReceived = event.eventId;
+        console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
+      },
+      onEnd: () => {
+        this.state = ResumableSubscriptionState.ENDED;
+        if (this.options.onEnd) { this.options.onEnd(); }
+      },
+      onError: (error: Error) => {
+        if (this.isResumableError(error)) {
+          this.state = ResumableSubscriptionState.OPENING;
+          if (this.options.onOpening) { this.options.onOpening(); }
+          this.backoff();
+        } else {
           this.state = ResumableSubscriptionState.ENDED;
-          if (this.options.onEnd) { this.options.onEnd(); }
-        },
-        onError: (error: Error) => {
-          if (this.isResumableError(error)) {
-            this.state = ResumableSubscriptionState.OPENING;
-            if (this.options.onOpening) { this.options.onOpening(); }
-            this.backoff();
-          } else {
-            this.state = ResumableSubscriptionState.ENDED;
-            if (this.options.onError) { this.options.onError(error); }
-          }
-        },
+          if (this.options.onError) { this.options.onError(error); }
+        }
+      },
     });
     if (this.options.authorizer) {
       this.options.authorizer.authorize().then((jwt) => {
@@ -385,7 +388,7 @@ class ResumableSubscription {
   }
 
   backoff(): void {
-    this.delayMillis = this.delayMillis*2 + 1000;
+    this.delayMillis = this.delayMillis * 2 + 1000;
     console.log("Trying reconnect in " + this.delayMillis + " ms.");
     window.setTimeout(() => { this.tryNow(); }, this.delayMillis);
   }
@@ -403,231 +406,24 @@ class ResumableSubscription {
   }
 }
 
-interface BaseClientOptions {
-  cluster: string;
-  encrypted?: boolean;
-  timeout?: number;
-  XMLHttpRequest?: Function;
-}
 
-export class BaseClient {
-  private baseURL : string;
-  private XMLHttpRequest : any;
-
-  constructor(private options: BaseClientOptions) {
-    let cluster = options.cluster.replace(/\/$/, '');
-    this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${cluster}`;
-    this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
-  }
-
-  request(options : RequestOptions) : Promise<any> {
-    let xhr = this.createXHR(this.baseURL, options);
-
-    return new Promise<any>((resolve, reject) => {
-
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4) {
-          if (xhr.status === 200) {
-            resolve(xhr.responseText);
-          } else {
-            reject(new ErrorResponse(xhr));
-          }
-        }
-      };
-
-      xhr.send(JSON.stringify(options.body));
-    });
-  }
-
-  newSubscription(subOptions : SubscribeOptions) : Subscription {
-    return new Subscription(
-      this.createXHR(this.baseURL, {
-        method: "SUBSCRIBE",
-        path: subOptions.path,
-        headers: {},
-        body: null,
-      }),
-      subOptions
-    );
-  }
-
-  newResumableSubscription(subOptions: ResumableSubscribeOptions) : ResumableSubscription {
-    return new ResumableSubscription(
-      () => {
-        return this.createXHR(this.baseURL, {
-          method: "SUBSCRIBE",
-          path: subOptions.path,
-          headers: {},
-          body: null,
-        });
-      },
-      subOptions
-    );
-  }
-
-  private createXHR(baseURL : string, options : RequestOptions) : XMLHttpRequest {
-    let XMLHttpRequest: any = this.XMLHttpRequest;
-    let xhr = new XMLHttpRequest();
-    let path = options.path.replace(/^\/+/, "");
-    let endpoint = `${baseURL}/${path}`;
-
-    xhr.open(options.method.toUpperCase(), endpoint, true);
-
-    if (options.body) {
-      xhr.setRequestHeader("content-type", "application/json");
-    }
-
-    if (options.jwt) {
-      xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
-    }
-
-    for (let key in options.headers) {
-      xhr.setRequestHeader(key, options.headers[key]);
-    }
-
-    return xhr;
-  }
-}
-
-
-export interface Authorizer {
-  authorize() : Promise<string>;
-}
-
-export class SimpleTokenAuthorizer implements Authorizer {
-  constructor(public jwt : string) { }
-  authorize() : Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      resolve(this.jwt);
-    });
-  }
-}
-
-function base64UrlDecode(encoded: string): string {
-  return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
-}
-
-export class AuthServerAuthorizer implements Authorizer {
-  private accessToken : string = null;
-  constructor(private authServerUrl: string, private credentials?: string) { }
-  authorize() : Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      if (this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(this.accessToken.split(".")[1]))["exp"]*1000) {
-        resolve(this.accessToken);
-      } else {
-        let xhr : XMLHttpRequest = new XMLHttpRequest();
-        xhr.onreadystatechange = () => {
-          if (xhr.readyState === 4) {
-            if (200 <= xhr.status && xhr.status < 300) {
-              this.accessToken = JSON.parse(xhr.responseText)["access_token"];
-              resolve(this.accessToken);
-            } else {
-              reject(new Error("Unexpected status code in response from auth server: " + xhr.status));
-            }
-          }
-        };
-        xhr.open("POST", this.authServerUrl, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.send(
-          "grant_type=client_credentials" +
-          (this.credentials ? "&credentials=" + encodeURIComponent(this.credentials) : "")
-        );
-      }
-    });
-  }
-}
 
 type Response = any;
-
-interface FeedSubscribeOptions {
-  lastEventId?: string;
-  onOpening? : () => void;
-  onOpen? : () => void;
-  onItem? : (item: Event) => void;
-  onEnd? : () => void;
-  onError? : (error: Error) => void;
-}
-
-export interface FeedsGetOptions {
-  id?: string;
-  limit?: number;
-}
-
-class FeedsHelper {
-  public app : App;
-  public feedId : string;
-  readonly serviceName : string = "feeds-service";
-
-  constructor(feedId : string, app: App){
-    this.feedId = feedId;
-    this.app = app;
-  }
-
-  subscribe(options: FeedSubscribeOptions) : ResumableSubscription {
-    return this.app.resumableSubscribe({
-      path: this.feedItemsPath(),
-      lastEventId: options.lastEventId,
-      onOpening: options.onOpening,
-      onOpen: options.onOpen,
-      onEvent: options.onItem,
-      onEnd: options.onEnd,
-      onError: options.onError
-    });
-  }
-
-  fetchOlderThan(options? : FeedsGetOptions) : Promise<any> {
-    var queryString = "";
-    var queryParams: string[] = [];
-    if (options && options.id) { queryParams.push("from_id=" + options.id); }
-    if (options && options.limit) { queryParams.push("limit=" + options.limit); }
-
-    if (queryParams.length > 0) { queryString = "?" + queryParams.join("&"); }
-
-    var pathWithQuery = this.feedItemsPath() + queryString;
-
-    return new Promise((resolve, reject) => {
-      this.app.request({ method: "GET", path: pathWithQuery })
-        .then((responseBody) => {
-          try {
-            resolve(JSON.parse(responseBody));
-          } catch (e) {
-            reject(e);
-          }
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
-
-  publish(item : any) : Promise<Response> {
-    return this.app.request({
-      method: "POST",
-      path: this.feedItemsPath(),
-      body: { items: [item] }
-    });
-  }
-
-  private feedItemsPath(): string {
-    return `${this.serviceName}/feeds/${this.feedId}/items`;
-  }
-}
-
 
 interface AppOptions {
   appId: string;
   cluster?: string;
   authorizer?: Authorizer;
   client?: BaseClient;
-  encrypted? : boolean;
+  encrypted?: boolean;
 }
 
 export class App {
-  private client : BaseClient;
-  private appId : string;
-  private authorizer : Authorizer;
+  private client: BaseClient;
+  private appId: string;
+  private authorizer: Authorizer;
 
-  constructor(options : AppOptions) {
+  constructor(options: AppOptions) {
     this.appId = options.appId;
     this.authorizer = options.authorizer;
 
@@ -637,22 +433,22 @@ export class App {
     });
   }
 
-  request(options : RequestOptions) : Promise<Response> {
+  request(options: RequestOptions): Promise<Response> {
     options.path = this.absPath(options.path);
 
     if (!options.jwt && this.authorizer) {
       return this.authorizer.authorize().then((jwt) => {
-        return this.client.request(Object.assign(options, {jwt}));
+        return this.client.request(Object.assign(options, { jwt }));
       });
     } else {
       return this.client.request(options);
     }
   }
 
-  subscribe(options : SubscribeOptions) : Subscription {
+  subscribe(options: SubscribeOptions): Subscription {
     options.path = this.absPath(options.path);
 
-    let subscription : Subscription = this.client.newSubscription(options);
+    let subscription: Subscription = this.client.newSubscription(options);
 
     if (options.jwt) {
       subscription.open(options.jwt);
@@ -669,35 +465,15 @@ export class App {
     return subscription;
   }
 
-  resumableSubscribe(options: ResumableSubscribeOptions) : ResumableSubscription {
+  resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
     options.path = this.absPath(options.path);
     options.authorizer = this.authorizer;
 
-    let resumableSubscription : ResumableSubscription = this.client.newResumableSubscription(options);
+    let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription(options);
 
     resumableSubscription.open();
 
     return resumableSubscription;
-  }
-
-  feed(feedID : string) : FeedsHelper {
-    return new FeedsHelper(feedID, this);
-  }
-
-  listFeeds() : Promise<Array<string>> {
-    return new Promise((resolve, reject) => {
-      this.request({ method: "GET", path: "feeds" })
-        .then((responseBody) => {
-          try {
-            resolve(JSON.parse(responseBody));
-          } catch (e) {
-            reject(e);
-          }
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
   }
 
   private absPath(relativePath: string): string {

@@ -1,5 +1,5 @@
 import jwt = require('jwt-simple');
-import { Authorizer } from "./pusher-platform";
+import { Authorizer } from "./authorizer";
 
 interface SecretAuthorizerOptions {
   appId: string;
@@ -18,7 +18,7 @@ function base64UrlDecode(encoded: string): string {
 
 export class SecretAuthorizer implements Authorizer {
   constructor(public options: SecretAuthorizerOptions) { }
-  authorize() : Promise<string> {
+  authorize(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let currentTimeUnixSecs = Math.floor(Date.now() / 1000);
       let payload = {
