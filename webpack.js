@@ -3,7 +3,7 @@
 const webpack = require('webpack');
 
 const pusherPlatformJsConfig = {
-  entry: "./src/pusher-platform.ts",
+  entry: "./src/feeds.ts",
   output: {
     filename: "target/pusher-platform.js",
     libraryTarget: "umd",

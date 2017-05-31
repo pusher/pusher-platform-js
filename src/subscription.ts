@@ -30,7 +30,6 @@ function assertState(stateEnum, states = []) {
     }
 };
 
-
 // Callback pattern: (onOpen onEvent* (onEnd|onError)) | onError
 // A call to `unsubscribe()` will call `options.onEnd()`;
 // a call to `unsubscribe(someError)` will call `options.onError(someError)`.

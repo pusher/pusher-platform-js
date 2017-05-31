@@ -1,4 +1,6 @@
-import { App, ResumableSubscription, Event } from './pusher-platform'
+import { Event } from './pusher-platform';
+import { App } from './app';
+import { ResumableSubscription } from './resumable-subscription'; 
 
 interface FeedSubscribeOptions {
     lastEventId?: string;
@@ -48,15 +50,14 @@ class FeedsHelper {
         var pathWithQuery = this.feedItemsPath() + queryString;
 
         return new Promise((resolve, reject) => {
-            this.app.request({ method: "GET", path: pathWithQuery })
-                .then((responseBody) => {
+            return this.app.request({ method: "GET", path: pathWithQuery })
+                .then((response) => {
                     try {
-                        resolve(JSON.parse(responseBody));
-                    } catch (e) {
+                    resolve(JSON.parse(response));
+                    } catch(e) {
                         reject(e);
                     }
-                })
-                .catch((error) => {
+                }).catch((error) => {
                     reject(error);
                 });
         });
@@ -74,13 +75,14 @@ class FeedsHelper {
         return `${this.serviceName}/feeds/${this.feedId}/items`;
     }
 
-    istFeeds(): Promise<Array<string>> {
+    listFeeds(): Promise<Array<string>> {
         return new Promise((resolve, reject) => {
-            this.app.request({ method: "GET", path: "feeds" })
+
+            this.app.request({ method: "GET", path: "feeds"})
                 .then((responseBody) => {
-                    try {
+                    try { 
                         resolve(JSON.parse(responseBody));
-                    } catch (e) {
+                    } catch(e){
                         reject(e);
                     }
                 })

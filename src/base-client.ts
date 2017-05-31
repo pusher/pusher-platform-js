@@ -1,4 +1,7 @@
-import { RequestOptions, ErrorResponse, SubscribeOptions, Subscription, ResumableSubscribeOptions, ResumableSubscription } from './pusher-platform'
+import { RequestOptions, ErrorResponse } from './pusher-platform';
+import { Subscription, SubscribeOptions } from './subscription';
+import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
+
 interface BaseClientOptions {
     cluster: string;
     encrypted?: boolean;

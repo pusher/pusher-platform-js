@@ -55,7 +55,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var jwt = __webpack_require__(1);
 	function base64UrlEncode(decoded) {
 	    return btoa(decoded).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
