@@ -157,6 +157,7 @@ var FeedsHelper = (function () {
     };
     return FeedsHelper;
 }());
+exports.default = FeedsHelper;
 
 
 /***/ })

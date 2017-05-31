@@ -1,8 +1,8 @@
 import { Event } from './pusher-platform';
-import { App } from './app';
+import App from './app';
 import { ResumableSubscription } from './resumable-subscription'; 
 
-interface FeedSubscribeOptions {
+export interface FeedSubscribeOptions {
     lastEventId?: string;
     onOpening?: () => void;
     onOpen?: () => void;
@@ -11,14 +11,14 @@ interface FeedSubscribeOptions {
     onError?: (error: Error) => void;
 }
 
-interface FeedsGetOptions {
+export interface FeedsGetOptions {
     id?: string;
     limit?: number;
 }
 
 type Response = any;
 
-class FeedsHelper {
+export default class FeedsHelper {
     public app: App;
     public feedId: string;
     readonly serviceName: string = "feeds-service";

@@ -4,7 +4,7 @@ import { RequestOptions } from './pusher-platform';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
 
-interface AppOptions {
+export interface AppOptions {
     appId: string;
     cluster?: string;
     authorizer?: Authorizer;
@@ -14,7 +14,7 @@ interface AppOptions {
 
 type Response = any;
 
-export class App {
+export default class App {
     private client: BaseClient;
     private appId: string;
     private authorizer: Authorizer;
