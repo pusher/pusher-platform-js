@@ -11,11 +11,12 @@ interface FeedSubscribeOptions {
     onError?: (error: Error) => void;
 }
 
-export interface FeedsGetOptions {
+interface FeedsGetOptions {
     id?: string;
     limit?: number;
 }
 
+type Response = any;
 
 class FeedsHelper {
     public app: App;
