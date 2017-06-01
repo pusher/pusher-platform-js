@@ -4,7 +4,7 @@ import { RequestOptions } from './base-client';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
 
-export const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
+const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 
 export interface AppOptions {
     appId: string;

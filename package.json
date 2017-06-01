@@ -18,10 +18,10 @@
     "webpack": "^2.5.1"
   },
   "scripts": {
-    "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js --config=webpack.js --display-error-details",
-    "test": "node_modules/webpack/bin/webpack.js --config=webpack.js && node test/test.js "
+    "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js",
+    "test": "node_modules/webpack/bin/webpack.js && node test/test.js "
   },
-  "version": "0.0.5",
+  "version": "0.1.0",
   "dependencies": {
     "jwt-simple": "^0.5.1"
   }
