@@ -4,5 +4,9 @@
     "sourceMap": true,
     "module": "commonjs",
     "lib": ["ES6", "dom"]
-  }
+  },
+  
+  "include": [
+        "src/**/*"
+    ]
 }

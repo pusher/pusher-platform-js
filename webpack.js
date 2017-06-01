@@ -13,23 +13,22 @@ module.exports = {
   },
   resolve: {
     // extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.tsx', '.js']
   },
   module: {
         rules: [
         {
             test: /\.tsx?$/,
-            loader: 'ts-loader',
+            loader: 'ts-loader?' + JSON.stringify({ logInfoToStdOut: true }),
             exclude: /node_modules/,
         }
     ]
     }
 };
 
-// loaders: [
-//       { test: /\.ts$/, loader: "ts-loader" }
-//     ]
 
+//TODO:
+//
 // const pusherPlatformMinJsConfig = Object.assign({}, pusherPlatformJsConfig, {
 //   output: Object.assign({}, pusherPlatformJsConfig.output, {
 //     filename: "target/pusher-platform.min.js"

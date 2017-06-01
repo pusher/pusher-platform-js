@@ -2,7 +2,7 @@ import { RequestOptions, ErrorResponse } from './pusher-platform';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
 
-interface BaseClientOptions {
+export interface BaseClientOptions {
     cluster: string;
     encrypted?: boolean;
     timeout?: number;

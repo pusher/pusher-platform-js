@@ -13,7 +13,7 @@ export interface ResumableSubscribeOptions {
     onError?: (error: Error) => void;
 }
 
-enum ResumableSubscriptionState {
+export enum ResumableSubscriptionState {
     UNOPENED = 0,
     OPENING,      // can be visited multiple times
     OPEN,         // called onOpen(); expecting message
@@ -23,7 +23,7 @@ enum ResumableSubscriptionState {
 
 // Asserts that the subscription state is one of the specified values,
 // otherwise logs the current value.
-function assertState(stateEnum, states = []) {
+export function assertState(stateEnum, states = []) {
     const check = states.some(state => stateEnum[state] === this.state);
     const expected = states.join(', ');
     const actual = stateEnum[this.state];

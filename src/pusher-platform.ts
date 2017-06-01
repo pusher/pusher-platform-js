@@ -3,7 +3,7 @@ import { BaseClient } from './base-client'
 import { Subscription, SubscribeOptions } from './subscription'
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'
 
-type Headers = {
+export type Headers = {
   [key: string]: string;
 }
 
@@ -21,7 +21,7 @@ export interface RequestOptions {
   body?: any;
 }
 
-function responseHeadersObj(headerStr: string): Headers {
+export function responseHeadersObj(headerStr: string): Headers {
   var headers: Headers = {};
   if (!headerStr) {
     return headers;

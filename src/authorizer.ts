@@ -11,7 +11,7 @@ export class SimpleTokenAuthorizer implements Authorizer {
     }
 }
 
-function base64UrlDecode(encoded: string): string {
+export function base64UrlDecode(encoded: string): string {
     return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
 }
 

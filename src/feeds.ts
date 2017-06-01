@@ -1,5 +1,6 @@
 import { Event } from './pusher-platform';
 import App from './app';
+import { AppOptions } from './app';
 import { ResumableSubscription } from './resumable-subscription'; 
 
 export interface FeedSubscribeOptions {
@@ -23,9 +24,9 @@ export default class FeedsHelper {
     public feedId: string;
     readonly serviceName: string = "feeds-service";
 
-    constructor(feedId: string, app: App) {
+    constructor(feedId: string) {
         this.feedId = feedId;
-        this.app = app;
+        this.app = new App({} as AppOptions);
     }
 
     subscribe(options: FeedSubscribeOptions): ResumableSubscription {

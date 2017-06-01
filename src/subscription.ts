@@ -1,6 +1,6 @@
 import { Event, XhrReadyState } from './pusher-platform'
 
-enum SubscriptionState {
+export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
     OPENING,      // called xhr.send(); not yet received response headers
     OPEN,         // received response headers; called onOpen(); expecting message
@@ -20,7 +20,7 @@ export interface SubscribeOptions {
 
 // Asserts that the subscription state is one of the specified values,
 // otherwise logs the current value.
-function assertState(stateEnum, states = []) {
+export function assertState(stateEnum, states = []) {
     const check = states.some(state => stateEnum[state] === this.state);
     const expected = states.join(', ');
     const actual = stateEnum[this.state];
