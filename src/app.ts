@@ -17,7 +17,6 @@ type Response = any;
 
 export class App {
 
-
     private client: BaseClient;
     private appId: string;
     private authorizer: Authorizer;

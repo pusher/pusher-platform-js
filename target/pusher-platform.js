@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["Feeds"] = factory();
+		exports["Pusher Platform"] = factory();
 	else
-		root["Feeds"] = factory();
+		root["Pusher Platform"] = factory();
 })(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -84,7 +84,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var subscription_1 = __webpack_require__(1);
-var resumable_subscription_1 = __webpack_require__(4);
+var resumable_subscription_1 = __webpack_require__(3);
 function responseHeadersObj(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -438,12 +438,12 @@ exports.Subscription = Subscription;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(0);
+exports.DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 var App = (function () {
     function App(options) {
         this.appId = options.appId;
-        this.authorizer = options.authorizer;
         this.client = options.client || new base_client_1.BaseClient({
-            cluster: options.cluster || "api.private-beta-1.pusherplatform.com",
+            cluster: options.cluster || exports.DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
     }
@@ -489,96 +489,11 @@ var App = (function () {
     };
     return App;
 }());
-exports.default = App;
+exports.App = App;
 
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var app_1 = __webpack_require__(2);
-var FeedsHelper = (function () {
-    function FeedsHelper(feedId) {
-        this.serviceName = "feeds-service";
-        this.feedId = feedId;
-        this.app = new app_1.default({});
-    }
-    FeedsHelper.prototype.subscribe = function (options) {
-        return this.app.resumableSubscribe({
-            path: this.feedItemsPath(),
-            lastEventId: options.lastEventId,
-            onOpening: options.onOpening,
-            onOpen: options.onOpen,
-            onEvent: options.onItem,
-            onEnd: options.onEnd,
-            onError: options.onError
-        });
-    };
-    FeedsHelper.prototype.fetchOlderThan = function (options) {
-        var _this = this;
-        var queryString = "";
-        var queryParams = [];
-        if (options && options.id) {
-            queryParams.push("from_id=" + options.id);
-        }
-        if (options && options.limit) {
-            queryParams.push("limit=" + options.limit);
-        }
-        if (queryParams.length > 0) {
-            queryString = "?" + queryParams.join("&");
-        }
-        var pathWithQuery = this.feedItemsPath() + queryString;
-        return new Promise(function (resolve, reject) {
-            return _this.app.request({ method: "GET", path: pathWithQuery })
-                .then(function (response) {
-                try {
-                    resolve(JSON.parse(response));
-                }
-                catch (e) {
-                    reject(e);
-                }
-            }).catch(function (error) {
-                reject(error);
-            });
-        });
-    };
-    FeedsHelper.prototype.publish = function (item) {
-        return this.app.request({
-            method: "POST",
-            path: this.feedItemsPath(),
-            body: { items: [item] }
-        });
-    };
-    FeedsHelper.prototype.feedItemsPath = function () {
-        return this.serviceName + "/feeds/" + this.feedId + "/items";
-    };
-    FeedsHelper.prototype.listFeeds = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            _this.app.request({ method: "GET", path: "feeds" })
-                .then(function (responseBody) {
-                try {
-                    resolve(JSON.parse(responseBody));
-                }
-                catch (e) {
-                    reject(e);
-                }
-            })
-                .catch(function (error) {
-                reject(error);
-            });
-        });
-    };
-    return FeedsHelper;
-}());
-exports.default = FeedsHelper;
-
-
-/***/ }),
-/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

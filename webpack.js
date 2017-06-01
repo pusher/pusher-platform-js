@@ -4,12 +4,12 @@
 
 module.exports = {
   entry: {
-    main: './src/feeds.ts',
+    main: './src/app.ts',
   },
   output: {
-    filename: "target/feeds.js",
+    filename: "target/pusher-platform.js",
     libraryTarget: "umd",
-    library: "Feeds"
+    library: "Pusher Platform"
   },
   resolve: {
     // extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
