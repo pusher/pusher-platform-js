@@ -1,30 +1,32 @@
 import { Authorizer } from './authorizer';
 import { BaseClient } from './base-client';
-import { RequestOptions } from './pusher-platform';
+import { RequestOptions } from './base-client';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
 
-export type AppOptions = {
+export const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
+
+export interface AppOptions {
     appId: string;
     cluster?: string;
-    authorizer?: Authorizer;
     client?: BaseClient;
     encrypted?: boolean;
 }
 
 type Response = any;
 
-export default class App {
+export class App {
+
+
     private client: BaseClient;
     private appId: string;
     private authorizer: Authorizer;
 
     constructor(options: AppOptions) {
         this.appId = options.appId;
-        this.authorizer = options.authorizer;
 
         this.client = options.client || new BaseClient({
-            cluster: options.cluster || "api.private-beta-1.pusherplatform.com",
+            cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
     }

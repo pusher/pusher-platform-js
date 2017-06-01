@@ -1,6 +1,6 @@
 import { Authorizer } from './authorizer';
 import { Subscription } from './subscription';
-import { Event } from './pusher-platform'
+import { Event } from './base-client'
 
 export interface ResumableSubscribeOptions {
     path: string;

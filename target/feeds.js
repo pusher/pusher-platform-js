@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 4);
+/******/ 	return __webpack_require__(__webpack_require__.s = 3);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -83,6 +83,8 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+var subscription_1 = __webpack_require__(1);
+var resumable_subscription_1 = __webpack_require__(4);
 function responseHeadersObj(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -119,6 +121,68 @@ var XhrReadyState;
     XhrReadyState[XhrReadyState["LOADING"] = 3] = "LOADING";
     XhrReadyState[XhrReadyState["DONE"] = 4] = "DONE";
 })(XhrReadyState = exports.XhrReadyState || (exports.XhrReadyState = {}));
+var BaseClient = (function () {
+    function BaseClient(options) {
+        this.options = options;
+        var cluster = options.cluster.replace(/\/$/, '');
+        this.baseURL = (options.encrypted !== false ? "https" : "http") + "://" + cluster;
+        this.XMLHttpRequest = options.XMLHttpRequest || window.XMLHttpRequest;
+    }
+    BaseClient.prototype.request = function (options) {
+        var xhr = this.createXHR(this.baseURL, options);
+        return new Promise(function (resolve, reject) {
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        resolve(xhr.responseText);
+                    }
+                    else {
+                        reject(new ErrorResponse(xhr));
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(options.body));
+        });
+    };
+    BaseClient.prototype.newSubscription = function (subOptions) {
+        return new subscription_1.Subscription(this.createXHR(this.baseURL, {
+            method: "SUBSCRIBE",
+            path: subOptions.path,
+            headers: {},
+            body: null,
+        }), subOptions);
+    };
+    BaseClient.prototype.newResumableSubscription = function (subOptions) {
+        var _this = this;
+        return new resumable_subscription_1.ResumableSubscription(function () {
+            return _this.createXHR(_this.baseURL, {
+                method: "SUBSCRIBE",
+                path: subOptions.path,
+                headers: {},
+                body: null,
+            });
+        }, subOptions);
+    };
+    BaseClient.prototype.createXHR = function (baseURL, options) {
+        var XMLHttpRequest = this.XMLHttpRequest;
+        var xhr = new XMLHttpRequest();
+        var path = options.path.replace(/^\/+/, "");
+        var endpoint = baseURL + "/" + path;
+        xhr.open(options.method.toUpperCase(), endpoint, true);
+        if (options.body) {
+            xhr.setRequestHeader("content-type", "application/json");
+        }
+        if (options.jwt) {
+            xhr.setRequestHeader("authorization", "Bearer " + options.jwt);
+        }
+        for (var key in options.headers) {
+            xhr.setRequestHeader(key, options.headers[key]);
+        }
+        return xhr;
+    };
+    return BaseClient;
+}());
+exports.BaseClient = BaseClient;
 
 
 /***/ }),
@@ -128,7 +192,7 @@ var XhrReadyState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var pusher_platform_1 = __webpack_require__(0);
+var base_client_1 = __webpack_require__(0);
 var SubscriptionState;
 (function (SubscriptionState) {
     SubscriptionState[SubscriptionState["UNOPENED"] = 0] = "UNOPENED";
@@ -168,13 +232,13 @@ var Subscription = (function () {
             this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
         }
         this.xhr.onreadystatechange = function () {
-            if (_this.xhr.readyState === pusher_platform_1.XhrReadyState.UNSENT ||
-                _this.xhr.readyState === pusher_platform_1.XhrReadyState.OPENED ||
-                _this.xhr.readyState === pusher_platform_1.XhrReadyState.HEADERS_RECEIVED) {
+            if (_this.xhr.readyState === base_client_1.XhrReadyState.UNSENT ||
+                _this.xhr.readyState === base_client_1.XhrReadyState.OPENED ||
+                _this.xhr.readyState === base_client_1.XhrReadyState.HEADERS_RECEIVED) {
                 // Too early for us to do anything.
                 _this.assertState(['OPENING']);
             }
-            else if (_this.xhr.readyState === pusher_platform_1.XhrReadyState.LOADING) {
+            else if (_this.xhr.readyState === base_client_1.XhrReadyState.LOADING) {
                 // The headers have loaded and we have partial body text.
                 // We can get this one multiple times.
                 _this.assertState(['OPENING', 'OPEN', 'ENDING']);
@@ -209,7 +273,7 @@ var Subscription = (function () {
                     _this.assertState(['OPENING']);
                 }
             }
-            else if (_this.xhr.readyState === pusher_platform_1.XhrReadyState.DONE) {
+            else if (_this.xhr.readyState === base_client_1.XhrReadyState.DONE) {
                 // This is the last time onreadystatechange is called.
                 if (_this.xhr.status === 200) {
                     if (_this.state === SubscriptionState.OPENING) {
@@ -373,7 +437,7 @@ exports.Subscription = Subscription;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(3);
+var base_client_1 = __webpack_require__(0);
 var App = (function () {
     function App(options) {
         this.appId = options.appId;
@@ -430,80 +494,6 @@ exports.default = App;
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var pusher_platform_1 = __webpack_require__(0);
-var subscription_1 = __webpack_require__(1);
-var resumable_subscription_1 = __webpack_require__(5);
-var BaseClient = (function () {
-    function BaseClient(options) {
-        this.options = options;
-        var cluster = options.cluster.replace(/\/$/, '');
-        this.baseURL = (options.encrypted !== false ? "https" : "http") + "://" + cluster;
-        this.XMLHttpRequest = options.XMLHttpRequest || window.XMLHttpRequest;
-    }
-    BaseClient.prototype.request = function (options) {
-        var xhr = this.createXHR(this.baseURL, options);
-        return new Promise(function (resolve, reject) {
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        resolve(xhr.responseText);
-                    }
-                    else {
-                        reject(new pusher_platform_1.ErrorResponse(xhr));
-                    }
-                }
-            };
-            xhr.send(JSON.stringify(options.body));
-        });
-    };
-    BaseClient.prototype.newSubscription = function (subOptions) {
-        return new subscription_1.Subscription(this.createXHR(this.baseURL, {
-            method: "SUBSCRIBE",
-            path: subOptions.path,
-            headers: {},
-            body: null,
-        }), subOptions);
-    };
-    BaseClient.prototype.newResumableSubscription = function (subOptions) {
-        var _this = this;
-        return new resumable_subscription_1.ResumableSubscription(function () {
-            return _this.createXHR(_this.baseURL, {
-                method: "SUBSCRIBE",
-                path: subOptions.path,
-                headers: {},
-                body: null,
-            });
-        }, subOptions);
-    };
-    BaseClient.prototype.createXHR = function (baseURL, options) {
-        var XMLHttpRequest = this.XMLHttpRequest;
-        var xhr = new XMLHttpRequest();
-        var path = options.path.replace(/^\/+/, "");
-        var endpoint = baseURL + "/" + path;
-        xhr.open(options.method.toUpperCase(), endpoint, true);
-        if (options.body) {
-            xhr.setRequestHeader("content-type", "application/json");
-        }
-        if (options.jwt) {
-            xhr.setRequestHeader("authorization", "Bearer " + options.jwt);
-        }
-        for (var key in options.headers) {
-            xhr.setRequestHeader(key, options.headers[key]);
-        }
-        return xhr;
-    };
-    return BaseClient;
-}());
-exports.BaseClient = BaseClient;
-
-
-/***/ }),
-/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -588,7 +578,7 @@ exports.default = FeedsHelper;
 
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

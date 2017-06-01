@@ -1,9 +1,9 @@
-import { Event } from './pusher-platform';
-import App from './app';
-import { AppOptions } from './app';
+import { Event } from './base-client';
+import {App, AppOptions, DEFAULT_CLUSTER } from './app';
 import { ResumableSubscription } from './resumable-subscription'; 
 
 export interface FeedSubscribeOptions {
+    feedId: string,
     lastEventId?: string;
     onOpening?: () => void;
     onOpen?: () => void;
@@ -19,14 +19,27 @@ export interface FeedsGetOptions {
 
 type Response = any;
 
-export default class FeedsHelper {
+//Sample options object
+let optionsObj = {
+    appId: "sdads", // <- mandatory
+    cluster: "api-ceres.kube.pusherplatform.io", // <- optional 
+    feedId: "zans-awesome-feed" // <- mandatory
+}
+
+
+export default class Feed {
     public app: App;
     public feedId: string;
-    readonly serviceName: string = "feeds-service";
+    readonly serviceName: string = "feeds";
 
-    constructor(feedId: string) {
-        this.feedId = feedId;
-        this.app = new App({} as AppOptions);
+    constructor(options: any)
+    {
+        let appOptions: AppOptions = {
+            appId: options.appId,
+            cluster: options.cluster
+        };
+        this.app = new App(appOptions);
+        this.feedId = options.feedId;
     }
 
     subscribe(options: FeedSubscribeOptions): ResumableSubscription {
@@ -73,9 +86,13 @@ export default class FeedsHelper {
         });
     }
 
+    private servicePath: string = `service/feeds/v1/`;
+
     private feedItemsPath(): string {
-        return `${this.serviceName}/feeds/${this.feedId}/items`;
+        return `${this.servicePath}/feeds/${this.feedId}/items`;
     }
+
+    
 
     listFeeds(): Promise<Array<string>> {
         return new Promise((resolve, reject) => {

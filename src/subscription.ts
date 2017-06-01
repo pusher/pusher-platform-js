@@ -1,4 +1,4 @@
-import { Event, XhrReadyState } from './pusher-platform'
+import { Event, XhrReadyState } from './base-client'
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
