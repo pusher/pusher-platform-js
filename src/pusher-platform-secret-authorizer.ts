@@ -1,24 +1,24 @@
 import jwt = require('jwt-simple');
-import { Authorizer } from "./pusher-platform";
+import { Authorizer } from "./authorizer";
 
-interface SecretAuthorizerOptions {
+export interface SecretAuthorizerOptions {
   appId: string;
   issuerKey: string;
   secretKey: string;
   userId: string;
 }
 
-function base64UrlEncode(decoded: string): string {
+export function base64UrlEncode(decoded: string): string {
   return btoa(decoded).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
-function base64UrlDecode(encoded: string): string {
+export function base64UrlDecode(encoded: string): string {
   return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
 }
 
 export class SecretAuthorizer implements Authorizer {
   constructor(public options: SecretAuthorizerOptions) { }
-  authorize() : Promise<string> {
+  authorize(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let currentTimeUnixSecs = Math.floor(Date.now() / 1000);
       let payload = {
