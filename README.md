@@ -33,7 +33,7 @@ It has 3 methods of interest:
 
 For regular HTTP requests.
 
-- `subscribe(options: SubscribeOptions`
+- `subscribe(options: SubscribeOptions)`
 
 A subscription to events. 
 
