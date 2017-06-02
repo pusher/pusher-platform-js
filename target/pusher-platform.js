@@ -438,12 +438,12 @@ exports.Subscription = Subscription;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(0);
-exports.DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
+var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 var App = (function () {
     function App(options) {
         this.appId = options.appId;
         this.client = options.client || new base_client_1.BaseClient({
-            cluster: options.cluster || exports.DEFAULT_CLUSTER,
+            cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
     }
