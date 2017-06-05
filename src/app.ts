@@ -8,8 +8,9 @@ const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 
 export interface AppOptions {
     appId: string;
-    cluster?: string;
+    authorizer?: Authorizer;
     client?: BaseClient;
+    cluster?: string;
     encrypted?: boolean;
 }
 
@@ -23,7 +24,7 @@ export class App {
 
     constructor(options: AppOptions) {
         this.appId = options.appId;
-
+        this.authorizer = options.authorizer;
         this.client = options.client || new BaseClient({
             cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
