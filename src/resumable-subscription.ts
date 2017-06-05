@@ -39,7 +39,7 @@ export class ResumableSubscription {
     private state: ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
     private assertState: Function;
     private subscription: Subscription;
-    private lastEventIdReceived: string = null;
+    private lastEventIdReceived: string;
     private delayMillis: number = 0;
 
     constructor(
@@ -65,12 +65,11 @@ export class ResumableSubscription {
                 this.assertState(['OPEN']);
                 if (this.options.onEvent) { this.options.onEvent(event); }
                 console.assert(
-                    this.lastEventIdReceived === null ||
+                    !this.lastEventIdReceived ||
                     parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
                     'Expected the current event id to be larger than the previous one'
                 );
                 this.lastEventIdReceived = event.eventId;
-                console.log("Set lastEventIdReceived to " + this.lastEventIdReceived);
             },
             onEnd: () => {
                 this.state = ResumableSubscriptionState.ENDED;
