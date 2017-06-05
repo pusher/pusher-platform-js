@@ -1,6 +1,6 @@
 module.exports = {
   entry: {
-    main: './src/app.ts',
+    main: './src/index.ts'
   },
   output: {
     filename: "target/pusher-platform.js",
