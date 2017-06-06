@@ -13,13 +13,18 @@
     "url": "git+https://github.com/pusher/pusher-platform-js.git"
   },
   "devDependencies": {
+    "jest": "^20.0.4",
     "ts-loader": "^2.1.0",
     "typescript": "^2.3.2",
     "webpack": "^2.5.1"
   },
   "scripts": {
     "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js",
-    "test": "node_modules/webpack/bin/webpack.js && node test/test.js "
+    
+    "test-legacy": "node test/test-legacy.js",
+    "test-jest": "jest test/*.test.js",
+
+    "test": "yarn build && yarn test-legacy && yarn test-jest"
   },
   "version": "0.1.0",
   "dependencies": {

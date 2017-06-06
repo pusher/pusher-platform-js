@@ -1,8 +1,8 @@
-var PusherPlatform = require("../target/pusher-platform.js").default;
+/**
+ * This runs a bunch of tests on our subscription logic.
+ */
 
-//check what's built into node
-//check out mocha
-//jest as an alternative to mocha - comes with shit built in
+var PusherPlatform = require("../target/pusher-platform.js").default;
 
 function assertEquals(a, b, e) {
   if (a !== b) {
@@ -84,7 +84,6 @@ function runTest(responseText, expectedEvents, expectedError) {
     encrypted: true,
     XMLHttpRequest: MockXMLHttpRequest
   });
-
 
   var app = new PusherPlatform.App({
     encrypted: true,
