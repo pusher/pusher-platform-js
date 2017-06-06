@@ -582,10 +582,13 @@ var ResumableSubscription = (function () {
         if (this.options.authorizer) {
             this.options.authorizer.authorize().then(function (jwt) {
                 _this.subscription.open(jwt);
-            }).catch(function (err) {
+            }).catch(function (error) {
                 // This is a resumable error?
                 console.log("Error getting auth token; backing off");
                 _this.backoff();
+                if (_this.options.onError) {
+                    _this.options.onError(error);
+                }
             });
         }
         else {
