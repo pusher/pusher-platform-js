@@ -89,10 +89,11 @@ export class ResumableSubscription {
         if (this.options.authorizer) {
             this.options.authorizer.authorize().then((jwt) => {
                 this.subscription.open(jwt);
-            }).catch((err) => {
+            }).catch((error) => {
                 // This is a resumable error?
                 console.log("Error getting auth token; backing off");
                 this.backoff();
+                if (this.options.onError) { this.options.onError(error); }
             });
         } else {
             this.subscription.open(null);
