@@ -33,11 +33,9 @@ export class App {
 
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
-        if (!options.jwt && options.authorizer) {
-            return options.authorizer.authorize().then((jwt) => {
+        const authorizer = options.authorizer || this.authorizer;
+        if (!options.jwt && authorizer) {
+            return authorizer.authorize().then((jwt) => {
                 return this.client.request(Object.assign(options, { jwt }));
             });
         } else {
@@ -50,13 +48,11 @@ export class App {
 
         let subscription: Subscription = this.client.newSubscription(options);
 
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
+        const authorizer = options.authorizer || this.authorizer;
         if (options.jwt) {
             subscription.open(options.jwt);
-        } else if (options.authorizer) {
-            options.authorizer.authorize().then((jwt) => {
+        } else if (authorizer) {
+            authorizer.authorize().then((jwt) => {
                 subscription.open(jwt);
             }).catch((err) => {
                 subscription.unsubscribe(err);
@@ -70,11 +66,9 @@ export class App {
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
         options.path = this.absPath(options.path);
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
+        const authorizer = options.authorizer || this.authorizer;
 
-        let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription(options);
+        let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription({ authorizer, ...options });
 
         resumableSubscription.open();
 

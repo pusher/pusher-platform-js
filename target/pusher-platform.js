@@ -436,6 +436,14 @@ exports.Subscription = Subscription;
 
 "use strict";
 
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(0);
 var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
@@ -451,11 +459,9 @@ var App = (function () {
     App.prototype.request = function (options) {
         var _this = this;
         options.path = this.absPath(options.path);
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
-        if (!options.jwt && options.authorizer) {
-            return options.authorizer.authorize().then(function (jwt) {
+        var authorizer = options.authorizer || this.authorizer;
+        if (!options.jwt && authorizer) {
+            return authorizer.authorize().then(function (jwt) {
                 return _this.client.request(Object.assign(options, { jwt: jwt }));
             });
         }
@@ -466,14 +472,12 @@ var App = (function () {
     App.prototype.subscribe = function (options) {
         options.path = this.absPath(options.path);
         var subscription = this.client.newSubscription(options);
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
+        var authorizer = options.authorizer || this.authorizer;
         if (options.jwt) {
             subscription.open(options.jwt);
         }
-        else if (options.authorizer) {
-            options.authorizer.authorize().then(function (jwt) {
+        else if (authorizer) {
+            authorizer.authorize().then(function (jwt) {
                 subscription.open(jwt);
             }).catch(function (err) {
                 subscription.unsubscribe(err);
@@ -486,10 +490,8 @@ var App = (function () {
     };
     App.prototype.resumableSubscribe = function (options) {
         options.path = this.absPath(options.path);
-        if (!options.authorizer) {
-            options.authorizer = this.authorizer;
-        }
-        var resumableSubscription = this.client.newResumableSubscription(options);
+        var authorizer = options.authorizer || this.authorizer;
+        var resumableSubscription = this.client.newResumableSubscription(__assign({ authorizer: authorizer }, options));
         resumableSubscription.open();
         return resumableSubscription;
     };
