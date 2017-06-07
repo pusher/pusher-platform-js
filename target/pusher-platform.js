@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ 	return __webpack_require__(__webpack_require__.s = 3);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -84,7 +84,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var subscription_1 = __webpack_require__(1);
-var resumable_subscription_1 = __webpack_require__(3);
+var resumable_subscription_1 = __webpack_require__(2);
 function responseHeadersObj(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -436,79 +436,6 @@ exports.Subscription = Subscription;
 
 "use strict";
 
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(0);
-var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
-var App = (function () {
-    function App(options) {
-        this.appId = options.appId;
-        this.authorizer = options.authorizer;
-        this.client = options.client || new base_client_1.BaseClient({
-            cluster: options.cluster || DEFAULT_CLUSTER,
-            encrypted: options.encrypted
-        });
-    }
-    App.prototype.request = function (options) {
-        var _this = this;
-        options.path = this.absPath(options.path);
-        var authorizer = options.authorizer || this.authorizer;
-        if (!options.jwt && authorizer) {
-            return authorizer.authorize().then(function (jwt) {
-                return _this.client.request(__assign({ jwt: jwt }, options));
-            });
-        }
-        else {
-            return this.client.request(options);
-        }
-    };
-    App.prototype.subscribe = function (options) {
-        options.path = this.absPath(options.path);
-        var subscription = this.client.newSubscription(options);
-        var authorizer = options.authorizer || this.authorizer;
-        if (options.jwt) {
-            subscription.open(options.jwt);
-        }
-        else if (authorizer) {
-            authorizer.authorize().then(function (jwt) {
-                subscription.open(jwt);
-            }).catch(function (err) {
-                subscription.unsubscribe(err);
-            });
-        }
-        else {
-            subscription.open(null);
-        }
-        return subscription;
-    };
-    App.prototype.resumableSubscribe = function (options) {
-        options.path = this.absPath(options.path);
-        var authorizer = options.authorizer || this.authorizer;
-        var resumableSubscription = this.client.newResumableSubscription(__assign({ authorizer: authorizer }, options));
-        resumableSubscription.open();
-        return resumableSubscription;
-    };
-    App.prototype.absPath = function (relativePath) {
-        return ("/apps/" + this.appId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
-    };
-    return App;
-}());
-exports.App = App;
-
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 Object.defineProperty(exports, "__esModule", { value: true });
 var subscription_1 = __webpack_require__(1);
 var ResumableSubscriptionState;
@@ -620,6 +547,80 @@ var ResumableSubscription = (function () {
     return ResumableSubscription;
 }());
 exports.ResumableSubscription = ResumableSubscription;
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var base_client_1 = __webpack_require__(0);
+var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
+var Service = (function () {
+    function Service(options) {
+        this.serviceId = options.serviceId;
+        this.authorizer = options.authorizer;
+        this.client = options.client || new base_client_1.BaseClient({
+            cluster: options.cluster || DEFAULT_CLUSTER,
+            encrypted: options.encrypted
+        });
+    }
+    Service.prototype.request = function (options) {
+        var _this = this;
+        options.path = this.absPath(options.path);
+        var authorizer = options.authorizer || this.authorizer;
+        if (!options.jwt && authorizer) {
+            return authorizer.authorize().then(function (jwt) {
+                return _this.client.request(__assign({ jwt: jwt }, options));
+            });
+        }
+        else {
+            return this.client.request(options);
+        }
+    };
+    Service.prototype.subscribe = function (options) {
+        options.path = this.absPath(options.path);
+        var subscription = this.client.newSubscription(options);
+        var authorizer = options.authorizer || this.authorizer;
+        if (options.jwt) {
+            subscription.open(options.jwt);
+        }
+        else if (authorizer) {
+            authorizer.authorize().then(function (jwt) {
+                subscription.open(jwt);
+            }).catch(function (err) {
+                subscription.unsubscribe(err);
+            });
+        }
+        else {
+            subscription.open(null);
+        }
+        return subscription;
+    };
+    Service.prototype.resumableSubscribe = function (options) {
+        options.path = this.absPath(options.path);
+        var authorizer = options.authorizer || this.authorizer;
+        var resumableSubscription = this.client.newResumableSubscription(__assign({ authorizer: authorizer }, options));
+        resumableSubscription.open();
+        return resumableSubscription;
+    };
+    Service.prototype.absPath = function (relativePath) {
+        // TODO update url schema upstream?
+        return ("/apps/" + this.serviceId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
+    };
+    return Service;
+}());
+exports.Service = Service;
 
 
 /***/ })
