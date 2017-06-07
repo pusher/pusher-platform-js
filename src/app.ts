@@ -33,9 +33,11 @@ export class App {
 
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
-
-        if (!options.jwt && this.authorizer) {
-            return this.authorizer.authorize().then((jwt) => {
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
+        if (!options.jwt && options.authorizer) {
+            return options.authorizer.authorize().then((jwt) => {
                 return this.client.request(Object.assign(options, { jwt }));
             });
         } else {
@@ -48,10 +50,13 @@ export class App {
 
         let subscription: Subscription = this.client.newSubscription(options);
 
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
         if (options.jwt) {
             subscription.open(options.jwt);
-        } else if (this.authorizer) {
-            this.authorizer.authorize().then((jwt) => {
+        } else if (options.authorizer) {
+            options.authorizer.authorize().then((jwt) => {
                 subscription.open(jwt);
             }).catch((err) => {
                 subscription.unsubscribe(err);
@@ -65,7 +70,9 @@ export class App {
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
         options.path = this.absPath(options.path);
-        options.authorizer = this.authorizer;
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
 
         let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription(options);
 

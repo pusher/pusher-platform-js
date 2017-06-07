@@ -451,8 +451,11 @@ var App = (function () {
     App.prototype.request = function (options) {
         var _this = this;
         options.path = this.absPath(options.path);
-        if (!options.jwt && this.authorizer) {
-            return this.authorizer.authorize().then(function (jwt) {
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
+        if (!options.jwt && options.authorizer) {
+            return options.authorizer.authorize().then(function (jwt) {
                 return _this.client.request(Object.assign(options, { jwt: jwt }));
             });
         }
@@ -463,11 +466,14 @@ var App = (function () {
     App.prototype.subscribe = function (options) {
         options.path = this.absPath(options.path);
         var subscription = this.client.newSubscription(options);
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
         if (options.jwt) {
             subscription.open(options.jwt);
         }
-        else if (this.authorizer) {
-            this.authorizer.authorize().then(function (jwt) {
+        else if (options.authorizer) {
+            options.authorizer.authorize().then(function (jwt) {
                 subscription.open(jwt);
             }).catch(function (err) {
                 subscription.unsubscribe(err);
@@ -480,7 +486,9 @@ var App = (function () {
     };
     App.prototype.resumableSubscribe = function (options) {
         options.path = this.absPath(options.path);
-        options.authorizer = this.authorizer;
+        if (!options.authorizer) {
+            options.authorizer = this.authorizer;
+        }
         var resumableSubscription = this.client.newResumableSubscription(options);
         resumableSubscription.open();
         return resumableSubscription;

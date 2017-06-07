@@ -1,3 +1,4 @@
+import { Authorizer } from './authorizer';
 import { Event, XhrReadyState } from './base-client'
 
 export enum SubscriptionState {
@@ -10,6 +11,7 @@ export enum SubscriptionState {
 
 export interface SubscribeOptions {
     path: string;
+    authorizer?: Authorizer;
     jwt?: string;
     lastEventId?: string;
     onOpen?: () => void;
