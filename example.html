@@ -40,14 +40,14 @@
     <script src="./target/pusher-platform.js"></script>
     <script src="./target/pusher-platform-secret-authorizer.js"></script>
     <script>
-      var app = new PusherPlatform.App({
-        appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+      var service = new PusherPlatform.Service({
+        serviceId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
         authorizer: new PusherPlatform.AuthServerAuthorizer(
           "https://platform-example-authorizer.herokuapp.com/pusherplatform/authorize",
-          "jim"  // in a real app this would be a private proof of identity, e.g. a password or session cookie
+          "jim"  // in a real service this would be a private proof of identity, e.g. a password or session cookie
         )
       });
-      var notificationsFeed = app.feed("notifications");
+      var notificationsFeed = service.feed("notifications");
       var notificationsSubscription = notificationsFeed.subscribe({
         lastEventId: "0",
         onOpen: () => {
@@ -98,7 +98,7 @@
         notificationsSubscription.unsubscribe();
       });
 
-      app.listFeeds()
+      service.listFeeds()
         .then((feeds) => {
           for (var i = 0; i < feeds.length; i++) {
             var feedInfo = feeds[i];

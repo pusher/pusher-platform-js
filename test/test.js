@@ -81,10 +81,10 @@ function runTest(responseText, expectedEvents, expectedError) {
     XMLHttpRequest: MockXMLHttpRequest
   });
 
-  var app = new PusherPlatform.App({
+  var service = new PusherPlatform.Service({
     encrypted: true,
     cluster: "somecluster:12345",
-    appId: "3",
+    serviceId: "3",
     client: baseClient
   });
 
@@ -95,7 +95,7 @@ function runTest(responseText, expectedEvents, expectedError) {
   var calledOnEnd = false;
   var calledOnError = false;
 
-  var subscription = app.subscribe({
+  var subscription = service.subscribe({
     path: "example/sub",
     jwt: "foo",
     onOpen: function() {
