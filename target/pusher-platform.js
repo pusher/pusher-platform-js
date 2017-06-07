@@ -462,7 +462,7 @@ var App = (function () {
         var authorizer = options.authorizer || this.authorizer;
         if (!options.jwt && authorizer) {
             return authorizer.authorize().then(function (jwt) {
-                return _this.client.request(Object.assign(options, { jwt: jwt }));
+                return _this.client.request(__assign({ jwt: jwt }, options));
             });
         }
         else {

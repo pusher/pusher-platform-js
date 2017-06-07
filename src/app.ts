@@ -36,7 +36,7 @@ export class App {
         const authorizer = options.authorizer || this.authorizer;
         if (!options.jwt && authorizer) {
             return authorizer.authorize().then((jwt) => {
-                return this.client.request(Object.assign(options, { jwt }));
+                return this.client.request({ jwt, ...options });
             });
         } else {
             return this.client.request(options);
@@ -68,7 +68,8 @@ export class App {
         options.path = this.absPath(options.path);
         const authorizer = options.authorizer || this.authorizer;
 
-        let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription({ authorizer, ...options });
+        let resumableSubscription: ResumableSubscription =
+            this.client.newResumableSubscription({ authorizer, ...options });
 
         resumableSubscription.open();
 
