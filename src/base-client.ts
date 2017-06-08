@@ -1,4 +1,4 @@
-import { Authorizer } from './authorizer';
+import { TokenProvider } from './token-provider';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
 
@@ -22,7 +22,7 @@ export interface Event {
 export interface RequestOptions {
   method: string;
   path: string;
-  authorizer?: Authorizer;
+  tokenProvider?: TokenProvider;
   jwt?: string;
   headers?: Headers;
   body?: any;

@@ -516,8 +516,8 @@ var ResumableSubscription = (function () {
                 }
             },
         });
-        if (this.options.authorizer) {
-            this.options.authorizer.authorize().then(function (jwt) {
+        if (this.options.tokenProvider) {
+            this.options.tokenProvider.provideToken().then(function (jwt) {
                 _this.subscription.open(jwt);
             }).catch(function (err) {
                 // This is a resumable error?
@@ -569,7 +569,7 @@ var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 var App = (function () {
     function App(options) {
         this.serviceId = options.serviceId;
-        this.authorizer = options.authorizer;
+        this.tokenProvider = options.tokenProvider;
         this.client = options.client || new base_client_1.BaseClient({
             cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
@@ -578,9 +578,9 @@ var App = (function () {
     App.prototype.request = function (options) {
         var _this = this;
         options.path = this.absPath(options.path);
-        var authorizer = options.authorizer || this.authorizer;
-        if (!options.jwt && authorizer) {
-            return authorizer.authorize().then(function (jwt) {
+        var tokenProvider = options.tokenProvider || this.tokenProvider;
+        if (!options.jwt && tokenProvider) {
+            return tokenProvider.provideToken().then(function (jwt) {
                 return _this.client.request(__assign({ jwt: jwt }, options));
             });
         }
@@ -591,12 +591,12 @@ var App = (function () {
     App.prototype.subscribe = function (options) {
         options.path = this.absPath(options.path);
         var subscription = this.client.newSubscription(options);
-        var authorizer = options.authorizer || this.authorizer;
+        var tokenProvider = options.tokenProvider || this.tokenProvider;
         if (options.jwt) {
             subscription.open(options.jwt);
         }
-        else if (authorizer) {
-            authorizer.authorize().then(function (jwt) {
+        else if (tokenProvider) {
+            tokenProvider.provideToken().then(function (jwt) {
                 subscription.open(jwt);
             }).catch(function (err) {
                 subscription.unsubscribe(err);
@@ -609,7 +609,7 @@ var App = (function () {
     };
     App.prototype.resumableSubscribe = function (options) {
         options.path = this.absPath(options.path);
-        var authorizer = options.authorizer || this.authorizer;
+        var authorizer = options.tokenProvider || this.tokenProvider;
         var resumableSubscription = this.client.newResumableSubscription(__assign({ authorizer: authorizer }, options));
         resumableSubscription.open();
         return resumableSubscription;
