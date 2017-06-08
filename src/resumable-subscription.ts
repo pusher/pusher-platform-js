@@ -1,6 +1,7 @@
 import { TokenProvider } from './token-provider';
 import { Subscription } from './subscription';
-import { Event } from './base-client'
+import { ErrorResponse, Event } from './base-client';
+import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
 
 export interface ResumableSubscribeOptions {
     path: string;
@@ -11,6 +12,7 @@ export interface ResumableSubscribeOptions {
     onEvent?: (event: Event) => void;
     onEnd?: () => void;
     onError?: (error: Error) => void;
+    retryStrategy?: RetryStrategy;
 }
 
 export enum ResumableSubscriptionState {
@@ -40,7 +42,9 @@ export class ResumableSubscription {
     private assertState: Function;
     private subscription: Subscription;
     private lastEventIdReceived: string;
-    private delayMillis: number = 0;
+    private retryStrategy: RetryStrategy = new ExponentialBackoffRetryStrategy({});
+
+    private log: (message: string) => void = (message) => {};
 
     constructor(
         private xhrSource: () => XMLHttpRequest,
@@ -76,11 +80,14 @@ export class ResumableSubscription {
                 if (this.options.onEnd) { this.options.onEnd(); }
             },
             onError: (error: Error) => {
-                if (this.isResumableError(error)) {
+                const shouldRetry = this.retryStrategy.shouldRetry(error);
+
+                if(shouldRetry instanceof Retry){
                     this.state = ResumableSubscriptionState.OPENING;
                     if (this.options.onOpening) { this.options.onOpening(); }
-                    this.backoff();
-                } else {
+                    this.backoff(shouldRetry.waitTimeMilis);
+                }
+                else {
                     this.state = ResumableSubscriptionState.ENDED;
                     if (this.options.onError) { this.options.onError(error); }
                 }
@@ -90,27 +97,21 @@ export class ResumableSubscription {
             this.options.tokenProvider.fetchToken().then((jwt) => {
                 this.subscription.open(jwt);
             }).catch((err) => {
-                // This is a resumable error?
-                console.log("Error getting auth token; backing off");
-                this.backoff();
+                if(this.options.onError) this.options.onError(err);
             });
         } else {
             this.subscription.open(null);
         }
     }
 
-    backoff(): void {
-        this.delayMillis = this.delayMillis * 2 + 1000;
-        console.log("Trying reconnect in " + this.delayMillis + " ms.");
-        window.setTimeout(() => { this.tryNow(); }, this.delayMillis);
+    backoff(delayMillis: number): void {
+        
+        console.log("Trying reconnect in " + delayMillis + " ms.");
+        window.setTimeout(this.tryNow.bind(this), delayMillis);
     }
 
     open(): void {
         this.tryNow();
-    }
-
-    private isResumableError(error: Error) {
-        return error.message === "resumable"; // TODO this is a horrible way to represent resumableness
     }
 
     unsubscribe() {

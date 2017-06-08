@@ -1,5 +1,5 @@
 import { TokenProvider } from './token-provider';
-import { Event, XhrReadyState } from './base-client'
+import { ErrorResponse, NetworkError, Event, XhrReadyState } from './base-client';
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
@@ -116,16 +116,17 @@ export class Subscription {
                     this.assertState(['OPENING', 'OPEN', 'ENDED']);
                     if (this.state === SubscriptionState.ENDED) {
                         // We aborted the request deliberately, and called onError/onEnd elsewhere.
-                    } else {
-                        // The server
-                        if (this.options.onError) { this.options.onError(new Error("error from server: " + this.xhr.responseText)); }
+                    }
+                    else{
+                        this.options.onError(ErrorResponse.fromXHR(this.xhr));
+                        console.log(this.xhr);
                     }
                 }
             }
         };
 
-        xhr.onerror = () => {
-            if (this.options.onError) { this.options.onError(new Error("resumable")); }
+        xhr.onerror = (event: ErrorEvent) => {
+            if (this.options.onError) { this.options.onError(new NetworkError(event)); }
         };
     }
 
@@ -211,6 +212,7 @@ export class Subscription {
         if (typeof headers !== "object" || Array.isArray(headers)) {
             return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
         }
+
         if (this.options.onEvent) { this.options.onEvent({ eventId: id, headers: headers, body: body }); }
     }
 
@@ -230,6 +232,7 @@ export class Subscription {
         }
 
         this.state = SubscriptionState.ENDING;
+        return new ErrorResponse(statusCode, headers, info);
     }
 
     unsubscribe(err?: Error) {

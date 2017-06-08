@@ -20,13 +20,11 @@
   },
   "scripts": {
     "build": "rm -rf lib target && node_modules/webpack/bin/webpack.js",
-    
     "test-legacy": "node test/test-legacy.js",
     "test-jest": "jest test/*.test.js",
-
     "test": "yarn build && yarn test-legacy && yarn test-jest"
   },
-  "version": "0.2.0",
+  "version": "0.2.3",
   "dependencies": {
     "jwt-simple": "^0.5.1"
   }
