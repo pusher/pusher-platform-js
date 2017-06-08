@@ -25,7 +25,7 @@ You can also specify a particular commit, branch or release tag by appending `#c
 
 This is the main entry point - represents a single Elements app.
 
-Initialise with `appId` (required) and `cluster` (optional).
+Initialise with `serviceId` (required) and `cluster` (optional).
 
 It has 3 methods of interest:
 
