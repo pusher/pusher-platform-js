@@ -1,10 +1,10 @@
-export interface Authorizer {
-    authorize(): Promise<string>;
+export interface TokenProvider {
+    fetchToken(): Promise<string>;
 }
 
-export class SimpleTokenAuthorizer implements Authorizer {
+export class SimpleTokenProvider implements TokenProvider {
     constructor(public jwt: string) { }
-    authorize(): Promise<string> {
+    fetchToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             resolve(this.jwt);
         });
@@ -15,10 +15,10 @@ export function base64UrlDecode(encoded: string): string {
     return atob(encoded.replace(/\-/g, '+').replace(/_/g, '/'));
 }
 
-export class AuthServerAuthorizer implements Authorizer {
+export class AuthServerTokenProvider implements TokenProvider {
     private accessToken: string = null;
     constructor(private authServerUrl: string, private credentials?: string) { }
-    authorize(): Promise<string> {
+    fetchToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(this.accessToken.split(".")[1]))["exp"] * 1000) {
                 resolve(this.accessToken);

@@ -1,4 +1,4 @@
-import { Authorizer } from './authorizer';
+import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
 import { Subscription, SubscribeOptions } from './subscription';
@@ -7,8 +7,9 @@ import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-su
 const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 
 export interface AppOptions {
+
     serviceId: string;
-    authorizer?: Authorizer;
+    tokenProvider?: TokenProvider;
     client?: BaseClient;
     cluster?: string;
     encrypted?: boolean;
@@ -19,12 +20,13 @@ type Response = any;
 export default class App {
 
     private client: BaseClient;
+
     private serviceId: string;
-    private authorizer: Authorizer;
+    private tokenProvider: TokenProvider;
 
     constructor(options: AppOptions) {
         this.serviceId = options.serviceId;
-        this.authorizer = options.authorizer;
+        this.tokenProvider = options.tokenProvider;
         this.client = options.client || new BaseClient({
             cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
@@ -33,9 +35,9 @@ export default class App {
 
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
-        const authorizer = options.authorizer || this.authorizer;
-        if (!options.jwt && authorizer) {
-            return authorizer.authorize().then((jwt) => {
+        const tokenProvider = options.tokenProvider || this.tokenProvider;
+        if (!options.jwt && tokenProvider) {
+            return tokenProvider.fetchToken().then((jwt) => {
                 return this.client.request({ jwt, ...options });
             });
         } else {
@@ -48,11 +50,11 @@ export default class App {
 
         let subscription: Subscription = this.client.newSubscription(options);
 
-        const authorizer = options.authorizer || this.authorizer;
+        const tokenProvider = options.tokenProvider || this.tokenProvider;
         if (options.jwt) {
             subscription.open(options.jwt);
-        } else if (authorizer) {
-            authorizer.authorize().then((jwt) => {
+        } else if (tokenProvider) {
+            tokenProvider.fetchToken().then((jwt) => {
                 subscription.open(jwt);
             }).catch((err) => {
                 subscription.unsubscribe(err);
@@ -66,7 +68,7 @@ export default class App {
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
         options.path = this.absPath(options.path);
-        const authorizer = options.authorizer || this.authorizer;
+        const authorizer = options.tokenProvider || this.tokenProvider;
 
         let resumableSubscription: ResumableSubscription =
             this.client.newResumableSubscription({ authorizer, ...options });

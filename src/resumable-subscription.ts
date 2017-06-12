@@ -1,11 +1,11 @@
-import { Authorizer } from './authorizer';
+import { TokenProvider } from './token-provider';
 import { Subscription } from './subscription';
 import { Event } from './base-client'
 
 export interface ResumableSubscribeOptions {
     path: string;
     lastEventId?: string;
-    authorizer?: Authorizer;
+    tokenProvider?: TokenProvider;
     onOpening?: () => void;
     onOpen?: () => void;
     onEvent?: (event: Event) => void;
@@ -86,8 +86,8 @@ export class ResumableSubscription {
                 }
             },
         });
-        if (this.options.authorizer) {
-            this.options.authorizer.authorize().then((jwt) => {
+        if (this.options.tokenProvider) {
+            this.options.tokenProvider.fetchToken().then((jwt) => {
                 this.subscription.open(jwt);
             }).catch((err) => {
                 // This is a resumable error?
