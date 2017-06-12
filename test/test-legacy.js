@@ -88,7 +88,7 @@ function runTest(responseText, expectedEvents, expectedError) {
   var app = new PusherPlatform.App({
     encrypted: true,
     cluster: "somecluster:12345",
-    appId: "3",
+    serviceId: "3",
     client: baseClient
   });
 

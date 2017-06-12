@@ -7,7 +7,7 @@ import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-su
 const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 
 export interface AppOptions {
-    appId: string;
+    serviceId: string;
     authorizer?: Authorizer;
     client?: BaseClient;
     cluster?: string;
@@ -19,11 +19,11 @@ type Response = any;
 export default class App {
 
     private client: BaseClient;
-    private appId: string;
+    private serviceId: string;
     private authorizer: Authorizer;
 
     constructor(options: AppOptions) {
-        this.appId = options.appId;
+        this.serviceId = options.serviceId;
         this.authorizer = options.authorizer;
         this.client = options.client || new BaseClient({
             cluster: options.cluster || DEFAULT_CLUSTER,
@@ -77,6 +77,6 @@ export default class App {
     }
 
     private absPath(relativePath: string): string {
-        return `/apps/${this.appId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+        return `/apps/${this.serviceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
 }

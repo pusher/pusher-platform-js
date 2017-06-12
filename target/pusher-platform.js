@@ -568,7 +568,7 @@ var base_client_1 = __webpack_require__(0);
 var DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 var App = (function () {
     function App(options) {
-        this.appId = options.appId;
+        this.serviceId = options.serviceId;
         this.authorizer = options.authorizer;
         this.client = options.client || new base_client_1.BaseClient({
             cluster: options.cluster || DEFAULT_CLUSTER,
@@ -615,7 +615,7 @@ var App = (function () {
         return resumableSubscription;
     };
     App.prototype.absPath = function (relativePath) {
-        return ("/apps/" + this.appId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
+        return ("/apps/" + this.serviceId + "/" + relativePath).replace(/\/+/g, "/").replace(/\/+$/, "");
     };
     return App;
 }());

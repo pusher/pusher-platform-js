@@ -41,7 +41,7 @@
     <script src="./target/pusher-platform-secret-authorizer.js"></script>
     <script>
       var app = new PusherPlatform.App({
-        appId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
+        serviceId: '2efb721e-090b-4eda-bc2c-f6c1311208f6',
         authorizer: new PusherPlatform.AuthServerAuthorizer(
           "https://platform-example-authorizer.herokuapp.com/pusherplatform/authorize",
           "jim"  // in a real app this would be a private proof of identity, e.g. a password or session cookie

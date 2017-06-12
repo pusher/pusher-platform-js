@@ -26,7 +26,7 @@
 
     "test": "yarn build && yarn test-legacy && yarn test-jest"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "dependencies": {
     "jwt-simple": "^0.5.1"
   }
