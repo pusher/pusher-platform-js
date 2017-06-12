@@ -16,7 +16,7 @@ export interface AppOptions {
 
 type Response = any;
 
-export class App {
+export default class App {
 
     private client: BaseClient;
     private appId: string;
