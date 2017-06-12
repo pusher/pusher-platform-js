@@ -517,7 +517,7 @@ var ResumableSubscription = (function () {
             },
         });
         if (this.options.tokenProvider) {
-            this.options.tokenProvider.provideToken().then(function (jwt) {
+            this.options.tokenProvider.fetchToken().then(function (jwt) {
                 _this.subscription.open(jwt);
             }).catch(function (err) {
                 // This is a resumable error?
@@ -580,7 +580,7 @@ var App = (function () {
         options.path = this.absPath(options.path);
         var tokenProvider = options.tokenProvider || this.tokenProvider;
         if (!options.jwt && tokenProvider) {
-            return tokenProvider.provideToken().then(function (jwt) {
+            return tokenProvider.fetchToken().then(function (jwt) {
                 return _this.client.request(__assign({ jwt: jwt }, options));
             });
         }
@@ -596,7 +596,7 @@ var App = (function () {
             subscription.open(options.jwt);
         }
         else if (tokenProvider) {
-            tokenProvider.provideToken().then(function (jwt) {
+            tokenProvider.fetchToken().then(function (jwt) {
                 subscription.open(jwt);
             }).catch(function (err) {
                 subscription.unsubscribe(err);

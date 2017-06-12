@@ -87,7 +87,7 @@ export class ResumableSubscription {
             },
         });
         if (this.options.tokenProvider) {
-            this.options.tokenProvider.provideToken().then((jwt) => {
+            this.options.tokenProvider.fetchToken().then((jwt) => {
                 this.subscription.open(jwt);
             }).catch((err) => {
                 // This is a resumable error?

@@ -37,7 +37,7 @@ export default class App {
         options.path = this.absPath(options.path);
         const tokenProvider = options.tokenProvider || this.tokenProvider;
         if (!options.jwt && tokenProvider) {
-            return tokenProvider.provideToken().then((jwt) => {
+            return tokenProvider.fetchToken().then((jwt) => {
                 return this.client.request({ jwt, ...options });
             });
         } else {
@@ -54,7 +54,7 @@ export default class App {
         if (options.jwt) {
             subscription.open(options.jwt);
         } else if (tokenProvider) {
-            tokenProvider.provideToken().then((jwt) => {
+            tokenProvider.fetchToken().then((jwt) => {
                 subscription.open(jwt);
             }).catch((err) => {
                 subscription.unsubscribe(err);

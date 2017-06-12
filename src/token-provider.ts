@@ -1,10 +1,10 @@
 export interface TokenProvider {
-    provideToken(): Promise<string>;
+    fetchToken(): Promise<string>;
 }
 
 export class SimpleTokenProvider implements TokenProvider {
     constructor(public jwt: string) { }
-    provideToken(): Promise<string> {
+    fetchToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             resolve(this.jwt);
         });
@@ -18,7 +18,7 @@ export function base64UrlDecode(encoded: string): string {
 export class AuthServerTokenProvider implements TokenProvider {
     private accessToken: string = null;
     constructor(private authServerUrl: string, private credentials?: string) { }
-    provideToken(): Promise<string> {
+    fetchToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.accessToken != null && Date.now() < JSON.parse(base64UrlDecode(this.accessToken.split(".")[1]))["exp"] * 1000) {
                 resolve(this.accessToken);
