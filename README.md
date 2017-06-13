@@ -12,14 +12,26 @@ Package.json:
 ```javascript
 "dependencies": {
     ...
-    "pusher-platform-js": "git+ssh://git@github.com:pusher/pusher-platform-js.git"
+    "pusher-platform": "git+ssh://git@github.com:pusher/pusher-platform-js.git"
     ...
 }
 ```
 
 You can also specify a particular commit, branch or release tag by appending `#commit-ish` to the end. See https://docs.npmjs.com/files/package.json#git-urls-as-dependencies for a more detailed explanation.
 
-## Features
+## Usage and Features
+
+Use Webpack.
+
+Import it with:
+
+```JavaScript
+import * as PusherPlatform from `pusher-platform`
+```
+
+Then you can access all exported classes by calling referencing them from it: `PusherPlatform.App`.
+
+__Note - this will likely change in the future. __
 
 ### App
 
