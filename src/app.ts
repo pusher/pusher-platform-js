@@ -3,6 +3,7 @@ import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
+import { DefaultLogger, Logger } from './logger';
 
 const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
 
@@ -13,6 +14,7 @@ export interface AppOptions {
     client?: BaseClient;
     cluster?: string;
     encrypted?: boolean;
+    logger?: Logger;
 }
 
 type Response = any;
@@ -23,6 +25,7 @@ export default class App {
 
     private serviceId: string;
     private tokenProvider: TokenProvider;
+    private logger: Logger;
 
     constructor(options: AppOptions) {
         this.serviceId = options.serviceId;
@@ -31,6 +34,12 @@ export default class App {
             cluster: options.cluster || DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
+        if(options.logger){
+            this.logger = options.logger;
+        }
+        else{
+            this.logger = new DefaultLogger();
+        }
     }
 
     request(options: RequestOptions): Promise<any> {
@@ -47,6 +56,7 @@ export default class App {
 
     subscribe(options: SubscribeOptions): Subscription {
         options.path = this.absPath(options.path);
+        options.logger = this.logger;
 
         let subscription: Subscription = this.client.newSubscription(options);
 
@@ -67,6 +77,7 @@ export default class App {
     }
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
+        options.logger = this.logger;
         options.path = this.absPath(options.path);
         const authorizer = options.tokenProvider || this.tokenProvider;
 

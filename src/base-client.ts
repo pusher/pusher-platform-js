@@ -46,7 +46,6 @@ export function responseHeadersObj(headerStr: string): Headers {
       headers[key] = val;
     }
   }
-
   return headers;
 }
 
@@ -56,7 +55,7 @@ export class ErrorResponse extends Error{
     public info: any;
 
     constructor(statusCode: number, headers: Headers, info: any) {
-        super();
+        super(`ErroResponse: ${statusCode}: ${info} \n Headers: ${JSON.stringify(headers)}`);
         this.statusCode = statusCode;
         this.headers = headers;
         this.info = info;

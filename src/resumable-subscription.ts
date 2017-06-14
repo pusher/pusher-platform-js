@@ -2,6 +2,7 @@ import { TokenProvider } from './token-provider';
 import { Subscription } from './subscription';
 import { ErrorResponse, Event } from './base-client';
 import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
+import { Logger } from './logger';
 
 export interface ResumableSubscribeOptions {
     path: string;
@@ -13,6 +14,7 @@ export interface ResumableSubscribeOptions {
     onEnd?: () => void;
     onError?: (error: Error) => void;
     retryStrategy?: RetryStrategy;
+    logger?: Logger;
 }
 
 export enum ResumableSubscriptionState {
@@ -43,8 +45,7 @@ export class ResumableSubscription {
     private subscription: Subscription;
     private lastEventIdReceived: string;
     private retryStrategy: RetryStrategy = new ExponentialBackoffRetryStrategy({});
-
-    private log: (message: string) => void = (message) => {};
+    private logger?: Logger;
 
     constructor(
         private xhrSource: () => XMLHttpRequest,
@@ -52,6 +53,7 @@ export class ResumableSubscription {
     ) {
         this.assertState = assertState.bind(this, ResumableSubscriptionState);
         this.lastEventIdReceived = options.lastEventId;
+        this.logger = options.logger;
     }
 
     tryNow(): void {
@@ -80,19 +82,20 @@ export class ResumableSubscription {
                 if (this.options.onEnd) { this.options.onEnd(); }
             },
             onError: (error: Error) => {
-                const shouldRetry = this.retryStrategy.shouldRetry(error);
-
-                if(shouldRetry instanceof Retry){
-                    this.state = ResumableSubscriptionState.OPENING;
-                    if (this.options.onOpening) { this.options.onOpening(); }
-                    this.backoff(shouldRetry.waitTimeMilis);
-                }
-                else {
-                    this.state = ResumableSubscriptionState.ENDED;
-                    if (this.options.onError) { this.options.onError(error); }
-                }
-            },
+                this.state = ResumableSubscriptionState.OPENING
+                this.retryStrategy.attemptRetry(error).then((err) => {
+                    if(err){
+                        this.state = ResumableSubscriptionState.ENDED;
+                        if (this.options.onError) { this.options.onError(error); }
+                    }
+                    else{
+                        //Opening state? - how to show it?
+                        this.tryNow();
+                    }
+                })},
+            logger: this.logger
         });
+               
         if (this.options.tokenProvider) {
             this.options.tokenProvider.fetchToken().then((jwt) => {
                 this.subscription.open(jwt);
@@ -102,12 +105,6 @@ export class ResumableSubscription {
         } else {
             this.subscription.open(null);
         }
-    }
-
-    backoff(delayMillis: number): void {
-        
-        console.log("Trying reconnect in " + delayMillis + " ms.");
-        window.setTimeout(this.tryNow.bind(this), delayMillis);
     }
 
     open(): void {

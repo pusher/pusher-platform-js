@@ -1,6 +1,7 @@
 import { ErrorResponse, NetworkError } from './base-client';
+import { DefaultLogger, EmptyLogger, Logger } from './logger';
 export interface RetryStrategy {
-    shouldRetry(error: Error): RetryStrategyResult;
+    attemptRetry(error: Error): Promise<Error>;
 }
 
 export interface RetryStrategyResult {}
@@ -21,7 +22,7 @@ export class DoNotRetry implements RetryStrategyResult {
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
-    private logger: any;
+    private logger: Logger;
 
     private limit: number = 6;
     private retryCount = 0;
@@ -33,15 +34,20 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         if(options.limit) this.limit = options.limit;
         if(options.initialBackoffMilis) this.currentBackoffMilis = options.initialBackoffMilis;
         if(options.maxBackoffMilis) this.maxBackoffMilis = options.maxBackoffMilis;
-        if(options.logger) this.logger = options.logger;
+
+        if(options.logger) {
+            this.logger = options.logger;
+        } else{ 
+            this.logger = new DefaultLogger();
+        }
     }
 
-    shouldRetry(error: Error): RetryStrategyResult {
+    private shouldRetry(error: Error): RetryStrategyResult {
 
-        this.log("Error received: " + error);
+        this.logger.debug(`${this.constructor.name}:  Error received`, error);
         
         if(this.retryCount >= this.limit && this.limit > 0 ){
-            this.log("Retry count is over the maximum limit: " + this.limit);
+            this.logger.debug(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
         }
 
@@ -56,17 +62,32 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 this.currentBackoffMilis = this.calulateMilisToRetry();
                 this.retryCount += 1;
             
-                this.log("Will attempt to retry in: " + this.currentBackoffMilis);
+                this.logger.debug(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMilis}`);
                 return new Retry(this.currentBackoffMilis)
             }
-        
         }
 
         else{
-            this.log("Error is not retryable. " + error);
+            this.logger.debug(`${this.constructor.name}: Error is not retryable`, error);
             return new DoNotRetry(error);
         }
     }
+
+    attemptRetry(error: Error): Promise<Error> {
+        return new Promise((resolve, reject) => {
+
+            let shouldRetry = this.shouldRetry(error);
+
+            if(shouldRetry instanceof DoNotRetry){
+                resolve(error);
+            }
+            else if(shouldRetry instanceof Retry) {
+                window.setTimeout(resolve, shouldRetry.waitTimeMilis);
+            }
+        });
+    }
+
+
 
     isRetryable(error: Error): RetryableResult {
         let retryable: RetryableResult = {
@@ -81,16 +102,8 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                  retryable.isRetryable = true;
                  retryable.backoffMillis = parseInt(error.headers["retry-after"]) * 1000;
              }
-             //TODO: Permit 500s?
-             else if( error.statusCode >= 500 ) retryable.isRetryable = true; 
          }
         return retryable;
-    }
-
-    log(message: any): void {
-        if(this.logger){
-            this.logger.log(message);
-        }
     }
 
     private calulateMilisToRetry(): number{

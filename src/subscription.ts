@@ -1,5 +1,6 @@
 import { TokenProvider } from './token-provider';
 import { ErrorResponse, NetworkError, Event, XhrReadyState } from './base-client';
+import { Logger } from './logger';
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
@@ -18,6 +19,7 @@ export interface SubscribeOptions {
     onEvent?: (event: Event) => void;
     onEnd?: () => void;
     onError?: (error: Error) => void;
+    logger: Logger;
 }
 
 // Asserts that the subscription state is one of the specified values,
@@ -119,7 +121,6 @@ export class Subscription {
                     }
                     else{
                         this.options.onError(ErrorResponse.fromXHR(this.xhr));
-                        console.log(this.xhr);
                     }
                 }
             }

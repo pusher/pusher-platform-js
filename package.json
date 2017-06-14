@@ -24,7 +24,7 @@
     "test-jest": "jest test/*.test.js",
     "test": "yarn build && yarn test-legacy && yarn test-jest"
   },
-  "version": "0.2.3",
+  "version": "0.3.0",
   "dependencies": {
     "jwt-simple": "^0.5.1"
   }
