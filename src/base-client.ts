@@ -1,6 +1,7 @@
 import { TokenProvider } from './token-provider';
 import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
+import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
 
 export interface BaseClientOptions {
     cluster: string;
@@ -26,6 +27,7 @@ export interface RequestOptions {
   jwt?: string;
   headers?: Headers;
   body?: any;
+  retryStrategy?: RetryStrategy;
 }
 
 export function responseHeadersObj(headerStr: string): Headers {
@@ -44,20 +46,34 @@ export function responseHeadersObj(headerStr: string): Headers {
       headers[key] = val;
     }
   }
-
   return headers;
 }
 
-export class ErrorResponse {
-  public statusCode: number;
-  public headers: Headers;
-  public info: any;
+export class ErrorResponse extends Error{
+    public statusCode: number;
+    public headers: Headers;
+    public info: any;
 
-  constructor(xhr: XMLHttpRequest) {
-    this.statusCode = xhr.status;
-    this.headers = responseHeadersObj(xhr.getAllResponseHeaders());
-    this.info = xhr.responseText;
+    constructor(statusCode: number, headers: Headers, info: any) {
+        super(`ErroResponse: ${statusCode}: ${info} \n Headers: ${JSON.stringify(headers)}`);
+        this.statusCode = statusCode;
+        this.headers = headers;
+        this.info = info;
   }
+
+  static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
+        return new ErrorResponse(
+            xhr.status, responseHeadersObj(xhr.getAllResponseHeaders()), xhr.responseText);
+  }
+}
+
+export class NetworkError extends Error {
+    public error: any;
+
+    constructor(error: any){
+        super();
+        this.error = error;
+    }
 }
 
 // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
@@ -89,7 +105,7 @@ export class BaseClient {
                     if (xhr.status === 200) {
                         resolve(xhr.responseText);
                     } else {
-                        reject(new ErrorResponse(xhr));
+                        reject(ErrorResponse.fromXHR(xhr));
                     }
                 }
             };
