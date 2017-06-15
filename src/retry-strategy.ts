@@ -73,21 +73,19 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         }
     }
 
-    attemptRetry(error: Error): Promise<Error> {
+    attemptRetry(error: Error): Promise<any> {
         return new Promise((resolve, reject) => {
 
             let shouldRetry = this.shouldRetry(error);
 
             if(shouldRetry instanceof DoNotRetry){
-                resolve(error);
+                reject(error);
             }
             else if(shouldRetry instanceof Retry) {
                 window.setTimeout(resolve, shouldRetry.waitTimeMilis);
             }
         });
     }
-
-
 
     isRetryable(error: Error): RetryableResult {
         let retryable: RetryableResult = {

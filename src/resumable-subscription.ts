@@ -83,15 +83,11 @@ export class ResumableSubscription {
             },
             onError: (error: Error) => {
                 this.state = ResumableSubscriptionState.OPENING
-                this.retryStrategy.attemptRetry(error).then((err) => {
-                    if(err){
-                        this.state = ResumableSubscriptionState.ENDED;
-                        if (this.options.onError) { this.options.onError(error); }
-                    }
-                    else{
-                        //Opening state? - how to show it?
-                        this.tryNow();
-                    }
+                this.retryStrategy.attemptRetry(error)
+                .then(() => {this.tryNow})
+                .catch(error => {
+                    this.state = ResumableSubscriptionState.ENDED;
+                    if (this.options.onError) { this.options.onError(error); }
                 })},
             logger: this.logger
         });
