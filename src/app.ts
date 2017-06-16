@@ -79,10 +79,10 @@ export default class App {
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
         options.logger = this.logger;
         options.path = this.absPath(options.path);
-        const authorizer = options.tokenProvider || this.tokenProvider;
+        const tokenProvider = options.tokenProvider || this.tokenProvider;
 
         let resumableSubscription: ResumableSubscription =
-            this.client.newResumableSubscription({ authorizer, ...options });
+            this.client.newResumableSubscription({ tokenProvider, ...options });
 
         resumableSubscription.open();
 
