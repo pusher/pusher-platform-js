@@ -26,7 +26,7 @@ Use Webpack.
 Import it with:
 
 ```JavaScript
-import * as PusherPlatform from `pusher-platform`
+import PusherPlatform from `pusher-platform`
 ```
 
 Then you can access all exported classes by calling referencing them from it: `PusherPlatform.App`.
