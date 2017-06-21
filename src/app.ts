@@ -31,7 +31,8 @@ export default class App {
         this.serviceId = options.serviceId;
         this.tokenProvider = options.tokenProvider;
         this.client = options.client || new BaseClient({
-            cluster: options.cluster || DEFAULT_CLUSTER,
+            cluster:
+                options.cluster.replace(/^https:\/\//, "") || DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
         if(options.logger){
