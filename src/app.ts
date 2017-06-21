@@ -5,7 +5,7 @@ import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
 import { DefaultLogger, Logger } from './logger';
 
-const DEFAULT_CLUSTER = "api-ceres.kube.pusherplatform.io";
+const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
 
 export interface AppOptions {
 
