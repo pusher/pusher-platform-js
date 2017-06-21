@@ -20,7 +20,6 @@ export interface AppOptions {
 type Response = any;
 
 export default class App {
-
     private client: BaseClient;
 
     private serviceId: string;
