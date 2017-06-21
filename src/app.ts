@@ -31,8 +31,8 @@ export default class App {
         this.serviceId = options.serviceId;
         this.tokenProvider = options.tokenProvider;
         this.client = options.client || new BaseClient({
-            cluster:
-                options.cluster.replace(/^https?:\/\//, "") || DEFAULT_CLUSTER,
+            cluster: options.cluster ?
+                sanitizeCluster(options.cluster) : DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
         if(options.logger){
@@ -93,4 +93,10 @@ export default class App {
     private absPath(relativePath: string): string {
         return `/apps/${this.serviceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
+}
+
+function sanitizeCluster(cluster) {
+    return cluster
+        .replace(/^[^\/:]*:\/\//, "") // remove schema
+        .replace(/\/$/, ""); // remove trailing slash
 }
