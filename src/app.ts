@@ -32,7 +32,7 @@ export default class App {
         this.tokenProvider = options.tokenProvider;
         this.client = options.client || new BaseClient({
             cluster:
-                options.cluster.replace(/^https?:\/\//, "") || DEFAULT_CLUSTER,
+                options.cluster.replace(/^[^\/:]*:\/\//, "") || DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
         if(options.logger){
