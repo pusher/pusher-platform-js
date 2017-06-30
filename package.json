@@ -19,7 +19,7 @@
     "webpack": "^2.5.1"
   },
   "scripts": {
-    "build": "webpack -p",
+    "build": "webpack",
     "test-legacy": "node test/test-legacy.js",
     "test-jest": "jest test/*.test.js",
     "test": "yarn build && yarn test-legacy && yarn test-jest"
