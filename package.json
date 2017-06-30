@@ -2,6 +2,7 @@
   "name": "pusher-platform-js",
   "description": "Pusher Platform client library for web browsers",
   "main": "target/pusher-platform.js",
+  "types": "target/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/pusher-platform-js",
@@ -13,6 +14,7 @@
     "url": "git+https://github.com/pusher/pusher-platform-js.git"
   },
   "devDependencies": {
+    "dts-bundle": "^0.7.3",
     "jest": "^20.0.4",
     "ts-loader": "^2.1.0",
     "typescript": "^2.3.2",
@@ -24,7 +26,7 @@
     "test-jest": "jest test/*.test.js",
     "test": "yarn build && yarn test-legacy && yarn test-jest"
   },
-  "version": "0.3.4",
+  "version": "0.3.6",
   "dependencies": {
     "jwt-simple": "^0.5.1"
   }
