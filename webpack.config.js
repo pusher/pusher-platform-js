@@ -29,7 +29,7 @@ const baseConfig = {
 
 const minifiedConfig = Object.assign({}, baseConfig, {
   output: Object.assign({}, baseConfig.output, {
-    filename: '/[name].min.js',
+    filename: '[name].min.js',
   }),
   plugins: [
     ...baseConfig.plugins,
