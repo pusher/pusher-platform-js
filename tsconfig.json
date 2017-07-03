@@ -4,9 +4,10 @@
     "sourceMap": true,
     "module": "commonjs",
     "lib": ["ES6", "dom"],
-    "declaration": true  
-    },
-    "exclude": [
-      "node_modules"
-    ]
+    "strict": true,
+    "declaration": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }
