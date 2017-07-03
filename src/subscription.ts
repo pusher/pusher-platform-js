@@ -79,13 +79,14 @@ export class Subscription {
                     this.assertState(['OPEN', 'ENDING']);
 
                     if (err != null) {
-                        this.xhr.abort();
+                        this.state = SubscriptionState.ENDED;
+                        if((err as ErrorResponse).statusCode != 204){
+                            if (this.options.onError) { this.options.onError(err); }
+                        }
                         // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
                         // and so we will not call the event handler again.
                         // Finish with options.onError instead of the options.onEnd.
 
-                        this.state = SubscriptionState.ENDED;
-                        if (this.options.onError) { this.options.onError(err); }
                     } else {
                         // We consumed some response text, and all's fine. We expect more text.
                     }
@@ -105,16 +106,30 @@ export class Subscription {
                     let err = this.onChunk();
                     if (err !== null && err !== undefined) {
                         this.state = SubscriptionState.ENDED;
-                        if (this.options.onError) { this.options.onError(err); }
-                    } else if (this.state !== SubscriptionState.ENDING) {
+
+                        if((err as any).statusCode === 204){
+                            
+                            if (this.options.onEnd) {
+                                this.options.onEnd();
+                            }
+                        }
+                        else{
+                            if (this.options.onError) { this.options.onError(err); }
+                        }
+                    } else if (this.state <= SubscriptionState.ENDING) {
                         if (this.options.onError) { this.options.onError(new Error("HTTP response ended without receiving EOS message")); }
                     } else {
                         // Stream ended normally.
                         if (this.options.onEnd) { this.options.onEnd(); }
                     }
-                } else {
+               
+                } 
+                
+                else {
+
                     // The server responded with a bad status code (finish with onError).
                     // Finish with an error.
+
                     this.assertState(['OPENING', 'OPEN', 'ENDED']);
                     if (this.state === SubscriptionState.ENDED) {
                         // We aborted the request deliberately, and called onError/onEnd elsewhere.
@@ -124,10 +139,6 @@ export class Subscription {
                     }
                 }
             }
-        };
-
-        xhr.onerror = (event: ErrorEvent) => {
-            if (this.options.onError) { this.options.onError(new NetworkError(event)); }
         };
     }
 

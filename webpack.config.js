@@ -1,14 +1,11 @@
-const path = require('path');
 const webpack = require('webpack');
 
-const baseConfig = {
-  context: path.resolve('./src'),
+module.exports = {
   entry: {
-    'pusher-platform': './index.ts',
+    'pusher-platform': './src/index.ts'
   },
   output: {
-    path: path.resolve('./target'),
-    filename: '[name].js',
+    filename: 'target/[name].js',
     libraryTarget: 'umd',
     library: 'PusherPlatform',
   },
@@ -20,8 +17,8 @@ const baseConfig = {
       {
         test: /\.ts$/,
         loader: `ts-loader?${ JSON.stringify({ logInfoToStdOut: true }) }`,
-        exclude: /node_modules/,
-      },
+        exclude: [/node_modules/, /target/ ]
+      }
     ],
   },
   plugins: [
@@ -36,32 +33,10 @@ DtsBundlePlugin.prototype.apply = function (compiler) {
 
     dts.bundle({
       name: 'pusher-platform',
-      main: 'target/index.d.ts',
-      out: './index.d.ts',
+      main: 'src/index.d.ts',
+      out: '../target/index.d.ts',
       removeSource: true,
       outputAsModuleFolder: true // to use npm in-package typings
     });
   });
 };
-
-const minifiedConfig = Object.assign({}, baseConfig, {
-  output: Object.assign({}, baseConfig.output, {
-    filename: '[name].min.js',
-  }),
-  plugins: [
-    ...baseConfig.plugins,
-    new webpack.optimize.UglifyJsPlugin({
-      compress: {
-        warnings: false,
-        screw_ie8: true,
-      },
-      comments: false,
-      sourceMap: true,
-    }),
-  ],
-});
-
-module.exports = [
-  baseConfig,
-  minifiedConfig,
-];

@@ -2,7 +2,7 @@
  * This runs a bunch of tests on our subscription logic.
  */
 
-var PusherPlatform = require("../target/pusher-platform.js").default;
+var PusherPlatform = require("../../target/pusher-platform.js").default;
 
 function assertEquals(a, b, e) {
   if (a !== b) {
