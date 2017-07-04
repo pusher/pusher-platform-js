@@ -2,7 +2,7 @@
   "name": "pusher-platform-js",
   "description": "Pusher Platform client library for web browsers",
   "main": "target/pusher-platform.js",
-  "version": "0.5.0 ",
+  "version": "0.5.0",
   "types": "target/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
