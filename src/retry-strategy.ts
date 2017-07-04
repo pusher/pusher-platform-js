@@ -1,5 +1,5 @@
 import { ErrorResponse, NetworkError } from './base-client';
-import { DefaultLogger, EmptyLogger, Logger } from './logger';
+import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 export interface RetryStrategy {
     attemptRetry(error: Error): Promise<Error>;
 }
@@ -35,19 +35,19 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         if(options.initialBackoffMilis) this.currentBackoffMilis = options.initialBackoffMilis;
         if(options.maxBackoffMilis) this.maxBackoffMilis = options.maxBackoffMilis;
 
-        if(options.logger) {
+        if(options.logger !== undefined) {
             this.logger = options.logger;
         } else{ 
-            this.logger = new DefaultLogger();
+            this.logger = new EmptyLogger();
         }
     }
 
     private shouldRetry(error: Error): RetryStrategyResult {
 
-        this.logger.debug(`${this.constructor.name}:  Error received`, error);
+        this.logger.verbose(`${this.constructor.name}:  Error received`, error);
         
         if(this.retryCount >= this.limit && this.limit > 0 ){
-            this.logger.debug(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
+            this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
         }
 
@@ -62,13 +62,13 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 this.currentBackoffMilis = this.calulateMilisToRetry();
                 this.retryCount += 1;
             
-                this.logger.debug(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMilis}`);
+                this.logger.verbose(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMilis}`);
                 return new Retry(this.currentBackoffMilis)
             }
         }
 
         else{
-            this.logger.debug(`${this.constructor.name}: Error is not retryable`, error);
+            this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
             return new DoNotRetry(error);
         }
     }

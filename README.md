@@ -88,7 +88,7 @@ Like a subscription, but allows you to specify a `lastEventId` that will return 
 
 This is almost identical to Subscribe with the `lastEventId` and `retryStrategy`. By default it will use `ExponentialBackoffRetryStrategy`.
 
-### BaseClient
+### BaseClient
 
 This makes all the requests and executes them. They are [standard XHR objects](https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest). 
 It also creates XHRs that are used to create instances of `Subscription` and `ResumableSubscription`
@@ -134,10 +134,6 @@ export interface ResumableSubscribeOptions {
 
 Works the same as Subscription with the optional `retryStrategy` and `lastEventId`.
 
-### TokenProvider
-
-This will probably change.
-
 ### RetryStrategy
 
 __Note: currently this is not exported in the top-level.__
@@ -160,6 +156,8 @@ Configuration:
 ### Logger
 
 It logs things. 
+Interface:
+
 ```typescript
 export interface Logger {
     verbose(message: string, error?: Error);
@@ -170,7 +168,23 @@ export interface Logger {
 }
 ```
 
-Default implementation logs to console. You initiate it with a treshold for verbosity to filter log messages.
+You can pass it to the `App` object at startup. The default implementation is the `ConsoleLogger`. You initiate it with a threshold for the log level (defaults to `LogLevel.DEBUG`). It will log everything at or above this log level.
+
+The default log levels are:
+
+```typescript
+export enum LogLevel {
+     VERBOSE = 1,
+     DEBUG = 2,
+     INFO = 3,
+     WARNING = 4,
+     ERROR = 5
+}
+```
+
+### TokenProvider
+
+__DEPRECATED__ This will probably change.
 
 ## Building
 
