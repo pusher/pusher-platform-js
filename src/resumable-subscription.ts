@@ -44,7 +44,7 @@ export class ResumableSubscription {
     private assertState: Function;
     private subscription: Subscription;
     private lastEventIdReceived: string;
-    private retryStrategy: RetryStrategy = new ExponentialBackoffRetryStrategy({});
+    private retryStrategy: RetryStrategy;
     private logger?: Logger;
 
     constructor(
@@ -54,6 +54,15 @@ export class ResumableSubscription {
         this.assertState = assertState.bind(this, ResumableSubscriptionState);
         this.lastEventIdReceived = options.lastEventId;
         this.logger = options.logger;
+        
+        if(options.retryStrategy !== undefined){
+             this.retryStrategy = options.retryStrategy;
+        }
+        else{
+            this.retryStrategy = new ExponentialBackoffRetryStrategy({
+                logger: this.logger
+            })
+        }
     }
 
     tryNow(): void {
@@ -107,7 +116,7 @@ export class ResumableSubscription {
         this.tryNow();
     }
 
-    unsubscribe() {
-        this.subscription.unsubscribe(); // We'll get onEnd and bubble this up
+    unsubscribe(error?: Error) {
+        this.subscription.unsubscribe(error); // We'll get onEnd and bubble this up
     }
 }

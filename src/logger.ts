@@ -15,41 +15,57 @@ export interface Logger {
     error(message: string, error?: Error);
 }
 
-export class DefaultLogger implements Logger {
-    private treshold: LogLevel;
+/**
+ * Default implementation of the Logger. Wraps standards console calls.
+ * Logs only calls that are at or above the threshold (verbose/debug/info/warn/error)
+ * If error is passed, it will append the message to the error object. 
+ */
+export class ConsoleLogger implements Logger {
+    private threshold: LogLevel;
 
-    constructor(treshold: LogLevel = 2){
-        this.treshold = treshold;
+    constructor(threshold: LogLevel = 2){
+        this.threshold = threshold;
     }
 
-    private log(level: LogLevel, message: string, error?: Error): void {
-        if(level >= this.treshold){
-            console.log(message);
+    private log(
+        logFunction: (msg) => void, 
+        level: LogLevel, 
+        message: string, 
+        error?: Error): void {
 
-            if(error) {
-                console.log(error);
+            if(level >= this.threshold){
+                let loggerSignature = `Logger.${LogLevel[level]}`;
+
+                if(error){
+                    console.group();
+                    logFunction(`${loggerSignature}: ${message}`);
+                    logFunction(error);
+                    console.groupEnd();
+                }
+                else{
+                    logFunction(`${loggerSignature}: ${message}`);
+                }
             }
-        }
     }
 
     verbose(message: string, error?: Error){
-        this.log(LogLevel.VERBOSE, message, error);
+        this.log(console.log, LogLevel.VERBOSE, message, error);
     }
 
     debug(message: string, error?: Error){
-        this.log(LogLevel.DEBUG, message, error);
+        this.log(console.log, LogLevel.DEBUG, message, error);
     }
 
     info(message: string, error?: Error){
-        this.log(LogLevel.INFO, message, error);
+        this.log(console.info, LogLevel.INFO, message, error);
     }
 
     warn(message: string, error?: Error){
-        this.log(LogLevel.WARNING, message, error);
+        this.log(console.warn, LogLevel.WARNING, message, error);
     }
 
     error(message: string, error?: Error){
-        this.log(LogLevel.ERROR, message, error);
+        this.log(console.error, LogLevel.ERROR, message, error);
     }
 }
 

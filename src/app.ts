@@ -1,9 +1,9 @@
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
-import { Subscription, SubscribeOptions } from './subscription';
-import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription'; 
-import { DefaultLogger, Logger } from './logger';
+import { ConsoleLogger, Logger } from './logger';
+import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
+import { SubscribeOptions, Subscription } from './subscription';
 
 const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
 
@@ -34,11 +34,12 @@ export default class App {
                 sanitizeCluster(options.cluster) : DEFAULT_CLUSTER,
             encrypted: options.encrypted
         });
-        if(options.logger){
+
+        if(options.logger !== undefined){
             this.logger = options.logger;
         }
         else{
-            this.logger = new DefaultLogger();
+            this.logger = new ConsoleLogger();
         }
     }
 
@@ -72,11 +73,11 @@ export default class App {
         } else {
             subscription.open(null);
         }
-
         return subscription;
     }
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
+        if(!options.logger) options.logger = this.logger;
         options.logger = this.logger;
         options.path = this.absPath(options.path);
         const tokenProvider = options.tokenProvider || this.tokenProvider;
