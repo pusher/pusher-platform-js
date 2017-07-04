@@ -14,6 +14,7 @@ export interface ResumableSubscribeOptions {
     onEnd?: () => void;
     onError?: (error: Error) => void;
     retryStrategy?: RetryStrategy;
+    onRetry?: ()=>void;
     logger?: Logger;
 }
 
@@ -84,7 +85,13 @@ export class ResumableSubscription {
             onError: (error: Error) => {
                 this.state = ResumableSubscriptionState.OPENING
                 this.retryStrategy.attemptRetry(error)
-                .then(() => {this.tryNow})
+                .then(() => {
+                  if (this.options.onRetry !== null) {
+                    this.options.onRetry();
+                  } else {
+                    this.tryNow();
+                  }
+                })
                 .catch(error => {
                     this.state = ResumableSubscriptionState.ENDED;
                     if (this.options.onError) { this.options.onError(error); }
