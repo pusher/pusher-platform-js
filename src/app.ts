@@ -1,15 +1,9 @@
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
-<<<<<<< HEAD
 import { ConsoleLogger, Logger } from './logger';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
 import { SubscribeOptions, Subscription } from './subscription';
-=======
-import { Subscription, SubscribeOptions } from './subscription';
-import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription';
-import { DefaultLogger, Logger } from './logger';
->>>>>>> Catches for missing serviceId in App options
 
 const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
 
