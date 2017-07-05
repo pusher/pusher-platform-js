@@ -9,7 +9,10 @@ const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
 
 export interface InstanceOptions {
 
-    serviceId: string;
+    instanceId: string;
+    serviceName: string;
+    serviceVersion: string;
+
     tokenProvider?: TokenProvider;
     client?: BaseClient;
     cluster?: string;
@@ -20,18 +23,32 @@ export interface InstanceOptions {
 type Response = any;
 
 export default class Instance {
+
     private client: BaseClient;
 
     private instanceId: string;
+    private serviceVersion: string;
+    private serviceName: string;
+
     private tokenProvider: TokenProvider;
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
-        if (!options.serviceId) {
-          throw new Error('Expected `serviceId` property in App options')
+        if (!options.instanceId) {
+          throw new Error('Expected `instanceId` property in Instance options!');
         }
-        this.instanceId = options.serviceId;
+        if(!options.serviceName){
+            throw new Error('Expected `serviceName` property in Instance options!');
+        }
+        if(!options.serviceVersion){
+            throw new Error('Expected `serviceVersion` property in Instance otpions!');
+        }
+
+        this.instanceId = options.instanceId;
+        this.serviceName = options.serviceName;
+        this.serviceVersion = options.serviceVersion;
         this.tokenProvider = options.tokenProvider;
+
         this.client = options.client || new BaseClient({
             cluster: options.cluster ?
                 sanitizeCluster(options.cluster) : DEFAULT_CLUSTER,
@@ -93,9 +110,8 @@ export default class Instance {
         return resumableSubscription;
     }
 
-    private absPath(relativePath: string, serviceName: string): string {
-        let newUrl = `/services/${serviceName}/v1/${this.instanceId}`.replace(/\/+/g, "/").replace(/\/+$/, "");
-        return `/apps/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+    private absPath(relativePath: string): string {
+        return `/services/${this.serviceName}/${this.serviceVersion}/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
 }
 

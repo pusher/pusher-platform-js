@@ -4,9 +4,9 @@ const PATH_10_AND_EOS = "services/platform_lib_tester/v1/subscribe10";
 const PATH_3_AND_OPEN = "services/platform_lib_tester/v1/subscribe_3_continuous";
 const PATH_0_EOS = "services/platform_lib_tester/v1/subscribe_0_eos";
 
-describe('App Subscribe', () => {
+describe('Instance Subscribe', () => {
 
-    const app = new PusherPlatform.App({
+    const instance = new PusherPlatform.Instance({
             serviceId: "1",
             cluster: "localhost:10443",
             encrypted: true
@@ -16,7 +16,7 @@ describe('App Subscribe', () => {
 
     it('subscribes and terminates on EOS after receiving all events', (done) => {
         let eventCount = 0;
-        app.subscribe({
+        instance.subscribe({
             path: PATH_10_AND_EOS,
             onEvent: (event) => {
                 eventCount += 1;
@@ -33,7 +33,7 @@ describe('App Subscribe', () => {
 
     it('subscribes, terminates on EOS, and triggers onEnd callback exactly once', (done) => {
         let endCount = 0;
-        app.subscribe({
+        instance.subscribe({
             path: PATH_10_AND_EOS,
             onEvent: (event) => {},
             onEnd: () => {
@@ -50,12 +50,12 @@ describe('App Subscribe', () => {
     it('subscribes to a subscription that is kept open', (done) => {
         let eventCount = 0;
         
-        let app = new PusherPlatform.App({
+        let instance = new PusherPlatform.Instance({
             serviceId: "1",
             cluster: "localhost:10443",
             encrypted: true
         });
-        let sub = app.subscribe({
+        let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
             onEvent: (event) => {
                 eventCount += 1;                
@@ -78,7 +78,7 @@ describe('App Subscribe', () => {
 
     it('subscribes and then unsubscribes - expecrting onEnd', (done) => {
         let eventCount = 0;
-        let sub = app.subscribe({
+        let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
             onEvent: (event) => {
                 eventCount += 1;                
@@ -103,7 +103,7 @@ describe('App Subscribe', () => {
         let errorThrown = new Error("expected");
 
         let eventCount = 0;
-        let sub = app.subscribe({
+        let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
             onEvent: (event) => {
                 eventCount += 1;                
@@ -126,7 +126,7 @@ describe('App Subscribe', () => {
 
     it('subscribes and receives EOS immediately - expecting onEnd with no events', (done) => {
         let eventCount = 0;
-         let sub = app.subscribe({
+         let sub = instance.subscribe({
             path: PATH_0_EOS,
             onEvent: (event) => {
                 fail("No events should have been received");
@@ -141,7 +141,7 @@ describe('App Subscribe', () => {
     });
 
     it('subsccribes and receives EOS with retry-after headers', (done) => {
-        let sub = app.subscribe({
+        let sub = instance.subscribe({
             path: "services/platform_lib_tester/v1/subscribe_retry_after",
             onEvent: (event) => {
                 fail("No events should have been received");

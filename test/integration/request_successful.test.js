@@ -1,18 +1,18 @@
 const { default: PusherPlatform} = require('../../target/pusher-platform.js');
 
-describe('App Requests - Successful', () => {
+describe('Instance Requests - Successful', () => {
 
-    let app;
+    let instance;
 
     beforeAll(() => {
-        app = new PusherPlatform.App({
+        instance = new PusherPlatform.Instance({
             serviceId: "1",
             cluster: "localhost:10443"
         });
     })
 
     it('makes a successful GET request', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
             path: "services/platform_lib_tester/v1/get_ok"
         }).then((res) => {
@@ -21,7 +21,7 @@ describe('App Requests - Successful', () => {
     });
 
    it('makes a successful POST request', (done) => {
-        app.request({
+        instance.request({
             method: "POST",
             path: "services/platform_lib_tester/v1/post_ok"
         }).then((res) => {
@@ -31,7 +31,7 @@ describe('App Requests - Successful', () => {
 
 
     it('makes a successful POST request with body', (done) => {
-        app.request({
+        instance.request({
             method: "post",
             path: "services/platform_lib_tester/v1/post_ok",
             body: {
@@ -45,7 +45,7 @@ describe('App Requests - Successful', () => {
 
 
     it('makes a successful PUT request', (done) => {
-        app.request({
+        instance.request({
             method: "PUT",
             path: "services/platform_lib_tester/v1/put_ok"
         }).then((res) => {
@@ -54,7 +54,7 @@ describe('App Requests - Successful', () => {
     });
 
     it('makes a successful DELETE request', (done) => {
-        app.request({
+        instance.request({
             method: "DELETE",
             path: "services/platform_lib_tester/v1/delete_ok"
         }).then((res) => {

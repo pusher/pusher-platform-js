@@ -11,7 +11,7 @@ If you have any issues please open an issue on Github. That is the main issue tr
 We assume you use yarn/npm in your development workflow. You can grab it from the npm/yarn repository:
 
 ```bash
-yarn add 'pusher-platform-js'
+yarn add 'pusher-platform'
 ```
 
 The latest working version will always be published there. 
@@ -29,32 +29,33 @@ Currently there are two ways to import it - either import the whole thing:
 ```javascript
 import PusherPlatform from `pusher-platform`;
 
-let app = new PusherPlatfrm.App(...);
+let instance = new PusherPlatfrm.Instance(...);
 ```
 
 Or import individual components:
 Currently you can access:
-- App
+- Instance
 - BaseClient
 - Subscription
 - ResumableSubscription
 
 ```javascript
-import { App, ResumableSubscription } from `pusher-platform`;
+import { Instance, ResumableSubscription } from `pusher-platform`;
 
-let app = new App(...);
+let instance = new Instance(...);
 ```
 
-### App
+### Instance
 
-__note: App will be renamed soon, most likely to Instance__
+This is the main entry point - represents a single instance of a service running on the Elements infrastructure.
+Initialise with an `InstanceOptions` object that MUST contain at least the `instanceId`, `serviceName`, and `serviceVersion`.
 
-This is the main entry point - represents a single Elements app.
-Initialise with an `AppOptions` object that contains at least the `serviceId`.
-
-AppOptions: 
+InstanceOptions: 
 ```typescript
-    serviceId: string; // Mandatory
+    serviceName: string; //Mandatory
+    instanceId: string; // Mandatory
+    serviceVersion: string //Mandatory
+
     cluster?: string; // Defaults to "api-ceres.pusherplatform.io"
     encrypted?: boolean;
 
@@ -172,7 +173,7 @@ export interface Logger {
 }
 ```
 
-You can pass it to the `App` object at startup. The default implementation is the `ConsoleLogger`. You initiate it with a threshold for the log level (defaults to `LogLevel.DEBUG`). It will log everything at or above this log level.
+You can pass it to the `Instance` object at startup. The default implementation is the `ConsoleLogger`. You initiate it with a threshold for the log level (defaults to `LogLevel.DEBUG`). It will log everything at or above this log level.
 
 The default log levels are:
 
