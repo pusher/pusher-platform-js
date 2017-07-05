@@ -86,7 +86,7 @@ export class ResumableSubscription {
                 this.state = ResumableSubscriptionState.OPENING
                 this.retryStrategy.attemptRetry(error)
                 .then(() => {
-                  if (this.options.onRetry !== null) {
+                  if (this.options.onRetry !== undefined) {
                     this.options.onRetry();
                   } else {
                     this.tryNow();
