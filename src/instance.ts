@@ -7,7 +7,7 @@ import { SubscribeOptions, Subscription } from './subscription';
 
 const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
 
-export interface AppOptions {
+export interface InstanceOptions {
 
     serviceId: string;
     tokenProvider?: TokenProvider;
@@ -19,18 +19,18 @@ export interface AppOptions {
 
 type Response = any;
 
-export default class App {
+export default class Instance {
     private client: BaseClient;
 
-    private serviceId: string;
+    private instanceId: string;
     private tokenProvider: TokenProvider;
     private logger: Logger;
 
-    constructor(options: AppOptions) {
+    constructor(options: InstanceOptions) {
         if (!options.serviceId) {
           throw new Error('Expected `serviceId` property in App options')
         }
-        this.serviceId = options.serviceId;
+        this.instanceId = options.serviceId;
         this.tokenProvider = options.tokenProvider;
         this.client = options.client || new BaseClient({
             cluster: options.cluster ?
@@ -93,8 +93,9 @@ export default class App {
         return resumableSubscription;
     }
 
-    private absPath(relativePath: string): string {
-        return `/apps/${this.serviceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+    private absPath(relativePath: string, serviceName: string): string {
+        let newUrl = `/services/${serviceName}/v1/${this.instanceId}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+        return `/apps/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
 }
 
