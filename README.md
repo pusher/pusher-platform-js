@@ -2,6 +2,10 @@
 
 This is the official Pusher Platform client library for web browsers. Use it to build SDKs for services running on Pusher Platform / Elements infrastructure.
 
+## Issues?
+
+If you have any issues please open an issue on Github. That is the main issue tracker. Even better, open a PR with a failing test. Even betterer, open a PR with a fix.
+
 ## Installation
 
 We assume you use yarn/npm in your development workflow. You can grab it from the npm/yarn repository:
