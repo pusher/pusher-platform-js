@@ -7,8 +7,10 @@ describe('Instance requests - failing', () => {
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
-            serviceId: "1",
-            cluster: "localhost:10443"
+            instance: "v1:api-ceres:1",
+            serviceName: "platform_lib_tester",
+            serviceVersion: "v1",
+            host: "localhost:10443"
         });
     })
 

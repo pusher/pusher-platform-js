@@ -5,19 +5,20 @@ import { ConsoleLogger, Logger } from './logger';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
 import { SubscribeOptions, Subscription } from './subscription';
 
-const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
+const HOST_BASE = "pusherplatform.io";
 
 export interface InstanceOptions {
 
-    instanceId: string;
+    instance: string;
     serviceName: string;
     serviceVersion: string;
+    host?: string; //Allows to inject the hostname by default.
+    logger?: Logger;
 
     tokenProvider?: TokenProvider;
     client?: BaseClient;
-    cluster?: string;
+
     encrypted?: boolean;
-    logger?: Logger;
 }
 
 type Response = any;
@@ -25,8 +26,11 @@ type Response = any;
 export default class Instance {
 
     private client: BaseClient;
+    private host: string;
 
     private instanceId: string;
+    private cluster: string;
+    private platformVersion: string;
     private serviceVersion: string;
     private serviceName: string;
 
@@ -34,27 +38,31 @@ export default class Instance {
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
-        if (!options.instanceId) {
-          throw new Error('Expected `instanceId` property in Instance options!');
-        }
-        if(!options.serviceName){
-            throw new Error('Expected `serviceName` property in Instance options!');
-        }
-        if(!options.serviceVersion){
-            throw new Error('Expected `serviceVersion` property in Instance otpions!');
-        }
+        if (!options.instance) throw new Error('Expected `instance` property in Instance options!');
+        if (options.instance.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
+        if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
+        if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
+        
+        options.instance.split(":");
+        this.platformVersion = options[0];
+        this.cluster = options[1];
+        this.instanceId = options[2];
 
-        this.instanceId = options.instanceId;
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
         this.tokenProvider = options.tokenProvider;
 
-        this.client = options.client || new BaseClient({
-            cluster: options.cluster ?
-                sanitizeCluster(options.cluster) : DEFAULT_CLUSTER,
-            encrypted: options.encrypted
-        });
+        if(options.host){
+            this.host = options.host;
+        } else{
+            this.host = `${this.cluster}.${HOST_BASE}`;
+        }
 
+        this.client = options.client || new BaseClient({
+            encrypted: options.encrypted,
+            host: this.host
+        });
+        
         if(options.logger !== undefined){
             this.logger = options.logger;
         }
@@ -113,10 +121,4 @@ export default class Instance {
     private absPath(relativePath: string): string {
         return `/services/${this.serviceName}/${this.serviceVersion}/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
-}
-
-function sanitizeCluster(cluster) {
-    return cluster
-        .replace(/^[^\/:]*:\/\//, "") // remove schema
-        .replace(/\/$/, ""); // remove trailing slash
 }

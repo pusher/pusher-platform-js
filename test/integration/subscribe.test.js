@@ -6,11 +6,14 @@ const PATH_0_EOS = "services/platform_lib_tester/v1/subscribe_0_eos";
 
 describe('Instance Subscribe', () => {
 
-    const instance = new PusherPlatform.Instance({
-            serviceId: "1",
-            cluster: "localhost:10443",
-            encrypted: true
+    beforeAll(() => {
+        instance = new PusherPlatform.Instance({
+            instance: "v1:api-ceres:1",
+            serviceName: "platform_lib_tester",
+            serviceVersion: "v1",
+            host: "localhost:10443"
         });
+    });
 
     //TODO: use spies and expect methods to be called
 

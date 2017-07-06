@@ -5,11 +5,14 @@ const PATH_FORBIDDEN = "services/platform_lib_tester/v1/subscribe_forbidden";
 
 describe('Instance Subscribe errors nicely', () => {
 
-    const instance = new PusherPlatform.Instance({
-            serviceId: "1",
-            cluster: "localhost:10443",
-            encrypted: true
-    });
+    beforeAll(() => {
+        instance = new PusherPlatform.Instance({
+            instance: "v1:api-ceres:1",
+            serviceName: "platform_lib_tester",
+            serviceVersion: "v1",
+            host: "localhost:10443"
+        });
+    })
 
     it('handles 404', (done) => {
         instance.subscribe({

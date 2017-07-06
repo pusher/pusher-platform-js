@@ -4,7 +4,8 @@ import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-sub
 import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
 
 export interface BaseClientOptions {
-    cluster: string;
+    host: string;
+
     encrypted?: boolean;
     timeout?: number;
     XMLHttpRequest?: Function;
@@ -92,8 +93,8 @@ export class BaseClient {
     private XMLHttpRequest: any;
 
     constructor(private options: BaseClientOptions) {
-        let cluster = options.cluster.replace(/\/$/, '');
-        this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${cluster}`;
+        let host = options.host.replace(/\/$/, '');
+        this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
         this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
     }
 
