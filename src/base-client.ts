@@ -68,10 +68,11 @@ export class ErrorResponse extends Error{
 }
 
 export class NetworkError extends Error {
-    public error: any;
+    public error: string;
 
-    constructor(error: any){
-        super();
+    constructor(error: string){
+        super(error);
+        Object.setPrototypeOf(this, NetworkError.prototype);
         this.error = error;
     }
 }
