@@ -4,11 +4,13 @@
     "sourceMap": true,
     "module": "commonjs",
     "lib": ["ES6", "dom"],
-    "declaration": true  
+    "declaration": true,
+    "declarationDir": "declarations"  
     },
     "exclude": [
       "node_modules",
       "target",
-      "test"
+      "test",
+      "declarations"
     ]
 }

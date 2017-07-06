@@ -22,7 +22,7 @@ module.exports = {
     ],
   },
   plugins: [
-    new DtsBundlePlugin()
+    // new DtsBundlePlugin()
   ],
 };
 

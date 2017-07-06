@@ -2,8 +2,8 @@
   "name": "pusher-platform-js",
   "description": "Pusher Platform client library for web browsers",
   "main": "target/pusher-platform.js",
-  "version": "0.5.0",
-  "types": "target/index.d.ts",
+  "version": "0.5.1",
+  "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/pusher-platform-js",
@@ -15,7 +15,7 @@
     "url": "git+https://github.com/pusher/pusher-platform-js.git"
   },
   "scripts": {
-    "build": "rm -rf lib target && webpack",
+    "build": "rm -rf target declarations && webpack",
 
     "test-legacy": "node test/unit/test-legacy.js",
     "test-jest": "jest test/unit/*.test.js",
