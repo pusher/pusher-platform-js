@@ -43,10 +43,10 @@ export default class Instance {
         if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
         if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
         
-        options.instance.split(":");
-        this.platformVersion = options[0];
-        this.cluster = options[1];
-        this.instanceId = options[2];
+        let splitInstance = options.instance.split(":");
+        this.platformVersion = splitInstance[0];
+        this.cluster = splitInstance[1];
+        this.instanceId = splitInstance[2];
 
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
