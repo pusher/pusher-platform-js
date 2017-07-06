@@ -76,6 +76,7 @@ export class ResumableSubscription {
                 this.assertState(['OPENING']);
                 this.state = ResumableSubscriptionState.OPEN;
                 if (this.options.onOpen) { this.options.onOpen(); }
+                this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
             },
             onEvent: (event: Event) => {
                 this.assertState(['OPEN']);

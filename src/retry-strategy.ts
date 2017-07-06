@@ -2,6 +2,7 @@ import { ErrorResponse, NetworkError } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 export interface RetryStrategy {
     attemptRetry(error: Error): Promise<Error>;
+    reset(): void;
 }
 
 export interface RetryStrategyResult {}
@@ -28,11 +29,17 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private retryCount = 0;
 
     private maxBackoffMilis: number = 30000;
-    private currentBackoffMilis: number = 1000;
+    private defaultBackoffMilis: number = 1000;
+    private currentBackoffMilis: number = this.defaultBackoffMilis;
+
 
     constructor(options: any){
         if(options.limit) this.limit = options.limit;
-        if(options.initialBackoffMilis) this.currentBackoffMilis = options.initialBackoffMilis;
+        if(options.initialBackoffMilis){
+             this.currentBackoffMilis = options.initialBackoffMilis;
+             this.defaultBackoffMilis = options.defaultBackoffMilis;
+        }
+
         if(options.maxBackoffMilis) this.maxBackoffMilis = options.maxBackoffMilis;
 
         if(options.logger !== undefined) {
@@ -102,6 +109,12 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
              }
          }
         return retryable;
+    }
+
+
+    reset(): void {
+        this.retryCount = 0;
+        this.currentBackoffMilis = this.defaultBackoffMilis;
     }
 
     private calulateMilisToRetry(): number{
