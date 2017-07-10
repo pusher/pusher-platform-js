@@ -5,39 +5,64 @@ import { ConsoleLogger, Logger } from './logger';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
 import { SubscribeOptions, Subscription } from './subscription';
 
-const DEFAULT_CLUSTER = "api-ceres.pusherplatform.io";
+const HOST_BASE = "pusherplatform.io";
 
-export interface AppOptions {
+export interface InstanceOptions {
 
-    serviceId: string;
+    instance: string;
+    serviceName: string;
+    serviceVersion: string;
+    host?: string; //Allows to inject the hostname by default.
+    logger?: Logger;
+
     tokenProvider?: TokenProvider;
     client?: BaseClient;
-    cluster?: string;
+
     encrypted?: boolean;
-    logger?: Logger;
 }
 
 type Response = any;
 
-export default class App {
-    private client: BaseClient;
+export default class Instance {
 
-    private serviceId: string;
+    private client: BaseClient;
+    private host: string;
+
+    private instanceId: string;
+    private cluster: string;
+    private platformVersion: string;
+    private serviceVersion: string;
+    private serviceName: string;
+
     private tokenProvider: TokenProvider;
     private logger: Logger;
 
-    constructor(options: AppOptions) {
-        if (!options.serviceId) {
-          throw new Error('Expected `serviceId` property in App options')
-        }
-        this.serviceId = options.serviceId;
-        this.tokenProvider = options.tokenProvider;
-        this.client = options.client || new BaseClient({
-            cluster: options.cluster ?
-                sanitizeCluster(options.cluster) : DEFAULT_CLUSTER,
-            encrypted: options.encrypted
-        });
+    constructor(options: InstanceOptions) {
+        if (!options.instance) throw new Error('Expected `instance` property in Instance options!');
+        if (options.instance.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
+        if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
+        if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
+        
+        let splitInstance = options.instance.split(":");
+        this.platformVersion = splitInstance[0];
+        this.cluster = splitInstance[1];
+        this.instanceId = splitInstance[2];
 
+        this.serviceName = options.serviceName;
+        this.serviceVersion = options.serviceVersion;
+        this.tokenProvider = options.tokenProvider;
+
+        if(options.host){
+            this.host = options.host;
+        } else{
+            this.host = `${this.cluster}.${HOST_BASE}`;
+        }
+
+        this.client = options.client || new BaseClient({
+            encrypted: options.encrypted,
+            host: this.host
+        });
+        
         if(options.logger !== undefined){
             this.logger = options.logger;
         }
@@ -94,12 +119,6 @@ export default class App {
     }
 
     private absPath(relativePath: string): string {
-        return `/apps/${this.serviceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+        return `/services/${this.serviceName}/${this.serviceVersion}/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
-}
-
-function sanitizeCluster(cluster) {
-    return cluster
-        .replace(/^[^\/:]*:\/\//, "") // remove schema
-        .replace(/\/$/, ""); // remove trailing slash
 }

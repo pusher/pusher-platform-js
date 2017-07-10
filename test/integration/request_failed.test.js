@@ -1,21 +1,23 @@
 const {default: PusherPlatform } = require('../../target/pusher-platform.js');
 
 //these just test GET - everything else should just work.
-describe('App requests - failing', () => {
+describe('Instance requests - failing', () => {
 
-    let app;
+    let instance;
 
     beforeAll(() => {
-        app = new PusherPlatform.App({
-            serviceId: "1",
-            cluster: "localhost:10443"
+        instance = new PusherPlatform.Instance({
+            instance: "v1:api-ceres:1",
+            serviceName: "platform_lib_tester",
+            serviceVersion: "v1",
+            host: "localhost:10443"
         });
     })
 
     it('fails on 400 error', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_400"
+            path: "get_400"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -25,9 +27,9 @@ describe('App requests - failing', () => {
     });
 
     it('fails on 403 error', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_403"
+            path: "get_403"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -37,9 +39,9 @@ describe('App requests - failing', () => {
     });
 
     it('fails on 404 error', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_404"
+            path: "get_404"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -49,9 +51,9 @@ describe('App requests - failing', () => {
     });
 
     it('fails on 500 error', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_500"
+            path: "get_500"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -61,9 +63,9 @@ describe('App requests - failing', () => {
     });
 
     it('fails on 503 error', (done) => {
-        app.request({
+        instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_503"
+            path: "get_503"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
