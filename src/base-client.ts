@@ -56,6 +56,7 @@ export class ErrorResponse extends Error{
 
     constructor(statusCode: number, headers: Headers, info: any) {
         super(`ErroResponse: ${statusCode}: ${info} \n Headers: ${JSON.stringify(headers)}`);
+        Object.setPrototypeOf(this, ErrorResponse.prototype);
         this.statusCode = statusCode;
         this.headers = headers;
         this.info = info;
