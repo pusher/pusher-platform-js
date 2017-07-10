@@ -152,8 +152,8 @@ Configuration:
 
 ```typescript
     limit: number = 6;
-    initialBackoffMilis: number = 1000;
-    maxBackoffMilis: number = 30000;
+    initialBackoffMillis: number = 1000;
+    maxBackoffMillis: number = 30000;
     logger: Logger = DefaultLogger;
 ```
 

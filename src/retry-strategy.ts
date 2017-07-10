@@ -8,9 +8,9 @@ export interface RetryStrategy {
 export interface RetryStrategyResult {}
 
 export class Retry implements RetryStrategyResult {
-    waitTimeMilis: number;
-    constructor(waitTimeMilis: number){
-        this.waitTimeMilis = waitTimeMilis;
+    waitTimeMillis: number;
+    constructor(waitTimeMillis: number){
+        this.waitTimeMillis = waitTimeMillis;
     }
 }
 
@@ -28,19 +28,19 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private limit: number = 6;
     private retryCount = 0;
 
-    private maxBackoffMilis: number = 30000;
-    private defaultBackoffMilis: number = 1000;
-    private currentBackoffMilis: number = this.defaultBackoffMilis;
+    private maxBackoffMillis: number = 30000;
+    private defaultBackoffMillis: number = 1000;
+    private currentBackoffMillis: number = this.defaultBackoffMillis;
 
 
     constructor(options: any){
         if(options.limit) this.limit = options.limit;
-        if(options.initialBackoffMilis){
-             this.currentBackoffMilis = options.initialBackoffMilis;
-             this.defaultBackoffMilis = options.defaultBackoffMilis;
+        if(options.initialBackoffMillis){
+             this.currentBackoffMillis = options.initialBackoffMillis;
+             this.defaultBackoffMillis = options.defaultBackoffMillis;
         }
 
-        if(options.maxBackoffMilis) this.maxBackoffMilis = options.maxBackoffMilis;
+        if(options.maxBackoffMillis) this.maxBackoffMillis = options.maxBackoffMillis;
 
         if(options.logger !== undefined) {
             this.logger = options.logger;
@@ -66,11 +66,11 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 return new Retry(retryable.backoffMillis);
             }
             else{
-                this.currentBackoffMilis = this.calulateMilisToRetry();
+                this.currentBackoffMillis = this.calulateMillisToRetry();
                 this.retryCount += 1;
             
-                this.logger.verbose(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMilis}`);
-                return new Retry(this.currentBackoffMilis)
+                this.logger.verbose(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMillis}`);
+                return new Retry(this.currentBackoffMillis)
             }
         }
 
@@ -89,7 +89,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 reject(error);
             }
             else if(shouldRetry instanceof Retry) {
-                window.setTimeout(resolve, shouldRetry.waitTimeMilis);
+                window.setTimeout(resolve, shouldRetry.waitTimeMillis);
             }
         });
     }
@@ -114,20 +114,20 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     reset(): void {
         this.retryCount = 0;
-        this.currentBackoffMilis = this.defaultBackoffMilis;
+        this.currentBackoffMillis = this.defaultBackoffMillis;
     }
 
-    private calulateMilisToRetry(): number{
+    private calulateMillisToRetry(): number{
         
-        if(this.currentBackoffMilis >= this.maxBackoffMilis || this.currentBackoffMilis * 2 >= this.maxBackoffMilis) {
-            return this.maxBackoffMilis;
+        if(this.currentBackoffMillis >= this.maxBackoffMillis || this.currentBackoffMillis * 2 >= this.maxBackoffMillis) {
+            return this.maxBackoffMillis;
         }
             
         if(this.retryCount > 0){
-            return this.currentBackoffMilis * 2;
+            return this.currentBackoffMillis * 2;
         }
 
-        return this.currentBackoffMilis;
+        return this.currentBackoffMillis;
     }
 }
 

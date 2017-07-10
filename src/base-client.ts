@@ -72,6 +72,7 @@ export class NetworkError extends Error {
 
     constructor(error: string){
         super(error);
+        //TODO: ugly hack to make the instanceof calls work. We might have to find a better solution.
         Object.setPrototypeOf(this, NetworkError.prototype);
         this.error = error;
     }
