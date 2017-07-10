@@ -48,15 +48,15 @@ let instance = new Instance(...);
 ### Instance
 
 This is the main entry point - represents a single instance of a service running on the Elements infrastructure.
-Initialise with an `InstanceOptions` object that MUST contain at least the `instanceId`, `serviceName`, and `serviceVersion`.
+Initialise with an `InstanceOptions` object that MUST contain at least the `instance`, `serviceName`, and `serviceVersion`.
 
 InstanceOptions: 
 ```typescript
     serviceName: string; //Mandatory
-    instanceId: string; // Mandatory
+    instance: string; // Mandatory
     serviceVersion: string //Mandatory
 
-    cluster?: string; // Defaults to "api-ceres.pusherplatform.io"
+    host?: string; // Defaults to "api-ceres.pusherplatform.io"
     encrypted?: boolean;
 
     client?: BaseClient; // You can provide custom implementation - this will probably be deprecated in the future
