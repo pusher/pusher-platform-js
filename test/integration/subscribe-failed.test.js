@@ -1,7 +1,7 @@
 const { default: PusherPlatform } = require('../../target/pusher-platform.js');
     
-const PATH_NOT_EXISTING = "services/platform_lib_tester/v1/subscribe_missing";
-const PATH_FORBIDDEN = "services/platform_lib_tester/v1/subscribe_forbidden";
+const PATH_NOT_EXISTING = "subscribe_missing";
+const PATH_FORBIDDEN = "subscribe_forbidden";
 
 describe('Instance Subscribe errors nicely', () => {
 
@@ -49,7 +49,7 @@ describe('Instance Subscribe errors nicely', () => {
 
     it('handles 500', (done) => {
         instance.subscribe({
-            path: "services/platform_lib_tester/v1/subscribe_internal_server_error",
+            path: "subscribe_internal_server_error",
             onEvent: (event) => {
                 fail("Expecting onError");
             },

@@ -19,8 +19,8 @@
 
     "test-legacy": "node test/unit/test-legacy.js",
     "test-jest": "jest test/unit/*.test.js",
-    "test-integration": "webpack --watch & karma start",
-    "test": "yarn build && yarn test-legacy && yarn test-jest && karma start --single-run"
+    "test-integration": "karma start --single-run",
+    "test": "yarn build && yarn test-legacy && yarn test-jest && yarn test-integration"
   },
   "dependencies": {
     "jwt-simple": "^0.5.1"

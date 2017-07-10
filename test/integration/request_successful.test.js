@@ -16,7 +16,7 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful GET request', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_ok"
+            path: "get_ok"
         }).then((res) => {
             done();
         });
@@ -25,7 +25,7 @@ describe('Instance Requests - Successful', () => {
    it('makes a successful POST request', (done) => {
         instance.request({
             method: "POST",
-            path: "services/platform_lib_tester/v1/post_ok"
+            path: "post_ok"
         }).then((res) => {
             done();
         });
@@ -35,7 +35,7 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful POST request with body', (done) => {
         instance.request({
             method: "post",
-            path: "services/platform_lib_tester/v1/post_ok",
+            path: "post_ok",
             body: {
                 test: "123"
             }
@@ -49,7 +49,7 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful PUT request', (done) => {
         instance.request({
             method: "PUT",
-            path: "services/platform_lib_tester/v1/put_ok"
+            path: "put_ok"
         }).then((res) => {
             done();
         });
@@ -58,7 +58,7 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful DELETE request', (done) => {
         instance.request({
             method: "DELETE",
-            path: "services/platform_lib_tester/v1/delete_ok"
+            path: "delete_ok"
         }).then((res) => {
             done();
         });

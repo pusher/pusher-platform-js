@@ -17,7 +17,7 @@ describe('Instance requests - failing', () => {
     it('fails on 400 error', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_400"
+            path: "get_400"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -29,7 +29,7 @@ describe('Instance requests - failing', () => {
     it('fails on 403 error', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_403"
+            path: "get_403"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -41,7 +41,7 @@ describe('Instance requests - failing', () => {
     it('fails on 404 error', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_404"
+            path: "get_404"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -53,7 +53,7 @@ describe('Instance requests - failing', () => {
     it('fails on 500 error', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_500"
+            path: "get_500"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -65,7 +65,7 @@ describe('Instance requests - failing', () => {
     it('fails on 503 error', (done) => {
         instance.request({
             method: "GET",
-            path: "services/platform_lib_tester/v1/get_503"
+            path: "get_503"
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
