@@ -17,10 +17,9 @@
   "scripts": {
     "build": "rm -rf target declarations && webpack",
 
-    "test-legacy": "node test/unit/test-legacy.js",
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
-    "test": "yarn build && yarn test-legacy && yarn test-jest && yarn test-integration"
+    "test": "yarn build && yarn test-jest && yarn test-integration"
   },
   "dependencies": {
     "jwt-simple": "^0.5.1"
