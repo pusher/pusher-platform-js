@@ -103,7 +103,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
          else if(error instanceof ErrorResponse) {
              //Only retry after is allowed
-             if(error.headers["retry-after"]) {
+             if(error.headers["Retry-After"]) {
                  retryable.isRetryable = true;
                  retryable.backoffMillis = parseInt(error.headers["retry-after"]) * 1000;
              }
