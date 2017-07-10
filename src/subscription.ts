@@ -134,7 +134,11 @@ export class Subscription {
                     if (this.state === SubscriptionState.ENDED) {
                         // We aborted the request deliberately, and called onError/onEnd elsewhere.
                     }
-                    else{
+                    //Something terrible has happened. Most likely a network error. XHR is useless at that point.
+                    else if(this.xhr.status === 0){
+                        this.options.onError(new NetworkError("Connection lost."));
+
+                    }else{
                         this.options.onError(ErrorResponse.fromXHR(this.xhr));
                     }
                 }
