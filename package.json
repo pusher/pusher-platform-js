@@ -2,7 +2,7 @@
   "name": "pusher-platform",
   "description": "Pusher Platform client library for web browsers",
   "main": "target/pusher-platform.js",
-  "version": "0.7.0",
+  "version": "0.9.0-SNAPSHOT",
   "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
@@ -16,13 +16,13 @@
   },
   "scripts": {
     "build": "rm -rf target declarations && webpack",
-
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
     "test": "yarn build && yarn test-jest && yarn test-integration"
   },
   "dependencies": {
-    "jwt-simple": "^0.5.1"
+    "jwt-simple": "^0.5.1",
+    "p-cancelable": "^0.3.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
@@ -36,7 +36,7 @@
     "karma-jasmine": "^1.1.0",
     "karma-webpack": "^2.0.3",
     "ts-loader": "^2.1.0",
-    "typescript": "^2.4.1",
+    "typescript": "^2.5.2",
     "webpack": "^2.5.1"
   }
 }

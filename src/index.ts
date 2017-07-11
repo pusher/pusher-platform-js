@@ -1,24 +1,44 @@
-import Instance from './instance';
-import { BaseClient } from './base-client';
-import { ConsoleLogger, EmptyLogger, Logger } from './logger';
-import { ResumableSubscription } from './resumable-subscription';
-import { RetryStrategy, ExponentialBackoffRetryStrategy } from './retry-strategy';
-import { Subscription } from './subscription';
+import { createH2TransportStrategy } from './transports';
+import { executeNetworkRequest, NetworkRequest, RequestOptions } from './request';
+import { createResumingStrategy } from './resuming-subscription';
+import {
+    createRetryStrategyOptionsOrDefault,
+    DoNotRetry,
+    Retry,
+    RetryResolution,
+    RetryStrategyOptions,
+    RetryStrategyResult,
+} from './retry-strategy';
+import { TokenProvider } from './token-provider';
+import { Subscription, SubscriptionConstructor, SubscriptionListeners } from './subscription';
+import { default as Instance, ResumableSubscribeOptions, SubscribeOptions } from './instance';
+import { BaseClient, BaseClientOptions } from './base-client';
+import { Logger, ConsoleLogger, EmptyLogger } from './logger';
+import { createRetryingStrategy } from './retrying-subscription';
+import { createTokenProvidingStrategy } from './token-providing-subscription';
+import { BaseSubscription, BaseSubscriptionConstruction, BaseSubscriptionState } from './base-subscription';
+import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, XhrReadyState } from './network';
 
 export {
-  Instance,
-  BaseClient,
-  ResumableSubscription, Subscription,
+  Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners,
+  BaseClient,  BaseClientOptions,
+  
+  Subscription, BaseSubscriptionConstruction, BaseSubscription, BaseSubscriptionState,
+  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createH2TransportStrategy, 
+  
+  ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
+  RequestOptions, NetworkRequest, executeNetworkRequest, 
 
-  RetryStrategy, ExponentialBackoffRetryStrategy,
+  
+
+  RetryStrategyResult, Retry, DoNotRetry, RetryStrategyOptions, RetryResolution, createRetryStrategyOptionsOrDefault,
+  TokenProvider,
   Logger, ConsoleLogger, EmptyLogger, 
+  
 };
 
 export default {
   Instance,
   BaseClient,
-  ResumableSubscription, Subscription,
-
-  ExponentialBackoffRetryStrategy,
-  ConsoleLogger, EmptyLogger
+  ConsoleLogger, EmptyLogger,
 };
