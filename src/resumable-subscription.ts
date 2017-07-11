@@ -81,11 +81,6 @@ export class ResumableSubscription {
             onEvent: (event: Event) => {
                 this.assertState(['OPEN']);
                 if (this.options.onEvent) { this.options.onEvent(event); }
-                console.assert(
-                    !this.lastEventIdReceived ||
-                    parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
-                    'Expected the current event id to be larger than the previous one'
-                );
                 this.lastEventIdReceived = event.eventId;
             },
             onEnd: () => {
