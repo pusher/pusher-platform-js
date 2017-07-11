@@ -1,9 +1,10 @@
+import { ExponentialBackoffRetryStrategy, RetryStrategy } from './retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
-import { SubscribeOptions, Subscription } from './subscription';
+import { StatelessSubscribeOptions, StatelessSubscription } from './stateless-subscription';
 
 const HOST_BASE = "pusherplatform.io";
 
@@ -14,7 +15,6 @@ export interface InstanceOptions {
     serviceVersion: string;
     host?: string; //Allows to inject the hostname by default.
     logger?: Logger;
-
     tokenProvider?: TokenProvider;
     client?: BaseClient;
 
@@ -34,7 +34,6 @@ export default class Instance {
     private serviceVersion: string;
     private serviceName: string;
 
-    private tokenProvider: TokenProvider;
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
@@ -50,7 +49,6 @@ export default class Instance {
 
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
-        this.tokenProvider = options.tokenProvider;
 
         if(options.host){
             this.host = options.host;
@@ -63,7 +61,7 @@ export default class Instance {
             host: this.host
         });
         
-        if(options.logger !== undefined){
+        if(options.logger){
             this.logger = options.logger;
         }
         else{
@@ -73,46 +71,28 @@ export default class Instance {
 
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
-        if (!options.jwt && tokenProvider) {
-            return tokenProvider.fetchToken().then((jwt) => {
-                return this.client.request({ jwt, ...options });
-            });
-        } else {
-            return this.client.request(options);
-        }
+        if(!options.logger) options.logger = this.logger;
+
+        return this.client.request(options);
     }
 
-    subscribe(options: SubscribeOptions): Subscription {
+    subscribe(options: StatelessSubscribeOptions): StatelessSubscription {
         options.path = this.absPath(options.path);
-        options.logger = this.logger;
+        if(!options.logger) options.logger = this.logger;
 
-        let subscription: Subscription = this.client.newSubscription(options);
+        let subscription: StatelessSubscription = 
+            this.client.newStatelessSubscription( { ...options } );
+        subscription.open();
 
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
-        if (options.jwt) {
-            subscription.open(options.jwt);
-        } else if (tokenProvider) {
-            tokenProvider.fetchToken().then((jwt) => {
-                subscription.open(jwt);
-            }).catch((err) => {
-                subscription.unsubscribe(err);
-            });
-        } else {
-            subscription.open(null);
-        }
         return subscription;
     }
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
-        if(!options.logger) options.logger = this.logger;
-        options.logger = this.logger;
         options.path = this.absPath(options.path);
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
+        if(!options.logger) options.logger = this.logger;
 
         let resumableSubscription: ResumableSubscription =
-            this.client.newResumableSubscription({ tokenProvider, ...options });
-
+            this.client.newResumableSubscription({ ...options });
         resumableSubscription.open();
 
         return resumableSubscription;
