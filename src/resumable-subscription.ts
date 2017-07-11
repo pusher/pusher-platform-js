@@ -1,130 +1,207 @@
-import { TokenProvider } from './token-provider';
-import { Subscription } from './subscription';
-import { ErrorResponse, Event } from './base-client';
-import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
+import { NoOpTokenProvider, TokenProvider } from './token-provider';
+import { ErrorResponse } from './base-client';
+import {
+    RetryStrategy,
+    ExponentialBackoffRetryStrategy,
+    Retry,
+    DoNotRetry
+} from './retry-strategy';
 import { Logger } from './logger';
+import {
+    BaseSubscription,
+    SubscribeOptions,
+    SubscriptionEvent,
+    replaceUnimplementedListenersWithNoOps
+} from './base-subscription'
 
-export interface ResumableSubscribeOptions {
-    path: string;
-    lastEventId?: string;
-    tokenProvider?: TokenProvider;
-    onOpening?: () => void;
+
+export interface OptionalSubscriptionListeners {
+    onSubscribed?: (headers: Headers) => void;
     onOpen?: () => void;
-    onEvent?: (event: Event) => void;
-    onEnd?: () => void;
-    onError?: (error: Error) => void;
-    retryStrategy?: RetryStrategy;
-    onRetry?: ()=>void;
-    logger?: Logger;
+    onResuming?: () => void;
+    onEvent?: (event: SubscriptionEvent) => void;
+    onEnd?: (error?: ErrorResponse) => void;
+    onError?: (error: any) => void;
 }
 
-export enum ResumableSubscriptionState {
-    UNOPENED = 0,
-    OPENING,      // can be visited multiple times
-    OPEN,         // called onOpen(); expecting message
-    ENDING,       // received EOS message; response not yet finished
-    ENDED         // called onEnd() or onError(err)
+export interface SubscriptionListeners {
+    onSubscribed: (headers: Headers) => void;
+    onOpen: () => void;
+    onResuming: () => void;
+    onEvent: (event: SubscriptionEvent) => void;
+    onEnd: (error?: ErrorResponse) => void;
+    onError: (error: any) => void;
 }
 
-// Asserts that the subscription state is one of the specified values,
-// otherwise logs the current value.
-export function assertState(stateEnum, states = []) {
-    const check = states.some(state => stateEnum[state] === this.state);
-    const expected = states.join(', ');
-    const actual = stateEnum[this.state];
-    console.assert(check, `Expected this.state to be ${expected} but it is ${actual}`);
-    if (!check) {
-        console.trace();
+export interface ResumableSubscribeOptions extends SubscribeOptions {
+    lastEventId?: string;
+    retryStrategy?:  RetryStrategy;
+    tokenProvider?: TokenProvider;
+}
+
+type subscriptionConstructor = (lastError: any, lastEventID: string) => Promise<Subscription>;
+
+interface ResumableSubscriptionStateListeners {
+    onSubscribed: (headers: Headers) => void;
+    onOpen: () => void;
+    onResuming: () => void;
+    onEvent: (event: Event) => void;
+    onEnd: (error?: ErrorResponse) => void;
+    onError: (error: any) => void;
+}
+
+class SubscribingResumableSubscriptionState implements ResumableSubscriptionState {
+    constructor(
+            initialEventID: string,
+            subscriptionConstructor: subscriptionConstructor,
+            listeners: ResumableSubscriptionStateListeners) {
+        foo = subscriptionConstructor(null, initialEventID)
+        foo.onComplete((subscription) => {
+            this.onSubscribed(subscription.headers)
+            this.onTransition(
+                new OpenSubscriptionState(
+                    subscription, initialEventID, subscriptionConstructor, listeners
+                )
+            )
+        })
+        foo.onError((error) => {
+            this.onTransition(new FailedSubscriptionState(error, listeners))
+        })
     }
-};
+}
 
-// pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
+function constructorToPromise(c: Constructor<R, E>): Promise<R, E> {
+    return new Promise((resolve, fail) => {
+        foo = requestConstructor(options)
+        foo.onComplete(resolve)
+        foo.onError(fail)
+    })
+}
+
+class OpenSubscriptionState implements ResumableSubscriptionState {
+    constructor(
+            subscription: Subscription,
+            lastEventID: string,
+            subscriptionConstructor: subscriptionConstructor,
+            listeners: ResumableSubscriptionStateListeners) {
+        subscription.onEvent = (event) => {
+            lastEventID = event.ID
+            listeners.onEvent(event)
+        }
+        subscription.onEnd = (error) => {
+            this.onTransition(
+                new EndedResumableSubscriptionState(error, listeners)
+            )
+        }
+        subscription.onError = (error) => {
+            listeners.onResuming()
+            this.onTransition(
+                new ResumingResumableSubscriptionState(
+                    error, lastEventID, subscriptionConstructor, listeners
+                )
+            )
+        }
+        listeners.onOpen()
+    }
+}
+class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
+    constructor(
+            error: any,
+            lastEventID: string,
+            subscriptionConstructor: subscriptionConstructor,
+            listeners: ResumableSubscriptionStateListeners) {
+        subscriptionConstructor(error, lastEventID).then((subscription) => {
+            this.onTransition(
+                new OpenSubscriptionState(
+                    subscription, lastEventID, subscriptionConstructor, listeners
+                )
+            )
+        }).catch((error) => {
+            this.onTransition(new FailedSubscriptionState(error, listeners))
+        })
+    }
+}
+class EndedResumableSubscriptionState implements ResumableSubscriptionState {
+    constructor(error: any, listeners: ResumableSubscriptionStateListeners) {
+        listeners.onEnd(error)
+    }
+}
+class FailedResumableSubscriptionState implements ResumableSubscriptionState {
+    constructor(error: any, listeners: ResumableSubscriptionStateListeners) {
+        listeners.onError(error)
+    }
+}
+
 export class ResumableSubscription {
-
-    private state: ResumableSubscriptionState = ResumableSubscriptionState.UNOPENED;
-    private assertState: Function;
-    private subscription: Subscription;
-    private lastEventIdReceived: string;
-    private retryStrategy: RetryStrategy;
-    private logger?: Logger;
+    private state: ResumableSubscriptionState;
+    private logger: Logger;
 
     constructor(
-        private xhrSource: () => XMLHttpRequest,
+        private baseSubscriptionConstructor: (lastEventID: string) => Promise<BaseSubscription>,
         private options: ResumableSubscribeOptions
     ) {
-        this.assertState = assertState.bind(this, ResumableSubscriptionState);
-        this.lastEventIdReceived = options.lastEventId;
-        this.logger = options.logger;
-        
-        if(options.retryStrategy !== undefined){
-             this.retryStrategy = options.retryStrategy;
-        }
-        else{
-            this.retryStrategy = new ExponentialBackoffRetryStrategy({
-                logger: this.logger
+        listeners = replaceUnimplementedListenersWithNoOps(options);
+        subscriptionConstructor = (error: any, lastEventID: string) => Promise<BaseSubscription> {
+            return options.retryStrategy.execute(error, () => Promise<BaseSubscription> {
+                return baseSubscriptionConstructor(lastEventID)
             })
         }
+        this.state = new SubscribingResumableSubscriptionState(
+            options.lastEventID, subscriptionConstructor, listeners
+        )
+        this.logger = options.logger;
     }
 
-    tryNow(): void {
-        this.state = ResumableSubscriptionState.OPENING;
+    private tryNow(): void {
         let newXhr = this.xhrSource();
-        this.subscription = new Subscription(newXhr, {
-            path: this.options.path,
-            lastEventId: this.lastEventIdReceived,
-            onOpen: () => {
-                this.assertState(['OPENING']);
-                this.state = ResumableSubscriptionState.OPEN;
-                if (this.options.onOpen) { this.options.onOpen(); }
-                this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
-            },
-            onEvent: (event: Event) => {
-                this.assertState(['OPEN']);
-                if (this.options.onEvent) { this.options.onEvent(event); }
-                console.assert(
-                    !this.lastEventIdReceived ||
-                    parseInt(event.eventId) > parseInt(this.lastEventIdReceived),
-                    'Expected the current event id to be larger than the previous one'
-                );
-                this.lastEventIdReceived = event.eventId;
-            },
-            onEnd: () => {
-                this.state = ResumableSubscriptionState.ENDED;
-                if (this.options.onEnd) { this.options.onEnd(); }
-            },
-            onError: (error: Error) => {
-                this.state = ResumableSubscriptionState.OPENING
-                this.retryStrategy.attemptRetry(error)
-                .then(() => {
-                  if (this.options.onRetry !== undefined) {
-                    this.options.onRetry();
-                  } else {
-                    this.tryNow();
-                  }
-                })
-                .catch(error => {
-                    this.state = ResumableSubscriptionState.ENDED;
-                    if (this.options.onError) { this.options.onError(error); }
-                })},
-            logger: this.logger
-        });
-               
-        if (this.options.tokenProvider) {
-            this.options.tokenProvider.fetchToken().then((jwt) => {
-                this.subscription.open(jwt);
-            }).catch((err) => {
-                if(this.options.onError) this.options.onError(err);
+
+        if (this.lastEventIdReceived) {
+            newXhr.setRequestHeader("Last-Event-Id", this.lastEventIdReceived);
+        }
+
+        this.options.tokenProvider.fetchToken()
+        .then( token => {
+            this.baseSubscription = new BaseSubscription(newXhr, {
+                path: this.options.path,
+                headers: this.options.headers,
+                jwt: token,
+
+                onOpen: () => {
+                    this.options.onOpen();
+                    this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
+                },
+                onEvent: (event: SubscriptionEvent) => {
+                    this.options.onEvent(event);
+                    this.lastEventIdReceived = event.eventId;
+                },
+                onEnd: this.options.onEnd,
+                onError: (error: Error) => {
+                    this.retryStrategy.checkIfRetryable(error)
+                    .then(() => {
+                        if (this.options.onRetry) {
+                            this.options.onRetry();
+                        } else {
+                            this.tryNow();
+                        }
+                    })
+                    .catch(error => {
+                        this.options.onError(error);
+                    })},
+                    logger: this.logger
+                });
+                this.baseSubscription.open();
+            })
+            .catch(error => {
+                this.options.onError(error);
             });
-        } else {
-            this.subscription.open(null);
+        }
+
+        unsubscribe() {
+            if(!this.baseSubscription){
+                throw new Error("Subscription doesn't exist! Have you called open()?");
+            }
+            this.retryStrategy.cancel();
+            this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
         }
     }
 
-    open(): void {
-        this.tryNow();
-    }
-
-    unsubscribe(error?: Error) {
-        this.subscription.unsubscribe(error); // We'll get onEnd and bubble this up
-    }
-}
