@@ -226,4 +226,4 @@ To summon help you can also ping @pusher/sigsdk or @zmarkan.
 
 ## License
 
-PusherSwift is released under the MIT license. See LICENSE for details.
+pusher-platform-js is released under the MIT license. See LICENSE for details.
