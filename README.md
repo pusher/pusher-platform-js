@@ -2,6 +2,12 @@
 
 This is the official Pusher Platform client library for web browsers. Use it to build SDKs for services running on Pusher Platform / Elements infrastructure.
 
+## Issues, Bugs, and Feature Requests
+
+Feel free to create an issue on Github if you find anything wrong. Please use the existing template. 
+If you wish to contribute, please make a pull request. 
+To summon help you can also ping @pusher/sigsdk or @zmarkan.
+
 ## Installation
 
 We assume you use yarn/npm in your development workflow. You can grab it from the npm/yarn repository:
@@ -218,12 +224,6 @@ This will run tests and watch the `src/` and `test/` dirs to rebuild every time 
 
 Once we have some sort of CI setup we'll be able to run just `yarn test` to get everything going and run just once.
 
-## Issues, Bugs, and Feature Requests
-
-Feel free to create an issue on Github if you find anything wrong. Please use the existing template. 
-If you wish to contribute, please make a pull request. 
-To summon help you can also ping @pusher/sigsdk or @zmarkan.
-
-## License
+## License
 
 pusher-platform-js is released under the MIT license. See LICENSE for details.
