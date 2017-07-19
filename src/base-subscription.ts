@@ -54,11 +54,11 @@ export class BaseSubscription {
                 case XhrReadyState.UNSENT:
                 case XhrReadyState.OPENED:
                 case XhrReadyState.HEADERS_RECEIVED:
-                    this.assertStateIsIn([SubscriptionState.OPENING]);
+                    this.assertStateIsIn(SubscriptionState.OPENING);
                     break;
                 
                 case XhrReadyState.LOADING:
-                    this.assertStateIsIn([SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDING]);
+                    this.assertStateIsIn(SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDING);
                     if(this.xhr.status === 200){
                         
                         //Check if we just transitioned to the open state
@@ -67,9 +67,9 @@ export class BaseSubscription {
                             if(this.options.onOpen) { this.options.onOpen(); }
                         }
 
-                        this.assertStateIsIn([SubscriptionState.OPEN]);
+                        this.assertStateIsIn(SubscriptionState.OPEN);
                         let err = this.onChunk(); // might transition our state from OPEN -> ENDING
-                        this.assertStateIsIn([SubscriptionState.OPEN, SubscriptionState.ENDING]);
+                        this.assertStateIsIn(SubscriptionState.OPEN, SubscriptionState.ENDING);
 
                         //TODO: handle error
                         //...
@@ -86,7 +86,7 @@ export class BaseSubscription {
                 this.xhr.readyState === XhrReadyState.HEADERS_RECEIVED
             ) {
                 // Too early for us to do anything.
-                this.assertStateIsIn([SubscriptionState.OPENING]);
+                this.assertStateIsIn(SubscriptionState.OPENING);
             }
         } 
 
@@ -97,7 +97,7 @@ export class BaseSubscription {
 
     private onChunk(): Error {
 
-        this.assertStateIsIn([SubscriptionState.OPEN]);
+        this.assertStateIsIn(SubscriptionState.OPEN);
 
         return new Error("Not yet implemented!");
     }
@@ -106,7 +106,7 @@ export class BaseSubscription {
      * Asserts whether this subscription falls in one of the expected states and logs a warning if it's not. 
      * @param validStates Array of possible states this subscription could be in.
      */
-    private assertStateIsIn(validStates: Array<SubscriptionState>){
+    private assertStateIsIn(...validStates: SubscriptionState[]){
         const stateIsValid = validStates.some( validState => validState === this.state );
         if(!stateIsValid){
             const expectedStates = validStates.map( state => SubscriptionState[state]).join(', ');
