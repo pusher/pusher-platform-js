@@ -57,6 +57,24 @@ export class BaseSubscription {
                     this.assertStateIsIn([SubscriptionState.OPENING]);
                     break;
                 
+                case XhrReadyState.LOADING:
+                    this.assertStateIsIn([SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDING]);
+                    if(this.xhr.status === 200){
+                        
+                        //Check if we just transitioned to the open state
+                        if(this.state === SubscriptionState.OPENING) {
+                            this.state = SubscriptionState.OPEN;
+                            if(this.options.onOpen) { this.options.onOpen(); }
+                        }
+
+                        this.assertStateIsIn([SubscriptionState.OPEN]);
+                        let err = this.onChunk(); // might transition our state from OPEN -> ENDING
+                        this.assertStateIsIn([SubscriptionState.OPEN, SubscriptionState.ENDING]);
+
+                        //TODO: handle error
+                        //...
+
+                    }
                 
 
 
@@ -70,15 +88,18 @@ export class BaseSubscription {
                 // Too early for us to do anything.
                 this.assertStateIsIn([SubscriptionState.OPENING]);
             }
-
-
-
-
-
-
         } 
 
 
+
+
+    }
+
+    private onChunk(): Error {
+
+        this.assertStateIsIn([SubscriptionState.OPEN]);
+
+        return new Error("Not yet implemented!");
     }
 
     /**

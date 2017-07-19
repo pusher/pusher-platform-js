@@ -1,14 +1,15 @@
 import { TokenProvider } from './token-provider';
 import { ErrorResponse, NetworkError, Event, XhrReadyState } from './base-client';
 import { Logger } from './logger';
+import { SubscriptionState } from './base-subscription'
 
-export enum SubscriptionState {
-    UNOPENED = 0, // haven't called xhr.send()
-    OPENING,      // called xhr.send(); not yet received response headers
-    OPEN,         // received response headers; called onOpen(); expecting message
-    ENDING,       // received EOS message; response not yet finished
-    ENDED         // called onEnd() or onError(err)
-}
+// export enum SubscriptionState {
+//     UNOPENED = 0, // haven't called xhr.send()
+//     OPENING,      // called xhr.send(); not yet received response headers
+//     OPEN,         // received response headers; called onOpen(); expecting message
+//     ENDING,       // received EOS message; response not yet finished
+//     ENDED         // called onEnd() or onError(err)
+// }
 
 export interface SubscribeOptions {
     path: string;
