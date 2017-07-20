@@ -1,5 +1,5 @@
 import { TokenProvider } from './token-provider';
-import { ErrorResponse, NetworkError, Event, XhrReadyState } from './base-client';
+import { ErrorResponse, NetworkError, SubscriptionEvent, XhrReadyState } from './base-client';
 import { Logger } from './logger';
 import { SubscriptionState } from './base-subscription'
 
@@ -17,7 +17,7 @@ export interface SubscribeOptions {
     jwt?: string;
     lastEventId?: string;
     onOpen?: () => void;
-    onEvent?: (event: Event) => void;
+    onEvent?: (event: SubscriptionEvent) => void;
     onEnd?: () => void;
     onError?: (error: Error) => void;
     logger: Logger;

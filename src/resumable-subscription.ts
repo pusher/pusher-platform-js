@@ -1,6 +1,6 @@
 import { TokenProvider } from './token-provider';
 import { Subscription } from './subscription';
-import { ErrorResponse, Event } from './base-client';
+import { ErrorResponse, SubscriptionEvent } from './base-client';
 import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
 import { Logger } from './logger';
 
@@ -10,7 +10,7 @@ export interface ResumableSubscribeOptions {
     tokenProvider?: TokenProvider;
     onOpening?: () => void;
     onOpen?: () => void;
-    onEvent?: (event: Event) => void;
+    onEvent?: (event: SubscriptionEvent) => void;
     onEnd?: () => void;
     onError?: (error: Error) => void;
     retryStrategy?: RetryStrategy;
@@ -78,7 +78,7 @@ export class ResumableSubscription {
                 if (this.options.onOpen) { this.options.onOpen(); }
                 this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
             },
-            onEvent: (event: Event) => {
+            onEvent: (event: SubscriptionEvent) => {
                 this.assertState(['OPEN']);
                 if (this.options.onEvent) { this.options.onEvent(event); }
                 this.lastEventIdReceived = event.eventId;

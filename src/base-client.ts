@@ -11,14 +11,15 @@ export interface BaseClientOptions {
     XMLHttpRequest?: Function;
 }
 
+
+//TODO: can we unify these two?
 export type Headers = {
   [key: string]: string;
 }
 
-export interface Event {
-  eventId: string;
-  headers: Headers;
-  body: any;
+export interface Header {
+    key: string;
+    value: string;
 }
 
 export interface RequestOptions {
