@@ -1,7 +1,7 @@
 import { Logger } from './logger';
 // import { assertState } from './resumable-subscription';
 import { TokenProvider } from './token-provider';
-import { XhrReadyState, NetworkError, ErrorResponse, Header } from "./base-client";
+import { XhrReadyState, NetworkError, ErrorResponse, Headers } from "./base-client";
 
 
 export enum SubscriptionState {
@@ -40,13 +40,11 @@ export class BaseSubscription {
         private xhr: XMLHttpRequest,
         private options: SubscribeOptions
     ){  
-        
-        //Apply headers         
-        options.headers.forEach(header => {
-            xhr.setRequestHeader(header.key, header.value);
-        });  
-        
-        //onReadyStateChange
+        //Apply headers    
+        for (let key in options.headers) {
+            xhr.setRequestHeader(key, options.headers[key]);
+        }     
+  
         xhr.onreadystatechange = () => {
             
             switch(this.xhr.readyState){
@@ -140,7 +138,9 @@ export class BaseSubscription {
             }
         }
     }
+
     private lastNewlineIndex: number = 0;
+
     private onChunk(): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         let response = this.xhr.responseText;
@@ -168,17 +168,8 @@ export class BaseSubscription {
     // calls options.onEvent 0+ times, then returns an Error or null
     private onMessage(message: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
-        
-        if (this.gotEOS) {
-            return new Error("Got another message after EOS message");
-        }
-        if (!Array.isArray(message)) {
-            return new Error("Message is not an array");
-        }
-        if (message.length < 1) {
-            return new Error("Message is empty array");
-        }
-        
+        this.verifyMessage(message);
+
         switch (message[0]) {
             case 0:
             return null;
@@ -209,7 +200,11 @@ export class BaseSubscription {
         if (this.options.onEvent) { this.options.onEvent({ eventId: id, headers: headers, body: body }); }
     }
     
-    // calls options.onEvent 0+ times, then possibly returns an error
+    /**
+     * EOS message received. Sets subscription state to Ending and returns an error with given status code
+     * @param eosMessage final message of the subscription
+     */
+    // 
     private onEOSMessage(eosMessage: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         
@@ -240,4 +235,16 @@ export class BaseSubscription {
             this.options.logger.warn(`Expected this.state to be one of [${expectedStates}] but it is ${actualState}`);
         }
     } 
+
+    private verifyMessage(message: any[]){
+        if (this.gotEOS) {
+            return new Error("Got another message after EOS message");
+        }
+        if (!Array.isArray(message)) {
+            return new Error("Message is not an array");
+        }
+        if (message.length < 1) {
+            return new Error("Message is empty array");
+        }
+    }
 }
