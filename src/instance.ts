@@ -9,7 +9,7 @@ const HOST_BASE = "pusherplatform.io";
 
 export interface InstanceOptions {
 
-    instance: string;
+    instanceId: string;
     serviceName: string;
     serviceVersion: string;
     host?: string; //Allows to inject the hostname by default.
@@ -28,7 +28,7 @@ export default class Instance {
     private client: BaseClient;
     private host: string;
 
-    private instanceId: string;
+    private id: string;
     private cluster: string;
     private platformVersion: string;
     private serviceVersion: string;
@@ -38,15 +38,15 @@ export default class Instance {
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
-        if (!options.instance) throw new Error('Expected `instance` property in Instance options!');
-        if (options.instance.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
+        if (!options.instanceId) throw new Error('Expected `instanceId` property in Instance options!');
+        if (options.instanceId.split(":").length !== 3) throw new Error('The instanceId property is in the wrong format!');
         if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
         if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
         
-        let splitInstance = options.instance.split(":");
-        this.platformVersion = splitInstance[0];
-        this.cluster = splitInstance[1];
-        this.instanceId = splitInstance[2];
+        let splitinstanceId = options.instanceId.split(":");
+        this.platformVersion = splitinstanceId[0];
+        this.cluster = splitinstanceId[1];
+        this.id = splitinstanceId[2];
 
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
@@ -119,6 +119,6 @@ export default class Instance {
     }
 
     private absPath(relativePath: string): string {
-        return `/services/${this.serviceName}/${this.serviceVersion}/${this.instanceId}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
+        return `/services/${this.serviceName}/${this.serviceVersion}/${this.id}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
 }
