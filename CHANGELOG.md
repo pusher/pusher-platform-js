@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ### Changes
 
-- Renamed the `instance` to `instanceID` when instantiating an `Instance`. `Instance` class now has a parameter `id` that used to be `instance`. 
+- Renamed the `instance` to `instanceId` when instantiating an `Instance`. `Instance` class now has a parameter `id` that used to be `instance`. 
 - Won the Internet for the most confusing changelog entries.
 
 ## [v0.6.1] 2017-07-10

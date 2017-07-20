@@ -9,7 +9,7 @@ const HOST_BASE = "pusherplatform.io";
 
 export interface InstanceOptions {
 
-    instanceID: string;
+    instanceId: string;
     serviceName: string;
     serviceVersion: string;
     host?: string; //Allows to inject the hostname by default.
@@ -38,12 +38,12 @@ export default class Instance {
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
-        if (!options.instanceID) throw new Error('Expected `instanceID` property in Instance options!');
-        if (options.instanceID.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
+        if (!options.instanceId) throw new Error('Expected `instanceId` property in Instance options!');
+        if (options.instanceId.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
         if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
         if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
         
-        let splitInstance = options.instanceID.split(":");
+        let splitInstance = options.instanceId.split(":");
         this.platformVersion = splitInstance[0];
         this.cluster = splitInstance[1];
         this.id = splitInstance[2];

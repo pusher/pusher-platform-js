@@ -50,15 +50,15 @@ let instance = new Instance(...);
 ### Instance
 
 This is the main entry point - represents a single instance of a service running on the Elements infrastructure.
-Initialise with an `InstanceOptions` object that MUST contain at least the `instanceID`, `serviceName`, and `serviceVersion`.
+Initialise with an `InstanceOptions` object that MUST contain at least the `instanceId`, `serviceName`, and `serviceVersion`.
 
 InstanceOptions: 
 ```typescript
     serviceName: string; //Mandatory
-    instanceID: string; // Mandatory
+    instanceId: string; // Mandatory
     serviceVersion: string //Mandatory
 
-    host?: string; // Use in debugging, overrides the cluster setting that is the part of `instanceID` 
+    host?: string; // Use in debugging, overrides the cluster setting that is the part of `instanceId` 
     encrypted?: boolean; // Defaults to true
 
     client?: BaseClient; // You can provide custom implementation - this will probably be deprecated in the future
