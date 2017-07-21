@@ -8,7 +8,7 @@ describe('Instance Subscribe', () => {
     beforeEach(() => {
 
         instance = new PusherPlatform.Instance({
-            instance: "v1:api-ceres:1",
+            instanceId: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
             host: "localhost:10443"
