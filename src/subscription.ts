@@ -1,27 +1,10 @@
-import { TokenProvider } from './token-provider';
+//DEPRECATED!!!!!
+
+
+// import { TokenProvider } from './token-provider';
 import { ErrorResponse, NetworkError, XhrReadyState } from './base-client';
 import { Logger } from './logger';
-import { SubscriptionState, SubscriptionEvent } from './base-subscription'
-
-// export enum SubscriptionState {
-//     UNOPENED = 0, // haven't called xhr.send()
-//     OPENING,      // called xhr.send(); not yet received response headers
-//     OPEN,         // received response headers; called onOpen(); expecting message
-//     ENDING,       // received EOS message; response not yet finished
-//     ENDED         // called onEnd() or onError(err)
-// }
-
-// export interface SubscribeOptions {
-//     path: string;
-//     tokenProvider?: TokenProvider;
-//     jwt?: string;
-//     lastEventId?: string;
-//     onOpen?: () => void;
-//     onEvent?: (event: SubscriptionEvent) => void;
-//     onEnd?: () => void;
-//     onError?: (error: Error) => void;
-//     logger: Logger;
-// }
+import { SubscriptionState, SubscriptionEvent, SubscribeOptions } from './base-subscription'
 
 // Asserts that the subscription state is one of the specified values,
 // otherwise logs the current value.
@@ -49,9 +32,7 @@ export class Subscription {
         private options: SubscribeOptions
     ) {
         this.assertState = assertState.bind(this, SubscriptionState);
-        if (options.lastEventId) {
-            this.xhr.setRequestHeader("Last-Event-Id", options.lastEventId);
-        }
+        
         this.xhr.onreadystatechange = () => {
             if (
                 this.xhr.readyState === XhrReadyState.UNSENT ||

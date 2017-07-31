@@ -1,8 +1,6 @@
 import { Logger } from './logger';
-// import { assertState } from './resumable-subscription';
 import { TokenProvider } from './token-provider';
 import { XhrReadyState, NetworkError, ErrorResponse, Headers } from "./base-client";
-
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
@@ -18,10 +16,8 @@ export interface SubscriptionEvent {
     body: any;
 }
 
-export interface SubscribeOptions {
-    
+export interface SubscribeOptions {    
     path: string;
-    tokenProvider?: TokenProvider;
     headers: Headers;
     
     logger: Logger;
@@ -30,6 +26,7 @@ export interface SubscribeOptions {
     onEvent?: (event: SubscriptionEvent) => void;
     onEnd?: () => void;
     onError?: (error: Error) => void;
+    onRetry?: () => void;
 }
 
 export class BaseSubscription {
@@ -65,10 +62,29 @@ export class BaseSubscription {
             }
         } 
     }
+
+    open(jwt?: string) {
+        if (this.state !== SubscriptionState.UNOPENED) {
+            throw new Error("Called .open() on Subscription object in unexpected state: " + this.state);
+        }
+
+        this.state = SubscriptionState.OPENING;
+
+        if (jwt) {
+            this.xhr.setRequestHeader("authorization", `Bearer ${jwt}`);
+        }
+
+        this.xhr.send();
+    }
+
+    unsubscribe(err: any): void {
+        throw new Error("Not implemented!");
+    }
     
     private onLoading(): void {
         this.assertStateIsIn(SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDING);
         if(this.xhr.status === 200){                
+            
             //Check if we just transitioned to the open state
             if(this.state === SubscriptionState.OPENING) {
                 this.state = SubscriptionState.OPEN;
@@ -95,20 +111,19 @@ export class BaseSubscription {
     }
     
     private onDone(): void {
-        
         if (this.xhr.status === 200) {
             if (this.state === SubscriptionState.OPENING) {
                 this.state = SubscriptionState.OPEN;
                 this.options.onOpen();
             }
-            this.assertStateIsIn(SubscriptionState.OPEN, SubscriptionState.ENDING);
+            this.assertStateIsIn( SubscriptionState.OPEN, SubscriptionState.ENDING );
             let err = this.onChunk();
             if (err) {
                 this.state = SubscriptionState.ENDED;
-                if((err as any).statusCode === 204){ //TODO: That cast is horrific
+                if ( (err as any).statusCode === 204 ) { //TODO: That cast is horrific
                     this.options.onEnd();
                 }
-                else{
+                else {
                     this.options.onError(err);
                 }
             } else if (this.state <= SubscriptionState.ENDING) {
@@ -128,10 +143,10 @@ export class BaseSubscription {
                 return;
             }
             //Something terrible has happened. Most likely a network error. XHR is useless at that point.
-            else if(this.xhr.status === 0){
+            else if(this.xhr.status === 0) {
                 this.options.onError(new NetworkError("Connection lost."));
                 
-            }else{
+            } else {
                 this.options.onError(ErrorResponse.fromXHR(this.xhr));
             }
         }
@@ -144,7 +159,7 @@ export class BaseSubscription {
         let response = this.xhr.responseText;
         let newlineIndex = response.lastIndexOf("\n");
         if (newlineIndex > this.lastNewlineIndex) {
-            
+
             let rawEvents = response.slice(this.lastNewlineIndex, newlineIndex).split("\n");
             this.lastNewlineIndex = newlineIndex;
             
@@ -161,9 +176,16 @@ export class BaseSubscription {
         }
     }
     
+    /******
+    Message parsing
+    ******/
+
     private gotEOS: boolean = false;
     
-    // calls options.onEvent 0+ times, then returns an Error or null
+    /**
+     * Calls options.onEvent 0+ times, then returns an Error or null
+     * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
+     */
     private onMessage(message: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         this.verifyMessage(message);
@@ -201,7 +223,7 @@ export class BaseSubscription {
     * EOS message received. Sets subscription state to Ending and returns an error with given status code
     * @param eosMessage final message of the subscription
     */
-    // 
+
     private onEOSMessage(eosMessage: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         
@@ -220,6 +242,10 @@ export class BaseSubscription {
         return new ErrorResponse(statusCode, headers, info);
     }
     
+    /******
+    Utility methods
+    ******/
+
     /**
     * Asserts whether this subscription falls in one of the expected states and logs a warning if it's not. 
     * @param validStates Array of possible states this subscription could be in.
@@ -233,6 +259,11 @@ export class BaseSubscription {
         }
     } 
     
+    /**
+     * Check if a single subscription message is in the right format.
+     * @param message The message to check.
+     * @returns null or error if the message is wrong.
+     */
     private verifyMessage(message: any[]){
         if (this.gotEOS) {
             return new Error("Got another message after EOS message");
@@ -245,7 +276,13 @@ export class BaseSubscription {
         }
     }   
     
-    private replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+    /**
+     * Allows avoiding making null check every. Single. Time.
+     * @param options the options that come in
+     * @returns the mutated options
+     * TODO: should this be cloned instead?
+     */
+    replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
         if(!options.onOpen) options.onOpen = () => {};
         if(!options.onEvent) options.onEvent = (event) => {};
         if(!options.onEnd) options.onEnd = () => {};

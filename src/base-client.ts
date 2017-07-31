@@ -1,7 +1,8 @@
 import { TokenProvider } from './token-provider';
-import { Subscription, SubscribeOptions } from './subscription';
+// import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
 import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
+import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
 
 export interface BaseClientOptions {
     host: string;
@@ -119,17 +120,31 @@ export class BaseClient {
         });
     }
 
-    newSubscription(subOptions: SubscribeOptions): Subscription {
-        return new Subscription(
-            this.createXHR(this.baseURL, {
-                method: "SUBSCRIBE",
-                path: subOptions.path,
-                headers: {},
-                body: null,
-            }),
+    newStatelessSubscription(subOptions: StatelessSubscribeOptions): StatelessSubscription {
+        return new StatelessSubscription(
+            () => { 
+                return this.createXHR(this.baseURL, {
+                    method: "SUBSCRIBE",
+                    path: subOptions.path,
+                    headers: {},
+                    body: null,
+            });
+            },
             subOptions
-        );
+        )
     }
+
+    // newSubscription(subOptions: SubscribeOptions): Subscription {
+    //     return new Subscription(
+    //         this.createXHR(this.baseURL, {
+    //             method: "SUBSCRIBE",
+    //             path: subOptions.path,
+    //             headers: {},
+    //             body: null,
+    //         }),
+    //         subOptions
+    //     );
+    // }
 
     newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
         return new ResumableSubscription(
