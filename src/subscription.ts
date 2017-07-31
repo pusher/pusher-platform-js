@@ -11,17 +11,17 @@ import { SubscriptionState, SubscriptionEvent } from './base-subscription'
 //     ENDED         // called onEnd() or onError(err)
 // }
 
-export interface SubscribeOptions {
-    path: string;
-    tokenProvider?: TokenProvider;
-    jwt?: string;
-    lastEventId?: string;
-    onOpen?: () => void;
-    onEvent?: (event: SubscriptionEvent) => void;
-    onEnd?: () => void;
-    onError?: (error: Error) => void;
-    logger: Logger;
-}
+// export interface SubscribeOptions {
+//     path: string;
+//     tokenProvider?: TokenProvider;
+//     jwt?: string;
+//     lastEventId?: string;
+//     onOpen?: () => void;
+//     onEvent?: (event: SubscriptionEvent) => void;
+//     onEnd?: () => void;
+//     onError?: (error: Error) => void;
+//     logger: Logger;
+// }
 
 // Asserts that the subscription state is one of the specified values,
 // otherwise logs the current value.

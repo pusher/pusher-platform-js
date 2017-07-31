@@ -43,12 +43,12 @@ export class BaseSubscription {
         //Apply headers    
         for (let key in options.headers) {
             xhr.setRequestHeader(key, options.headers[key]);
-        }     
-  
+        }
+        
+        this.options = this.replaceUnimplementedListenersWithNoOps(options)
+        
         xhr.onreadystatechange = () => {
-            
-            switch(this.xhr.readyState){
-                
+            switch(this.xhr.readyState) {
                 case XhrReadyState.UNSENT:
                 case XhrReadyState.OPENED:
                 case XhrReadyState.HEADERS_RECEIVED:
@@ -72,7 +72,7 @@ export class BaseSubscription {
             //Check if we just transitioned to the open state
             if(this.state === SubscriptionState.OPENING) {
                 this.state = SubscriptionState.OPEN;
-                if(this.options.onOpen) { this.options.onOpen(); }
+                this.options.onOpen();
             }
             
             this.assertStateIsIn(SubscriptionState.OPEN);
@@ -82,7 +82,7 @@ export class BaseSubscription {
             if (err) {
                 this.state = SubscriptionState.ENDED;
                 if((err as ErrorResponse).statusCode != 204){
-                    if (this.options.onError) { this.options.onError(err); }
+                    this.options.onError(err);
                 }
                 // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
                 // and so we will not call the event handler again.
@@ -99,25 +99,23 @@ export class BaseSubscription {
         if (this.xhr.status === 200) {
             if (this.state === SubscriptionState.OPENING) {
                 this.state = SubscriptionState.OPEN;
-                if (this.options.onOpen) { this.options.onOpen(); }
+                this.options.onOpen();
             }
             this.assertStateIsIn(SubscriptionState.OPEN, SubscriptionState.ENDING);
             let err = this.onChunk();
             if (err) {
                 this.state = SubscriptionState.ENDED;
                 if((err as any).statusCode === 204){ //TODO: That cast is horrific
-                    if (this.options.onEnd) {
-                        this.options.onEnd();
-                    }
+                    this.options.onEnd();
                 }
                 else{
-                    if (this.options.onError) { this.options.onError(err); }
+                    this.options.onError(err);
                 }
             } else if (this.state <= SubscriptionState.ENDING) {
-                if (this.options.onError) { this.options.onError(new Error("HTTP response ended without receiving EOS message")); }
+                this.options.onError(new Error("HTTP response ended without receiving EOS message"));
             } else {
                 // Stream ended normally.
-                if (this.options.onEnd) { this.options.onEnd(); }
+                this.options.onEnd();
             }
             
         } 
@@ -138,9 +136,9 @@ export class BaseSubscription {
             }
         }
     }
-
+    
     private lastNewlineIndex: number = 0;
-
+    
     private onChunk(): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         let response = this.xhr.responseText;
@@ -169,7 +167,7 @@ export class BaseSubscription {
     private onMessage(message: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         this.verifyMessage(message);
-
+        
         switch (message[0]) {
             case 0:
             return null;
@@ -196,14 +194,13 @@ export class BaseSubscription {
         if (typeof headers !== "object" || Array.isArray(headers)) {
             return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
         }
-        
-        if (this.options.onEvent) { this.options.onEvent({ eventId: id, headers: headers, body: body }); }
+        this.options.onEvent({ eventId: id, headers: headers, body: body });
     }
     
     /**
-     * EOS message received. Sets subscription state to Ending and returns an error with given status code
-     * @param eosMessage final message of the subscription
-     */
+    * EOS message received. Sets subscription state to Ending and returns an error with given status code
+    * @param eosMessage final message of the subscription
+    */
     // 
     private onEOSMessage(eosMessage: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
@@ -235,7 +232,7 @@ export class BaseSubscription {
             this.options.logger.warn(`Expected this.state to be one of [${expectedStates}] but it is ${actualState}`);
         }
     } 
-
+    
     private verifyMessage(message: any[]){
         if (this.gotEOS) {
             return new Error("Got another message after EOS message");
@@ -246,5 +243,15 @@ export class BaseSubscription {
         if (message.length < 1) {
             return new Error("Message is empty array");
         }
+    }   
+    
+    private replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+        if(!options.onOpen) options.onOpen = () => {};
+        if(!options.onEvent) options.onEvent = (event) => {};
+        if(!options.onEnd) options.onEnd = () => {};
+        if(!options.onError) options.onError = (error) => {}; 
+        return options;
     }
 }
+
+
