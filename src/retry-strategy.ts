@@ -1,5 +1,8 @@
 import { ErrorResponse, NetworkError } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
+
+
+
 export interface RetryStrategy {
     attemptRetry(error: Error): Promise<Error>;
     reset(): void;
@@ -106,11 +109,14 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
              if(error.headers["Retry-After"]) {
                  retryable.isRetryable = true;
                  retryable.backoffMillis = parseInt(error.headers["retry-after"]) * 1000;
+             } else if(error.statusCode === 401) {
+                //We are unauthorized and should retry refreshing token. Can retry immediately.
+                retryable.isRetryable = true;
+                retryable.backoffMillis = 0;
              }
          }
         return retryable;
     }
-
 
     reset(): void {
         this.retryCount = 0;
