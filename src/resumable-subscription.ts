@@ -36,7 +36,7 @@ export class ResumableSubscription {
         }
     }
 
-    tryNow(): void {
+    private tryNow(): void {
         let newXhr = this.xhrSource();
         
         if (this.lastEventIdReceived) {

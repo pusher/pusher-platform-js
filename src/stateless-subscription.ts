@@ -95,7 +95,7 @@ export class StatelessSubscription {
      * @returns the mutated options
      * TODO: should this be cloned instead?
      */
-    replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+    replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions {
         if(!options.onOpen) options.onOpen = () => {};
         if(!options.onEvent) options.onEvent = (event) => {};
         if(!options.onEnd) options.onEnd = () => {};

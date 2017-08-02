@@ -41,9 +41,7 @@ export class BaseSubscription {
         for (let key in options.headers) {
             xhr.setRequestHeader(key, options.headers[key]);
         }
-        
-        this.options = this.replaceUnimplementedListenersWithNoOps(options)
-        
+                
         xhr.onreadystatechange = () => {
             switch(this.xhr.readyState) {
                 case XhrReadyState.UNSENT:
@@ -278,20 +276,6 @@ export class BaseSubscription {
             return new Error("Message is empty array");
         }
     }   
-    
-    /**
-     * Allows avoiding making null check every. Single. Time.
-     * @param options the options that come in
-     * @returns the mutated options
-     * TODO: should this be cloned instead?
-     */
-    replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
-        if(!options.onOpen) options.onOpen = () => {};
-        if(!options.onEvent) options.onEvent = (event) => {};
-        if(!options.onEnd) options.onEnd = () => {};
-        if(!options.onError) options.onError = (error) => {}; 
-        return options;
-    }
 }
 
 

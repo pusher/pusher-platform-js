@@ -1,6 +1,5 @@
 import { Logger } from './logger';
 import { TokenProvider } from './token-provider';
-// import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
 import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
 import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
@@ -13,7 +12,6 @@ export interface BaseClientOptions {
     XMLHttpRequest?: Function;
 }
 
-//TODO: can we unify these two?
 export type Headers = {
   [key: string]: string;
 }
