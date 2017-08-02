@@ -10,7 +10,6 @@ export interface ResumableSubscribeOptions extends SubscribeOptions {
     tokenProvider?: TokenProvider; 
 }
 
-// pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
 export class ResumableSubscription {
 
     private baseSubscription: BaseSubscription;
@@ -22,7 +21,7 @@ export class ResumableSubscription {
         private xhrSource: () => XMLHttpRequest,
         private options: ResumableSubscribeOptions
     ) {
-        // this.assertState = assertState.bind(this, ResumableSubscriptionState);
+        this.options = this.replaceUnimplementedListenersWithNoOps(options);
         this.lastEventIdReceived = options.lastEventId;
         this.logger = options.logger;
         
@@ -94,5 +93,19 @@ export class ResumableSubscription {
             throw new Error("Subscription doesn't exist! Have you called open()?");
         }
         this.baseSubscription.unsubscribe(error); // We'll get onEnd and bubble this up
+    }
+
+    /**
+     * Allows avoiding making null check every. Single. Time.
+     * @param options the options that come in
+     * @returns the mutated options
+     * TODO: should this be cloned instead?
+     */
+    replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+        if(!options.onOpen) options.onOpen = () => {};
+        if(!options.onEvent) options.onEvent = (event) => {};
+        if(!options.onEnd) options.onEnd = () => {};
+        if(!options.onError) options.onError = (error) => {}; 
+        return options;
     }
 }

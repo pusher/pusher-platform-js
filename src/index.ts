@@ -1,14 +1,15 @@
 import Instance from './instance';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
-import { ResumableSubscription } from './resumable-subscription';
+import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription';
+import { StatelessSubscription, StatelessSubscribeOptions } from './stateless-subscription'; 
 import { RetryStrategy, ExponentialBackoffRetryStrategy } from './retry-strategy';
-import { Subscription } from './subscription';
 
 export {
   Instance,
   BaseClient,
-  ResumableSubscription, Subscription,
+  ResumableSubscription, ResumableSubscribeOptions,
+  StatelessSubscription, StatelessSubscribeOptions,
 
   RetryStrategy, ExponentialBackoffRetryStrategy,
   Logger, ConsoleLogger, EmptyLogger, 
@@ -17,7 +18,8 @@ export {
 export default {
   Instance,
   BaseClient,
-  ResumableSubscription, Subscription,
+  ResumableSubscription,
+  StatelessSubscription,
 
   ExponentialBackoffRetryStrategy,
   ConsoleLogger, EmptyLogger

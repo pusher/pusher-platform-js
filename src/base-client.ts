@@ -13,15 +13,9 @@ export interface BaseClientOptions {
     XMLHttpRequest?: Function;
 }
 
-
 //TODO: can we unify these two?
 export type Headers = {
   [key: string]: string;
-}
-
-export interface Header {
-    key: string;
-    value: string;
 }
 
 export interface RequestOptions {
