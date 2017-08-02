@@ -66,6 +66,7 @@ export class StatelessSubscription {
             logger: this.logger
         });
                
+        //TODO: use RetryingTokenProvider
         if (this.options.tokenProvider) {
             this.options.tokenProvider.fetchToken().then((jwt) => {
                 this.baseSubscription.open(jwt);

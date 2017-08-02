@@ -104,7 +104,6 @@ export class Subscription {
                         // Stream ended normally.
                         if (this.options.onEnd) { this.options.onEnd(); }
                     }
-               
                 } 
                 
                 else {

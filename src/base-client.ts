@@ -1,3 +1,4 @@
+import { Logger } from './logger';
 import { TokenProvider } from './token-provider';
 // import { Subscription, SubscribeOptions } from './subscription';
 import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
@@ -31,6 +32,7 @@ export interface RequestOptions {
   headers?: Headers;
   body?: any;
   retryStrategy?: RetryStrategy;
+  logger?: Logger;
 }
 
 export function responseHeadersObj(headerStr: string): Headers {

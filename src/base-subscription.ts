@@ -132,7 +132,6 @@ export class BaseSubscription {
                 // Stream ended normally.
                 this.options.onEnd();
             }
-            
         } 
         
         else {

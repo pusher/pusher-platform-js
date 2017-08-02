@@ -35,7 +35,7 @@ export default class Instance {
     private serviceVersion: string;
     private serviceName: string;
 
-    private tokenProvider: TokenProvider;
+    // private tokenProvider: TokenProvider;
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
@@ -51,7 +51,7 @@ export default class Instance {
 
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
-        this.tokenProvider = options.tokenProvider;
+        // this.tokenProvider = options.tokenProvider;
 
         if(options.host){
             this.host = options.host;
@@ -74,46 +74,38 @@ export default class Instance {
 
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
-        if (!options.jwt && tokenProvider) {
-            return tokenProvider.fetchToken().then((jwt) => {
-                return this.client.request({ jwt, ...options });
-            });
-        } else {
-            return this.client.request(options);
-        }
+        if(!options.logger) options.logger = this.logger;
+
+        //TODO: use new tokenProvider
+        return this.client.request(options);
+
+        // const tokenProvider = options.tokenProvider || this.tokenProvider;
+        // if (!options.jwt && tokenProvider) {
+        //     return tokenProvider.fetchToken().then((jwt) => {
+        //         return this.client.request({ jwt, ...options });
+        //     });
+        // } else {
+        //     return this.client.request(options);
+        // }
     }
 
     subscribe(options: StatelessSubscribeOptions): StatelessSubscription {
         options.path = this.absPath(options.path);
-        options.logger = this.logger;
+        if(!options.logger) options.logger = this.logger;
 
-        let subscription: StatelessSubscription = this.clientSubscription(options);
+        let subscription: StatelessSubscription = 
+            this.client.newStatelessSubscription( { ...options } );
+        subscription.open();
 
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
-        if (options.jwt) {
-            subscription.open(options.jwt);
-        } else if (tokenProvider) {
-            tokenProvider.fetchToken().then((jwt) => {
-                subscription.open(jwt);
-            }).catch((err) => {
-                subscription.unsubscribe(err);
-            });
-        } else {
-            subscription.open(null);
-        }
         return subscription;
     }
 
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
-        if(!options.logger) options.logger = this.logger;
-        options.logger = this.logger;
         options.path = this.absPath(options.path);
-        const tokenProvider = options.tokenProvider || this.tokenProvider;
+        if(!options.logger) options.logger = this.logger;
 
         let resumableSubscription: ResumableSubscription =
-            this.client.newResumableSubscription({ tokenProvider, ...options });
-
+            this.client.newResumableSubscription({ ...options });
         resumableSubscription.open();
 
         return resumableSubscription;
