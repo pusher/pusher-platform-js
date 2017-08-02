@@ -3,7 +3,6 @@ import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
-// import { SubscribeOptions, Subscription } from './subscription';
 import { StatelessSubscribeOptions, StatelessSubscription } from './stateless-subscription';
 
 const HOST_BASE = "pusherplatform.io";

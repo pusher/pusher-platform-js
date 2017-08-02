@@ -1,8 +1,6 @@
 import { ErrorResponse, NetworkError } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 
-
-
 export interface RetryStrategy {
     attemptRetry(error: Error, ignoreRetryAfter?: boolean): Promise<Error>;
     reset(): void;

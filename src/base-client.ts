@@ -125,7 +125,7 @@ export class BaseClient {
             });
             },
             subOptions
-        )
+        );
     }
 
     newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
