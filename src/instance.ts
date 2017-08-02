@@ -35,7 +35,6 @@ export default class Instance {
     private serviceVersion: string;
     private serviceName: string;
 
-    // private tokenProvider: TokenProvider;
     private logger: Logger;
 
     constructor(options: InstanceOptions) {
@@ -51,7 +50,6 @@ export default class Instance {
 
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
-        // this.tokenProvider = options.tokenProvider;
 
         if(options.host){
             this.host = options.host;
@@ -76,17 +74,7 @@ export default class Instance {
         options.path = this.absPath(options.path);
         if(!options.logger) options.logger = this.logger;
 
-        //TODO: use new tokenProvider
         return this.client.request(options);
-
-        // const tokenProvider = options.tokenProvider || this.tokenProvider;
-        // if (!options.jwt && tokenProvider) {
-        //     return tokenProvider.fetchToken().then((jwt) => {
-        //         return this.client.request({ jwt, ...options });
-        //     });
-        // } else {
-        //     return this.client.request(options);
-        // }
     }
 
     subscribe(options: StatelessSubscribeOptions): StatelessSubscription {

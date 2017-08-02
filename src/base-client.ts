@@ -128,18 +128,6 @@ export class BaseClient {
         )
     }
 
-    // newSubscription(subOptions: SubscribeOptions): Subscription {
-    //     return new Subscription(
-    //         this.createXHR(this.baseURL, {
-    //             method: "SUBSCRIBE",
-    //             path: subOptions.path,
-    //             headers: {},
-    //             body: null,
-    //         }),
-    //         subOptions
-    //     );
-    // }
-
     newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
         return new ResumableSubscription(
             () => {
