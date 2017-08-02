@@ -4,7 +4,7 @@ import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 
 
 export interface RetryStrategy {
-    attemptRetry(error: Error): Promise<Error>;
+    attemptRetry(error: Error, ignoreRetryAfter?: boolean): Promise<Error>;
     reset(): void;
 }
 
