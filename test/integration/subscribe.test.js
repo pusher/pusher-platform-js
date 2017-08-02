@@ -100,7 +100,7 @@ describe('Instance Subscribe', () => {
 
     });
 
-    it('subscribes and then unsubscribes - expecrting onEnd', (done) => {
+    it('subscribes and then unsubscribes - expecting onEnd', (done) => {
         let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
             onEvent: (event) => {

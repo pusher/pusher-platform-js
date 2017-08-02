@@ -78,7 +78,11 @@ export class BaseSubscription {
     }
 
     unsubscribe(err: any): void {
-        throw new Error("Not implemented!");
+        this.state = SubscriptionState.ENDED;
+        this.xhr.abort();
+        
+        if (err) { this.options.onError(err); }
+        else { this.options.onEnd(); }
     }
     
     private onLoading(): void {
