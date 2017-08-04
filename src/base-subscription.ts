@@ -19,6 +19,7 @@ export interface SubscriptionEvent {
 export interface SubscribeOptions {    
     path: string;
     headers: Headers;
+    jwt?: string;
     
     logger: Logger;
     
@@ -61,15 +62,15 @@ export class BaseSubscription {
         } 
     }
 
-    open(jwt?: string) {
+    open() {
         if (this.state !== SubscriptionState.UNOPENED) {
             throw new Error("Called .open() on Subscription object in unexpected state: " + this.state);
         }
 
         this.state = SubscriptionState.OPENING;
 
-        if (jwt) {
-            this.xhr.setRequestHeader("authorization", `Bearer ${jwt}`);
+        if (this.options.jwt) {
+            this.xhr.setRequestHeader("authorization", `Bearer ${this.options.jwt}`);
         }
 
         this.xhr.send();
