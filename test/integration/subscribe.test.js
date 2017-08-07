@@ -22,31 +22,6 @@ describe('Instance Subscribe', () => {
 
     //TODO: use spies and expect methods to be called
 
-    it('subscribes and then unsubscribes with error - expecting onError', (done) => {
-        let errorThrown = new Error("expected");
-
-        let eventCount = 0;
-        let sub = instance.subscribe({
-            path: PATH_3_AND_OPEN,
-            onEvent: (event) => {
-                eventCount += 1;                
-                if(eventCount > 3){
-                    fail(`Too many events received: ${eventCount}`);
-                }
-                if(eventCount == 3){
-                    sub.unsubscribe(errorThrown);
-                }
-            },
-            onEnd: () => {
-                fail("We should have seen an error!");
-            },
-            onError: (err) => {
-                expect(err).toEqual(errorThrown);
-                done();
-            }
-        });
-    });
-
     it('subscribes and terminates on EOS after receiving all events', (done) => {
         instance.subscribe({
             path: PATH_10_AND_EOS,

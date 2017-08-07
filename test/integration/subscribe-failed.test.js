@@ -3,6 +3,12 @@ const { default: PusherPlatform } = require('../../target/pusher-platform.js');
 const PATH_NOT_EXISTING = "subscribe_missing";
 const PATH_FORBIDDEN = "subscribe_forbidden";
 
+const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    requestMethod: "",
+    logger: new PusherPlatform.EmptyLogger(),
+    limit: 0
+})
+
 describe('Instance Subscribe errors nicely', () => {
 
     beforeAll(() => {
@@ -10,7 +16,8 @@ describe('Instance Subscribe errors nicely', () => {
             instance: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
-            host: "localhost:10443"
+            host: "localhost:10443",
+            logger: new PusherPlatform.EmptyLogger()
         });
     })
 
@@ -26,7 +33,8 @@ describe('Instance Subscribe errors nicely', () => {
             onError: (err) => {
                 expect(err.statusCode).toBe(404);
                 done();
-            }
+            },
+            retryStrategy: noRetryStrategy
         });
     });
 
@@ -43,7 +51,8 @@ describe('Instance Subscribe errors nicely', () => {
 
                 expect(err.statusCode).toBe(403);
                 done();
-            }
+            },
+            retryStrategy: noRetryStrategy
         });
     });
 
@@ -59,7 +68,8 @@ describe('Instance Subscribe errors nicely', () => {
             onError: (err) => {
                 expect(err.statusCode).toBe(500);
                 done();
-            }
+            },
+            retryStrategy: noRetryStrategy
         });
     });
 

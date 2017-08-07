@@ -16,7 +16,7 @@ import {
 
 export interface ResumableSubscribeOptions extends SubscribeOptions {
     lastEventId?: string;
-    retryStrategy?: () => RetryStrategy;
+    retryStrategy?:  RetryStrategy;
     tokenProvider?: TokenProvider; 
 }
 
@@ -33,7 +33,7 @@ export class ResumableSubscription {
     ) {
         this.lastEventIdReceived = options.lastEventId;
         this.logger = options.logger;
-        this.retryStrategy = options.retryStrategy();
+        this.retryStrategy = options.retryStrategy;
         
         if(!this.options.tokenProvider)
             this.options.tokenProvider = new NoOpTokenProvider();

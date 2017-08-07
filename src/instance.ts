@@ -1,3 +1,4 @@
+import { ExponentialBackoffRetryStrategy, RetryStrategy } from './retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';
@@ -14,7 +15,6 @@ export interface InstanceOptions {
     serviceVersion: string;
     host?: string; //Allows to inject the hostname by default.
     logger?: Logger;
-
     tokenProvider?: TokenProvider;
     client?: BaseClient;
 
@@ -61,7 +61,7 @@ export default class Instance {
             host: this.host
         });
         
-        if(options.logger !== undefined){
+        if(options.logger){
             this.logger = options.logger;
         }
         else{

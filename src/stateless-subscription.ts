@@ -35,6 +35,7 @@ export class StatelessSubscription {
             this.options.tokenProvider = new NoOpTokenProvider();
         
         this.options = replaceUnimplementedListenersWithNoOps(options);
+        this.retryStrategy = options.retryStrategy;
     }
     
     tryNow(): void {
