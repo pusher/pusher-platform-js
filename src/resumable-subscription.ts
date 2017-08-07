@@ -1,8 +1,18 @@
 import { NoOpTokenProvider, TokenProvider } from './token-provider';
 import { ErrorResponse } from './base-client';
-import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
+import { 
+    RetryStrategy, 
+    ExponentialBackoffRetryStrategy, 
+    Retry, 
+    DoNotRetry 
+} from './retry-strategy';
 import { Logger } from './logger';
-import { BaseSubscription, SubscribeOptions, SubscriptionEvent } from './base-subscription' 
+import { 
+    BaseSubscription, 
+    SubscribeOptions, 
+    SubscriptionEvent, 
+    replaceUnimplementedListenersWithNoOps 
+} from './base-subscription' 
 
 export interface ResumableSubscribeOptions extends SubscribeOptions {
     lastEventId?: string;
@@ -28,7 +38,7 @@ export class ResumableSubscription {
         if(!this.options.tokenProvider)
             this.options.tokenProvider = new NoOpTokenProvider();
         
-        this.options = this.replaceUnimplementedListenersWithNoOps(options);
+        this.options = replaceUnimplementedListenersWithNoOps(options);
     }
     
     private tryNow(): void {
@@ -89,18 +99,13 @@ export class ResumableSubscription {
             this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
         }
         
-        /**
-        * Allows avoiding making null check every. Single. Time.
-        * @param options the options that come in
-        * @returns the mutated options
-        * TODO: should this be cloned instead?
-        */
-        replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
-            if(!options.onOpen) options.onOpen = () => {};
-            if(!options.onEvent) options.onEvent = (event) => {};
-            if(!options.onEnd) options.onEnd = () => {};
-            if(!options.onError) options.onError = (error) => {}; 
-            return options;
-        }
+     
+        // replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+        //     if(!options.onOpen) options.onOpen = () => {};
+        //     if(!options.onEvent) options.onEvent = (event) => {};
+        //     if(!options.onEnd) options.onEnd = () => {};
+        //     if(!options.onError) options.onError = (error) => {}; 
+        //     return options;
+        // }
     }
     

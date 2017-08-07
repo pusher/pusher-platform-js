@@ -2,7 +2,12 @@ import { TokenProvider, NoOpTokenProvider } from './token-provider';
 import { ErrorResponse } from './base-client';
 import { RetryStrategy, ExponentialBackoffRetryStrategy, Retry, DoNotRetry } from './retry-strategy';
 import { Logger } from './logger';
-import { BaseSubscription, SubscribeOptions, SubscriptionEvent } from './base-subscription' 
+import {
+    BaseSubscription,
+    replaceUnimplementedListenersWithNoOps,
+    SubscribeOptions,
+    SubscriptionEvent,
+} from './base-subscription'; 
 
 export interface StatelessSubscribeOptions extends SubscribeOptions {
     retryStrategy?: RetryStrategy;
@@ -24,7 +29,7 @@ export class StatelessSubscription {
         if(!this.options.tokenProvider)
             this.options.tokenProvider = new NoOpTokenProvider();
         
-        this.options = this.replaceUnimplementedListenersWithNoOps(options);
+        this.options = replaceUnimplementedListenersWithNoOps(options);
     }
     
     tryNow(): void {
@@ -78,20 +83,6 @@ export class StatelessSubscription {
             }
             this.retryStrategy.cancel();
             this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
-        }
-        
-        /**
-        * Allows avoiding making null check every. Single. Time.
-        * @param options the options that come in
-        * @returns the mutated options
-        * TODO: should this be cloned instead?
-        */
-        replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions {
-            if(!options.onOpen) options.onOpen = () => {};
-            if(!options.onEvent) options.onEvent = (event) => {};
-            if(!options.onEnd) options.onEnd = () => {};
-            if(!options.onError) options.onError = (error) => {}; 
-            return options;
         }
     }
     

@@ -30,6 +30,20 @@ export interface SubscribeOptions {
     onRetry?: () => void;
 }
 
+/**
+* Allows avoiding making null check every. Single. Time.
+* @param options the options that come in
+* @returns the mutated options
+* TODO: should this be cloned instead?
+*/
+export function replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
+    if(!options.onOpen) options.onOpen = () => {};
+    if(!options.onEvent) options.onEvent = (event) => {};
+    if(!options.onEnd) options.onEnd = () => {};
+    if(!options.onError) options.onError = (error) => {}; 
+    return options;
+}
+
 export class BaseSubscription {
     
     private state: SubscriptionState = SubscriptionState.UNOPENED;
@@ -42,7 +56,7 @@ export class BaseSubscription {
         for (let key in options.headers) {
             xhr.setRequestHeader(key, options.headers[key]);
         }
-                
+        
         xhr.onreadystatechange = () => {
             switch(this.xhr.readyState) {
                 case XhrReadyState.UNSENT:
@@ -61,21 +75,21 @@ export class BaseSubscription {
             }
         } 
     }
-
+    
     open() {
         if (this.state !== SubscriptionState.UNOPENED) {
             throw new Error("Called .open() on Subscription object in unexpected state: " + this.state);
         }
-
+        
         this.state = SubscriptionState.OPENING;
-
+        
         if (this.options.jwt) {
             this.xhr.setRequestHeader("authorization", `Bearer ${this.options.jwt}`);
         }
-
+        
         this.xhr.send();
     }
-
+    
     unsubscribe(): void {
         this.state = SubscriptionState.ENDED;
         this.xhr.abort();
@@ -159,7 +173,7 @@ export class BaseSubscription {
         let response = this.xhr.responseText;
         let newlineIndex = response.lastIndexOf("\n");
         if (newlineIndex > this.lastNewlineIndex) {
-
+            
             let rawEvents = response.slice(this.lastNewlineIndex, newlineIndex).split("\n");
             this.lastNewlineIndex = newlineIndex;
             
@@ -179,13 +193,13 @@ export class BaseSubscription {
     /******
     Message parsing
     ******/
-
+    
     private gotEOS: boolean = false;
     
     /**
-     * Calls options.onEvent 0+ times, then returns an Error or null
-     * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
-     */
+    * Calls options.onEvent 0+ times, then returns an Error or null
+    * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
+    */
     private onMessage(message: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         this.verifyMessage(message);
@@ -223,7 +237,7 @@ export class BaseSubscription {
     * EOS message received. Sets subscription state to Ending and returns an error with given status code
     * @param eosMessage final message of the subscription
     */
-
+    
     private onEOSMessage(eosMessage: any[]): Error {
         this.assertStateIsIn(SubscriptionState.OPEN);
         
@@ -245,7 +259,7 @@ export class BaseSubscription {
     /******
     Utility methods
     ******/
-
+    
     /**
     * Asserts whether this subscription falls in one of the expected states and logs a warning if it's not. 
     * @param validStates Array of possible states this subscription could be in.
@@ -260,10 +274,10 @@ export class BaseSubscription {
     } 
     
     /**
-     * Check if a single subscription message is in the right format.
-     * @param message The message to check.
-     * @returns null or error if the message is wrong.
-     */
+    * Check if a single subscription message is in the right format.
+    * @param message The message to check.
+    * @returns null or error if the message is wrong.
+    */
     private verifyMessage(message: any[]){
         if (this.gotEOS) {
             return new Error("Got another message after EOS message");
