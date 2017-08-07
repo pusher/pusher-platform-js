@@ -98,14 +98,5 @@ export class ResumableSubscription {
             this.retryStrategy.cancel();
             this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
         }
-        
-     
-        // replaceUnimplementedListenersWithNoOps(options: SubscribeOptions): SubscribeOptions{
-        //     if(!options.onOpen) options.onOpen = () => {};
-        //     if(!options.onEvent) options.onEvent = (event) => {};
-        //     if(!options.onEnd) options.onEnd = () => {};
-        //     if(!options.onError) options.onError = (error) => {}; 
-        //     return options;
-        // }
     }
     
