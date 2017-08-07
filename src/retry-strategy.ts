@@ -5,7 +5,6 @@ export interface RetryStrategy {
     attemptRetry(error: Error): Promise<Error>;
     cancel(): void; //Cancels any pending retries
     reset(): void; //Resets the retry counter
-
 }
 
 export interface RetryStrategyResult {}
@@ -25,16 +24,20 @@ export class DoNotRetry implements RetryStrategyResult {
 }
 
 export interface ExponentialBackoffRetryStrategyOptions {
+    requestMethod: string;
+    logger: Logger;
+    retryUnsafeRequests?: boolean;        
 
     limit?: number;
     initialBackoffMillis?: number;
     maxBackoffMillis?: number;
-    ignoreRetryAfterHeaders: boolean;
 }
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
+    private requestMethod: string;
     private logger: Logger;
+    private retryUnsafeRequests: boolean = false;
 
     private limit: number = 6;
     private retryCount = 0;
@@ -45,20 +48,21 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     private pendingTimeouts = new Set<number>();
 
-    constructor(options: any){
+    constructor(options: ExponentialBackoffRetryStrategyOptions){
+        this.requestMethod = options.requestMethod;
+        this.logger = options.logger;
+
+        if(options.retryUnsafeRequests) 
+            this.retryUnsafeRequests = options.retryUnsafeRequests
+
+        //Backoff limits
         if(options.limit) this.limit = options.limit;
         if(options.initialBackoffMillis){
              this.currentBackoffMillis = options.initialBackoffMillis;
-             this.defaultBackoffMillis = options.defaultBackoffMillis;
+             this.defaultBackoffMillis = options.initialBackoffMillis;
         }
-
-        if(options.maxBackoffMillis) this.maxBackoffMillis = options.maxBackoffMillis;
-
-        if(options.logger !== undefined) {
-            this.logger = options.logger;
-        } else{ 
-            this.logger = new EmptyLogger();
-        }
+        if(options.maxBackoffMillis) 
+            this.maxBackoffMillis = options.maxBackoffMillis;
     }
 
     attemptRetry(error: Error): Promise<any> {
@@ -70,9 +74,12 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 reject(error);
             }
             else if(shouldRetry instanceof Retry) {
+                this.retryCount += 1;
+
                 const timeout = window.setTimeout(() => {
                     this.pendingTimeouts.delete(timeout);
                 }, shouldRetry.waitTimeMillis);
+
                 this.pendingTimeouts.add(timeout);
             }
         });
@@ -90,29 +97,19 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         });        
     }
 
-    private isRetryable(error: Error): RetryableResult {
-        let retryable: RetryableResult = {
-            isRetryable: false
+    private requestMethodIsSafe(): boolean {
+        switch(this.requestMethod){
+            case 'GET':
+            case 'HEAD':
+            case 'OPTIONS':
+            case 'SUBSCRIBE':
+                return true;
+            default:
+                return false;
         }
-         //We allow network errors
-         if(error instanceof NetworkError) retryable.isRetryable = true;
-
-         else if(error instanceof ErrorResponse) {
-             //Only retry after is allowed
-             if(error.headers["Retry-After"]) {
-                 retryable.isRetryable = true;
-                 retryable.backoffMillis = parseInt(error.headers["retry-after"]) * 1000;
-             } else if(error.statusCode === 401) {
-                //We are unauthorized and should retry refreshing token. Can retry immediately.
-                retryable.isRetryable = true;
-                retryable.backoffMillis = 0;
-             }
-         }
-        return retryable;
     }
 
     private shouldRetry(error: Error): RetryStrategyResult {
-
         this.logger.verbose(`${this.constructor.name}:  Error received`, error);
         
         if(this.retryCount >= this.limit && this.limit > 0 ){
@@ -120,29 +117,35 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             return new DoNotRetry(error);
         }
 
-        let retryable = this.isRetryable(error);
-        if(retryable.isRetryable){
+        if (error instanceof ErrorResponse && error.headers['Retry-After']){
+            return new Retry(parseInt(error.headers['Retry-After']) * 1000);
+        } 
 
-            if(retryable.backoffMillis){
-                this.retryCount += 1;
-                return new Retry(retryable.backoffMillis);
-            }
-            else{
-                this.currentBackoffMillis = this.calulateMillisToRetry();
-                this.retryCount += 1;
-            
-                this.logger.verbose(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMillis}`);
-                return new Retry(this.currentBackoffMillis)
-            }
+        if (error instanceof NetworkError || this.requestMethodIsSafe() || this.retryUnsafeRequests) {
+            return this.shouldSafeRetry(error);
         }
-
-        else{
-            this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
-            return new DoNotRetry(error);
-        }
+    
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
+        return new DoNotRetry(error);
     }
 
-    private calulateMillisToRetry(): number{
+    private shouldSafeRetry(error: Error){
+        if(error instanceof NetworkError){
+            return new Retry(this.calulateMillisToRetry());
+        }
+
+        if(error instanceof ErrorResponse) {
+            if(error.statusCode >= 500 && error.statusCode < 600){
+                return new Retry(this.calulateMillisToRetry());
+            }
+            if(error.statusCode === 401){
+                return new Retry(0) //Token expired - can retry immediately
+            }
+        }
+        return new DoNotRetry(error);
+    }
+
+    private calulateMillisToRetry(): number {
         
         if(this.currentBackoffMillis >= this.maxBackoffMillis || this.currentBackoffMillis * 2 >= this.maxBackoffMillis) {
             return this.maxBackoffMillis;
