@@ -76,12 +76,10 @@ export class BaseSubscription {
         this.xhr.send();
     }
 
-    unsubscribe(err: any): void {
+    unsubscribe(): void {
         this.state = SubscriptionState.ENDED;
         this.xhr.abort();
-        
-        if (err) { this.options.onError(err); }
-        else { this.options.onEnd(); }
+        this.options.onEnd();
     }
     
     private onLoading(): void {

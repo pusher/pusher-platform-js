@@ -46,15 +46,15 @@ export class ResumableSubscription {
                 jwt: token,
                 
                 onOpen: () => {
-                    if (this.options.onOpen) { this.options.onOpen(); }
+                    this.options.onOpen();
                     this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
                 },
                 onEvent: (event: SubscriptionEvent) => {
-                    if (this.options.onEvent) { this.options.onEvent(event); }
+                    this.options.onEvent(event);
                     this.lastEventIdReceived = event.eventId;
                 },
                 onEnd: () => {
-                    if (this.options.onEnd) { this.options.onEnd(); }
+                    this.options.onEnd();
                 },
                 onError: (error: Error) => {
                     this.retryStrategy.attemptRetry(error)
@@ -66,7 +66,7 @@ export class ResumableSubscription {
                         }
                     })
                     .catch(error => {
-                        if (this.options.onError) { this.options.onError(error); }
+                        this.options.onError(error);
                     })},
                     logger: this.logger
                 });
@@ -81,11 +81,12 @@ export class ResumableSubscription {
             this.tryNow();
         }
         
-        unsubscribe(error?: Error) {
+        unsubscribe() {
             if(!this.baseSubscription){
                 throw new Error("Subscription doesn't exist! Have you called open()?");
             }
-            this.baseSubscription.unsubscribe(error); // We'll get onEnd and bubble this up
+            this.retryStrategy.cancel();
+            this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
         }
         
         /**
