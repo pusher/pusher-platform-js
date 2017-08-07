@@ -27,7 +27,7 @@ export class RetryingTokenProvider implements TokenProvider {
             .then( token => {
                 resolve(token);
             }).catch( error => {
-                this.retryStrategy.attemptRetry(error, true)
+                this.retryStrategy.attemptRetry(error)
                 .then(() => {
                     this.tryFetching();
                 }).catch(error => { 
@@ -36,4 +36,17 @@ export class RetryingTokenProvider implements TokenProvider {
         });
         });
     }
+}
+
+/**
+ * No-op token provider. Fetches undefined so we can more easily replace it.
+ * Never fails.
+ */
+export class NoOpTokenProvider implements TokenProvider {
+    fetchToken(){
+        return new Promise<string>( resolve => {
+            resolve(undefined);
+        });
+    }
+    invalidateToken(token?: string) {}
 }
