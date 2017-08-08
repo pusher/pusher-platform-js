@@ -1,4 +1,4 @@
-import { NoOpTokenProvider, TokenProvider } from './token-provider';
+import { TokenProvider, NoOpTokenProvider } from './token-provider';
 import { ErrorResponse } from './base-client';
 import { 
     RetryStrategy, 
@@ -7,46 +7,39 @@ import {
     DoNotRetry 
 } from './retry-strategy';
 import { Logger } from './logger';
-import { 
-    BaseSubscription, 
-    SubscribeOptions, 
-    SubscriptionEvent, 
-    replaceUnimplementedListenersWithNoOps 
-} from './base-subscription' 
+import {
+    BaseSubscription,
+    replaceUnimplementedListenersWithNoOps,
+    SubscribeOptions,
+    SubscriptionEvent,
+} from './base-subscription'; 
 
-export interface ResumableSubscribeOptions extends SubscribeOptions {
-    lastEventId?: string;
-    retryStrategy?:  RetryStrategy;
+export interface StatelessSubscribeOptions extends SubscribeOptions {
+    retryStrategy?: RetryStrategy;
     tokenProvider?: TokenProvider; 
 }
 
-export class ResumableSubscription {
+// pattern of callbacks: ((onOpening (onOpen onEvent*)?)? (onError|onEnd)) | onError
+export class StatelessSubscription {
     
     private baseSubscription: BaseSubscription;
-    private lastEventIdReceived: string;
     private retryStrategy: RetryStrategy;
     private logger: Logger;
     
     constructor(
         private xhrSource: () => XMLHttpRequest,
-        private options: ResumableSubscribeOptions
+        private options: StatelessSubscribeOptions
     ) {
-        this.lastEventIdReceived = options.lastEventId;
         this.logger = options.logger;
-        this.retryStrategy = options.retryStrategy;
-        
         if(!this.options.tokenProvider)
             this.options.tokenProvider = new NoOpTokenProvider();
         
         this.options = replaceUnimplementedListenersWithNoOps(options);
+        this.retryStrategy = options.retryStrategy;
     }
     
-    private tryNow(): void {
+    tryNow(): void {
         let newXhr = this.xhrSource();
-        
-        if (this.lastEventIdReceived) {
-            newXhr.setRequestHeader("Last-Event-Id", this.lastEventIdReceived);
-        }
         
         this.options.tokenProvider.fetchToken()
         .then( token => {
@@ -61,7 +54,6 @@ export class ResumableSubscription {
                 },
                 onEvent: (event: SubscriptionEvent) => {
                     this.options.onEvent(event);
-                    this.lastEventIdReceived = event.eventId;
                 },
                 onEnd: () => {
                     this.options.onEnd();
@@ -84,7 +76,7 @@ export class ResumableSubscription {
             })
             .catch(error => {
                 this.options.onError(error);
-            });
+            });   
         }
         
         open(): void {

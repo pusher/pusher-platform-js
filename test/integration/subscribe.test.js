@@ -4,6 +4,13 @@ const PATH_10_AND_EOS = "subscribe10";
 const PATH_3_AND_OPEN = "subscribe_3_continuous";
 const PATH_0_EOS = "subscribe_0_eos";
 
+
+const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    requestMethod: "",
+    logger: new PusherPlatform.EmptyLogger(),
+    limit: 0
+})
+
 describe('Instance Subscribe', () => {
     beforeEach(() => {
 
@@ -21,31 +28,6 @@ describe('Instance Subscribe', () => {
     });
 
     //TODO: use spies and expect methods to be called
-
-    it('subscribes and then unsubscribes with error - expecting onError', (done) => {
-        let errorThrown = new Error("expected");
-
-        let eventCount = 0;
-        let sub = instance.subscribe({
-            path: PATH_3_AND_OPEN,
-            onEvent: (event) => {
-                eventCount += 1;                
-                if(eventCount > 3){
-                    fail(`Too many events received: ${eventCount}`);
-                }
-                if(eventCount == 3){
-                    sub.unsubscribe(errorThrown);
-                }
-            },
-            onEnd: () => {
-                fail("We should have seen an error!");
-            },
-            onError: (err) => {
-                expect(err).toEqual(errorThrown);
-                done();
-            }
-        });
-    });
 
     it('subscribes and terminates on EOS after receiving all events', (done) => {
         instance.subscribe({
@@ -100,7 +82,7 @@ describe('Instance Subscribe', () => {
 
     });
 
-    it('subscribes and then unsubscribes - expecrting onEnd', (done) => {
+    it('subscribes and then unsubscribes - expecting onEnd', (done) => {
         let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
             onEvent: (event) => {
@@ -138,6 +120,7 @@ describe('Instance Subscribe', () => {
     });
 
 //TODO: this should probably involve the retry strategy
+//TODO: this will be... fun to test.
     it('subsccribes and receives EOS with retry-after headers', (done) => {
         let sub = instance.subscribe({
             path: "subscribe_retry_after",
@@ -151,7 +134,8 @@ describe('Instance Subscribe', () => {
             onError: (err) => {
                 expect(err.headers["retry-after"]).toBe('10');
                 done();
-            }
+            },
+            retryStrategy: noRetryStrategy
         });
     })
 });
