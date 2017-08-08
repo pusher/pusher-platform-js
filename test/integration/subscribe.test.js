@@ -4,6 +4,13 @@ const PATH_10_AND_EOS = "subscribe10";
 const PATH_3_AND_OPEN = "subscribe_3_continuous";
 const PATH_0_EOS = "subscribe_0_eos";
 
+
+const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    requestMethod: "",
+    logger: new PusherPlatform.EmptyLogger(),
+    limit: 0
+})
+
 describe('Instance Subscribe', () => {
     beforeEach(() => {
 
@@ -113,6 +120,7 @@ describe('Instance Subscribe', () => {
     });
 
 //TODO: this should probably involve the retry strategy
+//TODO: this will be... fun to test.
     it('subsccribes and receives EOS with retry-after headers', (done) => {
         let sub = instance.subscribe({
             path: "subscribe_retry_after",
@@ -126,7 +134,8 @@ describe('Instance Subscribe', () => {
             onError: (err) => {
                 expect(err.headers["retry-after"]).toBe('10');
                 done();
-            }
+            },
+            retryStrategy: noRetryStrategy
         });
     })
 });
