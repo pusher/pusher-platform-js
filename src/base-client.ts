@@ -5,8 +5,7 @@ import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBacko
 import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
 
 export interface BaseClientOptions {
-    host: string;
-    
+    host: string;    
     encrypted?: boolean;
     timeout?: number;
     XMLHttpRequest?: Function;
@@ -96,12 +95,7 @@ export class ErrorResponse extends Error{
             this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
             this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
             
-            if(options.logger){
-                this.logger = options.logger;
-            }
-            else{
-                this.logger = new ConsoleLogger();
-            }
+            this.logger = options.logger || new ConsoleLogger();
         }
         
         request(options: RequestOptions): Promise<any> {

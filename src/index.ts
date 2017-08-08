@@ -1,3 +1,10 @@
+import { 
+  FixedTokenProvider, 
+  RetryingTokenProvider, 
+  NoOpTokenProvider, 
+  TokenProvider 
+} from './token-provider';
+
 import Instance from './instance';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
@@ -13,6 +20,7 @@ export {
 
   RetryStrategy, ExponentialBackoffRetryStrategy,
   Logger, ConsoleLogger, EmptyLogger, 
+  TokenProvider, NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };
 
 export default {
@@ -22,5 +30,6 @@ export default {
   StatelessSubscription,
 
   ExponentialBackoffRetryStrategy,
-  ConsoleLogger, EmptyLogger
+  ConsoleLogger, EmptyLogger,
+  NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };

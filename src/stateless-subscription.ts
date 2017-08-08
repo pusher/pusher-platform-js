@@ -52,16 +52,14 @@ export class StatelessSubscription {
                     this.options.onOpen();
                     this.retryStrategy.reset(); //We need to reset the counter once the connection has been re-established.
                 },
-                onEvent: (event: SubscriptionEvent) => {
-                    this.options.onEvent(event);
-                },
-                onEnd: () => {
-                    this.options.onEnd();
-                },
+                onEvent: this.options.onEvent,
+                onEnd: this.options.onEnd,
+
                 onError: (error: Error) => {
-                    this.retryStrategy.attemptRetry(error)
+                    this.retryStrategy.checkIfRetryable(error)
                     .then(() => { 
-                        if (this.options.onRetry !== undefined) {
+                        this.logger.verbose("Then!");
+                        if (this.options.onRetry) {
                             this.options.onRetry();
                         } else {
                             this.tryNow();
@@ -70,25 +68,25 @@ export class StatelessSubscription {
                     .catch(error => {
                         this.options.onError(error);
                     })},
-                    logger: this.logger
+                logger: this.logger
                 });
-                this.baseSubscription.open();
-            })
-            .catch(error => {
-                this.options.onError(error);
-            });   
-        }
-        
-        open(): void {
-            this.tryNow();
-        }
-        
-        unsubscribe() {
-            if(!this.baseSubscription){
-                throw new Error("Subscription doesn't exist! Have you called open()?");
-            }
-            this.retryStrategy.cancel();
-            this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
-        }
+            this.baseSubscription.open();
+        })
+        .catch(error => {
+            this.options.onError(error);
+        });   
     }
+        
+    open(): void {
+        this.tryNow();
+    }
+        
+    unsubscribe() {
+        if(!this.baseSubscription){
+            throw new Error("Subscription doesn't exist! Have you called open()?");
+        }
+        this.retryStrategy.cancel();
+        this.baseSubscription.unsubscribe(); // We'll get onEnd and bubble this up
+    }
+}
     

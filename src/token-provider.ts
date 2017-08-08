@@ -7,6 +7,7 @@ export interface TokenProvider {
 /**
  * Wrapper around the token provider that contains a retry strategy
  * TODO: test
+ * Currently not used anywhere
  */
 export class RetryingTokenProvider implements TokenProvider {
     constructor(
@@ -27,7 +28,7 @@ export class RetryingTokenProvider implements TokenProvider {
             .then( token => {
                 resolve(token);
             }).catch( error => {
-                this.retryStrategy.attemptRetry(error)
+                this.retryStrategy.checkIfRetryable(error)
                 .then(() => {
                     this.tryFetching();
                 }).catch(error => { 
@@ -46,6 +47,19 @@ export class NoOpTokenProvider implements TokenProvider {
     fetchToken(){
         return new Promise<string>( resolve => {
             resolve(undefined);
+        });
+    }
+    invalidateToken(token?: string) {}
+}
+
+/**
+ * A token provider that always returns the same token. Can be used for debugging purposes.
+ */
+export class FixedTokenProvider implements TokenProvider {
+    constructor(private jwt: string){}
+    fetchToken(){
+        return new Promise<string>( resolve => {
+            resolve(this.jwt);
         });
     }
     invalidateToken(token?: string) {}

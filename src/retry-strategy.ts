@@ -2,7 +2,7 @@ import { ErrorResponse, NetworkError } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 
 export interface RetryStrategy {
-    attemptRetry(error: Error): Promise<Error>;
+    checkIfRetryable(error: Error): Promise<Error>;
     cancel(): void; //Cancels any pending retries
     reset(): void; //Resets the retry counter
 }
@@ -39,10 +39,10 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private logger: Logger;
     private retryUnsafeRequests: boolean = false;
 
-    private limit: number = 6;
+    private limit: number = -1;
     private retryCount = 0;
 
-    private maxBackoffMillis: number = 30000;
+    private maxBackoffMillis: number = 5000;
     private defaultBackoffMillis: number = 1000;
     private currentBackoffMillis: number = this.defaultBackoffMillis;
 
@@ -65,7 +65,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             this.maxBackoffMillis = options.maxBackoffMillis;
     }
 
-    attemptRetry(error: Error): Promise<any> {
+    checkIfRetryable(error: Error): Promise<any> {
         return new Promise((resolve, reject) => {
 
             let shouldRetry = this.shouldRetry(error);
@@ -78,6 +78,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
                 const timeout = window.setTimeout(() => {
                     this.pendingTimeouts.delete(timeout);
+                    resolve();
                 }, shouldRetry.waitTimeMillis);
 
                 this.pendingTimeouts.add(timeout);
@@ -112,12 +113,13 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private shouldRetry(error: Error): RetryStrategyResult {
         this.logger.verbose(`${this.constructor.name}:  Error received`, error);
         
-        if(this.retryCount >= this.limit && this.limit > 0 ){
+        if(this.retryCount >= this.limit && this.limit >= 0 ){
             this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
         }
 
         if (error instanceof ErrorResponse && error.headers['Retry-After']){
+                    this.logger.verbose(`${this.constructor.name}:  Retry-After header is present, retrying in ${error.headers['Retry-After']}`);
             return new Retry(parseInt(error.headers['Retry-After']) * 1000);
         } 
 
@@ -131,30 +133,35 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     private shouldSafeRetry(error: Error){
         if(error instanceof NetworkError){
+            this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
             return new Retry(this.calulateMillisToRetry());
         }
 
         if(error instanceof ErrorResponse) {
             if(error.statusCode >= 500 && error.statusCode < 600){
+                this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
                 return new Retry(this.calulateMillisToRetry());
             }
             if(error.statusCode === 401){
+                this.logger.verbose(`${this.constructor.name}: Error 401 - probably expired token, retrying immediately`);
                 return new Retry(0) //Token expired - can retry immediately
             }
         }
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
         return new DoNotRetry(error);
     }
 
     private calulateMillisToRetry(): number {
         
         if(this.currentBackoffMillis >= this.maxBackoffMillis || this.currentBackoffMillis * 2 >= this.maxBackoffMillis) {
-            return this.maxBackoffMillis;
+            this.currentBackoffMillis = this.maxBackoffMillis;
         }
             
-        if(this.retryCount > 0){
-            return this.currentBackoffMillis * 2;
+        else if(this.retryCount > 0){
+            this.currentBackoffMillis = this.currentBackoffMillis * 2;
         }
 
+        this.logger.verbose(`Retrying in ${this.currentBackoffMillis}ms`);
         return this.currentBackoffMillis;
     }
 }

@@ -63,13 +63,11 @@ export class ResumableSubscription {
                     this.options.onEvent(event);
                     this.lastEventIdReceived = event.eventId;
                 },
-                onEnd: () => {
-                    this.options.onEnd();
-                },
+                onEnd: this.options.onEnd,
                 onError: (error: Error) => {
-                    this.retryStrategy.attemptRetry(error)
+                    this.retryStrategy.checkIfRetryable(error)
                     .then(() => { 
-                        if (this.options.onRetry !== undefined) {
+                        if (this.options.onRetry) {
                             this.options.onRetry();
                         } else {
                             this.tryNow();
