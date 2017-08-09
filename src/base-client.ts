@@ -5,7 +5,7 @@ import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBacko
 import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
 
 export interface BaseClientOptions {
-    host: string;    
+    host: string;
     encrypted?: boolean;
     timeout?: number;
     XMLHttpRequest?: Function;
@@ -32,7 +32,7 @@ export function responseHeadersObj(headerStr: string): Headers {
     if (!headerStr) {
         return headers;
     }
-    
+
     var headerPairs = headerStr.split('\u000d\u000a');
     for (var i = 0; i < headerPairs.length; i++) {
         var headerPair = headerPairs[i];
@@ -50,7 +50,7 @@ export class ErrorResponse extends Error{
     public statusCode: number;
     public headers: Headers;
     public info: any;
-    
+
     constructor(statusCode: number, headers: Headers, info: any) {
         super(`ErroResponse: ${statusCode}: ${info} \n Headers: ${JSON.stringify(headers)}`);
         Object.setPrototypeOf(this, ErrorResponse.prototype);
@@ -58,16 +58,16 @@ export class ErrorResponse extends Error{
         this.headers = headers;
         this.info = info;
     }
-    
+
     static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
         return new ErrorResponse(
             xhr.status, responseHeadersObj(xhr.getAllResponseHeaders()), xhr.responseText);
         }
     }
-    
+
     export class NetworkError extends Error {
         public error: string;
-        
+
         constructor(error: string){
             super(error);
             //TODO: ugly hack to make the instanceof calls work. We might have to find a better solution.
@@ -75,7 +75,7 @@ export class ErrorResponse extends Error{
             this.error = error;
         }
     }
-    
+
     // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
     export enum XhrReadyState {
         UNSENT = 0,
@@ -84,26 +84,26 @@ export class ErrorResponse extends Error{
         LOADING = 3,
         DONE = 4
     }
-    
+
     export class BaseClient {
         private baseURL: string;
         private XMLHttpRequest: any;
         private logger: Logger;
-        
+
         constructor(private options: BaseClientOptions) {
             let host = options.host.replace(/\/$/, '');
             this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
             this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
-            
+
             this.logger = options.logger || new ConsoleLogger();
         }
-        
+
         request(options: RequestOptions): Promise<any> {
             let xhr = this.createXHR(this.baseURL, options);
-            
+
             //TODO: add retrying
             return new Promise<any>((resolve, reject) => {
-                
+
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
@@ -113,7 +113,7 @@ export class ErrorResponse extends Error{
                         }
                     }
                 };
-                
+
                 xhr.send(JSON.stringify(options.body));
             });
         }
@@ -127,27 +127,6 @@ export class ErrorResponse extends Error{
                 });
             }
             return new StatelessSubscription(
-                () => { 
-                    return this.createXHR(this.baseURL, {
-                        method: method,
-                        path: subOptions.path,
-                        headers: {},
-                        body: null,
-                    });
-                },
-                subOptions
-            );
-        }
-        
-        newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
-            const method = "SUBSCRIBE";
-            if( !subOptions.retryStrategy ) {
-                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                    logger: this.logger,
-                    requestMethod: method
-                });
-            }
-            return new ResumableSubscription(
                 () => {
                     return this.createXHR(this.baseURL, {
                         method: method,
@@ -159,28 +138,52 @@ export class ErrorResponse extends Error{
                 subOptions
             );
         }
-        
+
+        newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
+            const method = "SUBSCRIBE";
+            if( !subOptions.retryStrategy ) {
+                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
+                    logger: this.logger,
+                    requestMethod: method
+                });
+            }
+            return new ResumableSubscription(
+                (lastEventID) => {
+                    this.newBaseSubscription({
+                        lastEventID
+                    })
+                    return this.createXHR(this.baseURL, {
+                        method: method,
+                        path: subOptions.path,
+                        headers: {},
+                        body: null,
+                    });
+                },
+                subOptions
+            );
+        }
+
         private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
             let XMLHttpRequest: any = this.XMLHttpRequest;
             let xhr = new XMLHttpRequest();
             let path = options.path.replace(/^\/+/, "");
             let endpoint = `${baseURL}/${path}`;
-            
+
             xhr.open(options.method.toUpperCase(), endpoint, true);
-            
+
             if (options.body) {
                 xhr.setRequestHeader("content-type", "application/json");
             }
-            
+
             if (options.jwt) {
                 xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
             }
-            
+
             for (let key in options.headers) {
                 xhr.setRequestHeader(key, options.headers[key]);
             }
-            
+
             return xhr;
         }
     }
-    
+
