@@ -58,8 +58,14 @@ export default class Instance {
     request(options: RequestOptions): Promise<any> {
         options.path = this.absPath(options.path);
         if(!options.logger) options.logger = this.logger;
-
-        return this.client.request(options);
+                    
+        if (!options.jwt && options.tokenProvider) {
+             return options.tokenProvider.fetchToken().then((jwt) => {
+                 return this.client.request({ jwt, ...options });
+             });
+         } else {
+             return this.client.request(options);
+         }
     }
     
     subscribe(options: StatelessSubscribeOptions): StatelessSubscription {

@@ -100,7 +100,6 @@ export class ErrorResponse extends Error{
         
         request(options: RequestOptions): Promise<any> {
             let xhr = this.createXHR(this.baseURL, options);
-            
             //TODO: add retrying
             return new Promise<any>((resolve, reject) => {
                 
