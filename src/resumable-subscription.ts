@@ -14,6 +14,25 @@ import {
     replaceUnimplementedListenersWithNoOps
 } from './base-subscription'
 
+
+export interface OptionalSubscriptionListeners {
+    onSubscribed?: (headers: Headers) => void;
+    onOpen?: () => void;
+    onResuming?: () => void;
+    onEvent?: (event: SubscriptionEvent) => void;
+    onEnd?: (error?: ErrorResponse) => void;
+    onError?: (error: any) => void;
+}
+
+export interface SubscriptionListeners {
+    onSubscribed: (headers: Headers) => void;
+    onOpen: () => void;
+    onResuming: () => void;
+    onEvent: (event: SubscriptionEvent) => void;
+    onEnd: (error?: ErrorResponse) => void;
+    onError: (error: any) => void;
+}
+
 export interface ResumableSubscribeOptions extends SubscribeOptions {
     lastEventId?: string;
     retryStrategy?:  RetryStrategy;
@@ -36,18 +55,29 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
             initialEventID: string,
             subscriptionConstructor: subscriptionConstructor,
             listeners: ResumableSubscriptionStateListeners) {
-        subscriptionConstructor(null, initialEventID).then((subscription) => {
+        foo = subscriptionConstructor(null, initialEventID)
+        foo.onComplete((subscription) => {
             this.onSubscribed(subscription.headers)
             this.onTransition(
                 new OpenSubscriptionState(
                     subscription, initialEventID, subscriptionConstructor, listeners
                 )
             )
-        }).catch((error) => {
+        })
+        foo.onError((error) => {
             this.onTransition(new FailedSubscriptionState(error, listeners))
         })
     }
 }
+
+function constructorToPromise(c: Constructor<R, E>): Promise<R, E> {
+    return new Promise((resolve, fail) => {
+        foo = requestConstructor(options)
+        foo.onComplete(resolve)
+        foo.onError(fail)
+    })
+}
+
 class OpenSubscriptionState implements ResumableSubscriptionState {
     constructor(
             subscription: Subscription,
