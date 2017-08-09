@@ -299,6 +299,13 @@ export class BaseSubscription {
             return new Error("Message is empty array");
         }
     }
+
+
+    //new public api
+
+    onEvent: (event: SubscriptionEvent) => void;
+    onEnd: (error?: ErrorResponse) => void;
+    onError: (error: any) => void;
 }
 
 

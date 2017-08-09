@@ -139,14 +139,22 @@ export class ErrorResponse extends Error{
             );
         }
 
+        private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
+
+            // return (error, lastEvent) => { }
+        }
+
+
         newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
             const method = "SUBSCRIBE";
+
             if( !subOptions.retryStrategy ) {
                 subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
                     logger: this.logger,
                     requestMethod: method
                 });
             }
+
             return new ResumableSubscription(
                 (lastEventID) => {
                     this.newBaseSubscription({
