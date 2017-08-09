@@ -16,6 +16,11 @@ export type Headers = {
     [key: string]: string;
 }
 
+//TODO: utility method - not implemented yet
+export function headersFromString(headers: string): Headers {
+    return null;
+}
+
 export interface RequestOptions {
     method: string;
     path: string;
@@ -139,14 +144,22 @@ export class ErrorResponse extends Error{
             );
         }
 
+        private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
+
+            // return (error, lastEvent) => { }
+        }
+
+
         newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
             const method = "SUBSCRIBE";
+
             if( !subOptions.retryStrategy ) {
                 subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
                     logger: this.logger,
                     requestMethod: method
                 });
             }
+
             return new ResumableSubscription(
                 (lastEventID) => {
                     this.newBaseSubscription({

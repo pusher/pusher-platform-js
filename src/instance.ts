@@ -78,11 +78,12 @@ export default class Instance {
         options.path = this.absPath(options.path);
         if(!options.logger) options.logger = this.logger;
         
-        let resumableSubscription: ResumableSubscription =
-        this.client.newResumableSubscription({ ...options });
-        resumableSubscription.open();
+        return this.client.newResumableSubscription({ ...options });
         
-        return resumableSubscription;
+        // let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription({ ...options });
+        // resumableSubscription.open();
+        
+        // return resumableSubscription;
     }
     
     private absPath(relativePath: string): string {
