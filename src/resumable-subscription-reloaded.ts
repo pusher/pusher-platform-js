@@ -42,9 +42,6 @@ class ResumableSubscription implements ResumableSubscriptionStateTransition {
             listeners,
             this.onTransition
         );
-        
-        //TODO:
-
     }    
 
     onTransition(newState: ResumableSubscriptionState){
@@ -114,9 +111,21 @@ class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
         listeners: ResumableSubscriptionStateListeners,
         onTransition: (newState: ResumableSubscriptionState) => void
     ){
-
+        const subscriptionConstruction = subscriptionConstructor(null, lastEventId);
+        subscriptionConstruction.onComplete( (subscription) => {
+            listeners.onSubscribed(null); //should return `subscription.headers`
+            onTransition(new OpenSubscriptionState(
+                subscription,
+                lastEventId,
+                subscriptionConstructor,
+                listeners,
+                onTransition
+            ));
+        });
+        subscriptionConstruction.onError( (error) => {
+            onTransition(new FailedSubscriptionState(error, listeners));
+        });
     }
-    //TODO:
 }
 
 class FailedSubscriptionState implements ResumableSubscriptionState {
