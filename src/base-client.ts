@@ -16,6 +16,11 @@ export type Headers = {
     [key: string]: string;
 }
 
+//TODO: utility method - not implemented yet
+export function headersFromString(headers: string): Headers {
+    return null;
+}
+
 export interface RequestOptions {
     method: string;
     path: string;

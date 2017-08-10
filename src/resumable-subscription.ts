@@ -96,7 +96,7 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
 
                 subscriptionConstructor = new SubscriptionConstructor(null, initialEventID);
                 subscriptionConstructor.onComplete( (subscription) => {
-                    listeners.onSubscribed(subscription.headers); //TODO: pass sub headers
+                    listeners.onSubscribed(subscription.getHeaders()); //TODO: pass sub headers
                     this.onTransition(new OpenSubscriptionState(
                         subscription as any, initialEventID, subscriptionConstructor, listeners //using any for now to avoid compilation errors.
                     ));
@@ -189,6 +189,9 @@ class FailedResumableSubscriptionState implements ResumableSubscriptionState {
         listeners.onError(error)
     }
 }
+
+
+
 
 export class ResumableSubscription {
     private state: ResumableSubscriptionState;

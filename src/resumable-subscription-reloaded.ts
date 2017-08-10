@@ -17,10 +17,6 @@ interface ResumableSubscriptionStateListeners {
     onError: (error: any) => void;
 }
 
-interface BaseSubscriptionConstruction {
-    onComplete( callback: (subscription: BaseSubscription) => void );
-    onError( callback: (error: any) => void );
-}
 
 interface ResumableSubscriptionStateTransition {
     onTransition(state: ResumableSubscriptionState): void
