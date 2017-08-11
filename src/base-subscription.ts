@@ -1,7 +1,7 @@
 import { TokenProvider } from './token-provider';
-import { RetryStrategy } from './retry-strategy-reloaded';
+import { RetryStrategy } from './retry-strategy';
 import { Logger } from './logger';
-import { XhrReadyState, NetworkError, ErrorResponse, Headers, headersFromString } from "./base-client";
+import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
@@ -17,11 +17,6 @@ export interface SubscriptionEvent {
     body: any;
 }
 
-export interface BaseSubscriptionConstruction {
-    onComplete( callback: (subscription: BaseSubscription) => void );
-    onError( callback: (error: any) => void );
-}
-
 export function createSubscriptionConstructor(
     retryStrategy: RetryStrategy, 
     headers: Headers, 
@@ -32,14 +27,13 @@ export function createSubscriptionConstructor(
         for (let key in headers) {
             xhr.setRequestHeader(key, headers[key]);
         }
-        
+       
         return  (error: any, lastEventId?: string) => { 
-            return new BaseSubscriptionConstructionImpl(retryStrategy, xhr, error, lastEventId); 
+            return new BaseSubscriptionConstruction(retryStrategy, xhr, error, lastEventId); 
         };   
     }
     
-    //TODO: that name is just... ew.
-    export class BaseSubscriptionConstructionImpl implements BaseSubscriptionConstruction {
+    export class BaseSubscriptionConstruction {
         private subscription: BaseSubscription;
         private error: any;
         private subscriptionCallback: (subscription: BaseSubscription) => void;
@@ -75,45 +69,7 @@ export function createSubscriptionConstructor(
             else this.errorCallback = callback;
         }
     }
-    
-    export interface OptionalSubscriptionListeners {
-        onSubscribed?: (headers: Headers) => void;
-        onOpen?: () => void;
-        onEvent?: (event: SubscriptionEvent) => void;
-        onEnd?: (error?: ErrorResponse) => void;
-        onError?: (error: any) => void;
-    }
-    
-    export interface SubscriptionListeners {
-        onSubscribed: (headers: Headers) => void;
-        onOpen: () => void;
-        onEvent: (event: SubscriptionEvent) => void;
-        onEnd: (error?: ErrorResponse) => void;
-        onError: (error: any) => void;
-    }
-    
-    export interface SubscribeOptions extends OptionalSubscriptionListeners {
-        path: string;
-        headers: Headers;
-        jwt?: string;
         
-        logger: Logger;
-    }
-    
-    /**
-    * Allows avoiding making null check every. Single. Time.
-    * @param options the options that come in
-    * @returns the mutated options
-    * TODO: should this be cloned instead?
-    */
-    export function replaceUnimplementedListenersWithNoOps(options: OptionalSubscriptionListeners): OptionalSubscriptionListeners {
-        if(!options.onOpen) options.onOpen = () => {};
-        if(!options.onEvent) options.onEvent = (event) => {};
-        if(!options.onEnd) options.onEnd = () => {};
-        if(!options.onError) options.onError = (error) => {};
-        return options;
-    }
-    
     export class BaseSubscription {
         
         private state: SubscriptionState = SubscriptionState.UNOPENED;
@@ -153,11 +109,16 @@ export function createSubscriptionConstructor(
             }
             this.state = SubscriptionState.OPENING;
             this.xhr.send();
-        }            
+        }  
+        
         public unsubscribe(): void {
             this.state = SubscriptionState.ENDED;
             this.xhr.abort();
             this.onEnd();
+        }
+
+        public getHeaders(): Headers {
+            return responseHeadersObj(this.xhr.getAllResponseHeaders());
         }
         
         private onLoading(): void {
@@ -167,7 +128,7 @@ export function createSubscriptionConstructor(
                 //Check if we just transitioned to the open state
                 if(this.state === SubscriptionState.OPENING) {
                     this.state = SubscriptionState.OPEN;
-                    this.onOpen(headersFromString(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
                 
                 this.assertStateIsIn(SubscriptionState.OPEN);
@@ -193,7 +154,7 @@ export function createSubscriptionConstructor(
             if (this.xhr.status === 200) {
                 if (this.state === SubscriptionState.OPENING) {
                     this.state = SubscriptionState.OPEN;
-                    this.onOpen(headersFromString(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
                 this.assertStateIsIn( SubscriptionState.OPEN, SubscriptionState.ENDING );
                 let err = this.onChunk();

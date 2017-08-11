@@ -1,8 +1,9 @@
+import { createSubscriptionConstructor } from './base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
-import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
-import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
+import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
+import { RetryStrategy, ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy';
+import { NonResumableSubscribeOptions, NonResumableSubscription} from './non-resumable-subscription';
 
 export interface BaseClientOptions {
     host: string;
@@ -16,11 +17,7 @@ export type Headers = {
     [key: string]: string;
 }
 
-//TODO: utility method - not implemented yet
-export function headersFromString(headers: string): Headers {
-    return null;
-}
-
+//TODO: change this
 export interface RequestOptions {
     method: string;
     path: string;
@@ -123,57 +120,62 @@ export class ErrorResponse extends Error{
             });
         }
 
-        newStatelessSubscription(subOptions: StatelessSubscribeOptions): StatelessSubscription {
-            const method = "SUBSCRIBE";
-            if( !subOptions.retryStrategy ) {
-                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                    logger: this.logger,
-                    requestMethod: method
-                });
-            }
-            return new StatelessSubscription(
-                () => {
-                    return this.createXHR(this.baseURL, {
-                        method: method,
-                        path: subOptions.path,
-                        headers: {},
-                        body: null,
-                    });
-                },
-                subOptions
-            );
+        newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
+            // const method = "SUBSCRIBE";
+            // if( !subOptions.retryStrategy ) {
+            //     subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
+            //         logger: this.logger,
+            //         requestMethod: method
+            //     });
+            // }
+            // return new NonResumableSubscription(
+            //     () => {
+            //         return this.createXHR(this.baseURL, {
+            //             method: method,
+            //             path: subOptions.path,
+            //             headers: {},
+            //             body: null,
+            //         });
+            //     },
+            //     subOptions
+            // );
+
+            //TODO:
+            return null;
         }
 
-        private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
+        // private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
 
-            // return (error, lastEvent) => { }
-        }
+        //     // return (error, lastEvent) => { }
+        // }
 
 
-        newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
-            const method = "SUBSCRIBE";
+        newResumableSubscription(subOptions: ResumableSubscribeOptions):          
+        ResumableSubscription {
+            
+            //TODO: relay resumable subscribe options
 
-            if( !subOptions.retryStrategy ) {
-                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                    logger: this.logger,
-                    requestMethod: method
-                });
+            let tokenProvider: TokenProvider;
+            let retryStrategy = new ExponentialBackoffRetryStrategy({
+                tokenFetchingRetryStrategy:  new TokenFetchingRetryStrategy(tokenProvider),
             }
+               
+            )
+            let headers: Headers;
+            let path = "path";
+            let requestOptions: RequestOptions;
+            let someOtherOptions: any
 
-            return new ResumableSubscription(
-                (lastEventID) => {
-                    this.newBaseSubscription({
-                        lastEventID
-                    })
-                    return this.createXHR(this.baseURL, {
-                        method: method,
-                        path: subOptions.path,
-                        headers: {},
-                        body: null,
-                    });
-                },
-                subOptions
-            );
+            //TODO: figure out all of the options...
+            let resumableSubscription = new ResumableSubscription(
+                createSubscriptionConstructor(
+                    retryStrategy, 
+                    headers, 
+                    () => this.createXHR(path, requestOptions)),
+                someOtherOptions,
+                someOtherOptions.listeners);
+
+            return resumableSubscription;
         }
 
         private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
