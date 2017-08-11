@@ -1,7 +1,8 @@
+import { createSubscriptionConstructor } from './base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
-import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
+import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription-reloaded';
+import { RetryStrategy, ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy-reloaded';
 import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
 
 export interface BaseClientOptions {
@@ -14,11 +15,6 @@ export interface BaseClientOptions {
 
 export type Headers = {
     [key: string]: string;
-}
-
-//TODO: utility method - not implemented yet
-export function headersFromString(headers: string): Headers {
-    return null;
 }
 
 export interface RequestOptions {
@@ -144,36 +140,67 @@ export class ErrorResponse extends Error{
             );
         }
 
-        private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
+        // private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
 
-            // return (error, lastEvent) => { }
-        }
+        //     // return (error, lastEvent) => { }
+        // }
 
 
-        newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
+        newResumableSubscription(subOptions: ResumableSubscribeOptions):          
+        ResumableSubscription {
+
             const method = "SUBSCRIBE";
 
-            if( !subOptions.retryStrategy ) {
-                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                    logger: this.logger,
-                    requestMethod: method
-                });
-            }
+            let tokenProvider: TokenProvider;
+            let retryStrategy = new ExponentialBackoffRetryStrategy(
+                new TokenFetchingRetryStrategy(tokenProvider)
+            )
+            let headers: Headers;
+            let path = "path";
+            let requestOptions: RequestOptions;
+            let someOtherOptions: any
 
-            return new ResumableSubscription(
-                (lastEventID) => {
-                    this.newBaseSubscription({
-                        lastEventID
-                    })
-                    return this.createXHR(this.baseURL, {
-                        method: method,
-                        path: subOptions.path,
-                        headers: {},
-                        body: null,
-                    });
-                },
-                subOptions
-            );
+            //TODO: figure out all of the options...
+            let resumableSubscription = new ResumableSubscription(
+                createSubscriptionConstructor(
+                    retryStrategy, 
+                    headers, 
+                    () => this.createXHR(path, requestOptions)),
+                someOtherOptions,
+                someOtherOptions.listeners);
+
+
+
+
+            // if( !subOptions.retryStrategy ) {
+                // subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
+                //     logger: this.logger,
+                //     requestMethod: method
+                // });
+
+                
+            // }
+
+            return resumableSubscription;
+
+            // let retryStrategy = new RetryStra
+
+
+
+            // return new ResumableSubscription(
+            //     (lastEventID) => {
+            //         this.newBaseSubscription({
+            //             lastEventID
+            //         })
+            //         return this.createXHR(this.baseURL, {
+            //             method: method,
+            //             path: subOptions.path,
+            //             headers: {},
+            //             body: null,
+            //         });
+            //     },
+            //     subOptions
+            // );
         }
 
         private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {

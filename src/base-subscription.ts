@@ -32,7 +32,7 @@ export function createSubscriptionConstructor(
         for (let key in headers) {
             xhr.setRequestHeader(key, headers[key]);
         }
-        
+       
         return  (error: any, lastEventId?: string) => { 
             return new BaseSubscriptionConstructionImpl(retryStrategy, xhr, error, lastEventId); 
         };   

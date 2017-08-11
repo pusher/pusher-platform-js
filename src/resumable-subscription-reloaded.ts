@@ -2,13 +2,13 @@ import { BaseSubscription, BaseSubscriptionConstruction } from './base-subscript
 import { ErrorResponse } from './base-client';
 import { SubscriptionEvent } from './base-subscription';
 
-interface ResumableSubscribeOptions {
+export interface ResumableSubscribeOptions {
     initialEventId?: string
 }
 
-interface ResumableSubscriptionState {}
+export interface ResumableSubscriptionState {}
 
-interface ResumableSubscriptionStateListeners {
+export interface ResumableSubscriptionStateListeners {
     onSubscribed: (headers: Headers) => void;
     onOpen: () => void;
     onResuming: () => void;
@@ -18,11 +18,11 @@ interface ResumableSubscriptionStateListeners {
 }
 
 
-interface ResumableSubscriptionStateTransition {
+export interface ResumableSubscriptionStateTransition {
     onTransition(state: ResumableSubscriptionState): void
 }
 
-class ResumableSubscription implements ResumableSubscriptionStateTransition {
+export class ResumableSubscription implements ResumableSubscriptionStateTransition {
 
     state: ResumableSubscriptionState;
 

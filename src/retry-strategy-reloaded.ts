@@ -1,7 +1,10 @@
 import { DoNotRetry, Retry, RetryStrategyResult } from './retry-strategy';
+import { RetryStrategy} from './retry-strategy-reloaded';
 import { Logger } from './logger';
 import { ErrorResponse, NetworkError } from './base-client';
-import { BaseSubscription, TokenProvider } from './base-subscription';
+import { BaseSubscription } from './base-subscription';
+import { TokenProvider } from './token-provider';
+
 export interface RetryStrategy {
     executeSubscription(
         error: any,
@@ -12,8 +15,7 @@ export interface RetryStrategy {
     //TODO: executeRequest();
 }
 
-class TokenFetchingRetryStrategy implements RetryStrategy {
-    //TODO: this needs to be in the inner layer in order to propagate down, not vice versa!
+export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
         private tokenProvider: TokenProvider,
      ){}
@@ -59,7 +61,7 @@ class TokenFetchingRetryStrategy implements RetryStrategy {
         }
     }
 
-    class ExponentialBackoffRetryStrategy implements RetryStrategy {
+    export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
         constructor(
             private tokenFetchingRetryStrategy: RetryStrategy
