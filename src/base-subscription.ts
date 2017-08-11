@@ -1,7 +1,7 @@
 import { TokenProvider } from './token-provider';
 import { RetryStrategy } from './retry-strategy-reloaded';
 import { Logger } from './logger';
-import { XhrReadyState, NetworkError, ErrorResponse, Headers, headersFromString } from "./base-client";
+import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
@@ -167,7 +167,7 @@ export function createSubscriptionConstructor(
                 //Check if we just transitioned to the open state
                 if(this.state === SubscriptionState.OPENING) {
                     this.state = SubscriptionState.OPEN;
-                    this.onOpen(headersFromString(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
                 
                 this.assertStateIsIn(SubscriptionState.OPEN);
@@ -193,7 +193,7 @@ export function createSubscriptionConstructor(
             if (this.xhr.status === 200) {
                 if (this.state === SubscriptionState.OPENING) {
                     this.state = SubscriptionState.OPEN;
-                    this.onOpen(headersFromString(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
                 this.assertStateIsIn( SubscriptionState.OPEN, SubscriptionState.ENDING );
                 let err = this.onChunk();

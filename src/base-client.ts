@@ -160,6 +160,7 @@ export class ErrorResponse extends Error{
             let requestOptions: RequestOptions;
             let someOtherOptions: any
 
+            
             //TODO: figure out all of the options...
             let resumableSubscription = new ResumableSubscription(
                 createSubscriptionConstructor(
