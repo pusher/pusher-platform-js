@@ -6,7 +6,6 @@ export interface RetryStrategy {
     executeSubscription(
         error: any,
         xhr: XMLHttpRequest, 
-        // tokenProvider: TokenProvider, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );

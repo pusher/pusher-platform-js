@@ -1,4 +1,4 @@
-import { BaseSubscription } from './base-subscription';
+import { BaseSubscription, BaseSubscriptionConstruction } from './base-subscription';
 import { ErrorResponse } from './base-client';
 import { SubscriptionEvent } from './base-subscription';
 
