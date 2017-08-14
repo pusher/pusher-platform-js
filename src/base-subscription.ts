@@ -1,5 +1,5 @@
 import { TokenProvider } from './token-provider';
-import { RetryStrategy } from './retry-strategy-reloaded';
+import { RetryStrategy } from './retry-strategy';
 import { Logger } from './logger';
 import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
 
@@ -17,10 +17,10 @@ export interface SubscriptionEvent {
     body: any;
 }
 
-export interface BaseSubscriptionConstruction {
-    onComplete( callback: (subscription: BaseSubscription) => void );
-    onError( callback: (error: any) => void );
-}
+// export interface BaseSubscriptionConstruction {
+//     onComplete( callback: (subscription: BaseSubscription) => void );
+//     onError( callback: (error: any) => void );
+// }
 
 export function createSubscriptionConstructor(
     retryStrategy: RetryStrategy, 
@@ -34,12 +34,12 @@ export function createSubscriptionConstructor(
         }
        
         return  (error: any, lastEventId?: string) => { 
-            return new BaseSubscriptionConstructionImpl(retryStrategy, xhr, error, lastEventId); 
+            return new BaseSubscriptionConstruction(retryStrategy, xhr, error, lastEventId); 
         };   
     }
     
     //TODO: that name is just... ew.
-    export class BaseSubscriptionConstructionImpl implements BaseSubscriptionConstruction {
+    export class BaseSubscriptionConstruction {
         private subscription: BaseSubscription;
         private error: any;
         private subscriptionCallback: (subscription: BaseSubscription) => void;
@@ -153,11 +153,16 @@ export function createSubscriptionConstructor(
             }
             this.state = SubscriptionState.OPENING;
             this.xhr.send();
-        }            
+        }  
+        
         public unsubscribe(): void {
             this.state = SubscriptionState.ENDED;
             this.xhr.abort();
             this.onEnd();
+        }
+
+        public getHeaders(): Headers {
+            return responseHeadersObj(this.xhr.getAllResponseHeaders());
         }
         
         private onLoading(): void {

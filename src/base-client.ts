@@ -1,9 +1,9 @@
 import { createSubscriptionConstructor } from './base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription-reloaded';
-import { RetryStrategy, ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy-reloaded';
-import { StatelessSubscribeOptions, StatelessSubscription} from './stateless-subscription';
+import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
+import { RetryStrategy, ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy';
+import { NonResumableSubscribeOptions, NonResumableSubscription} from './non-resumable-subscription';
 
 export interface BaseClientOptions {
     host: string;
@@ -119,7 +119,7 @@ export class ErrorResponse extends Error{
             });
         }
 
-        newStatelessSubscription(subOptions: StatelessSubscribeOptions): StatelessSubscription {
+        newStatelessSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
             const method = "SUBSCRIBE";
             if( !subOptions.retryStrategy ) {
                 subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
@@ -127,7 +127,7 @@ export class ErrorResponse extends Error{
                     requestMethod: method
                 });
             }
-            return new StatelessSubscription(
+            return new NonResumableSubscription(
                 () => {
                     return this.createXHR(this.baseURL, {
                         method: method,
@@ -149,8 +149,6 @@ export class ErrorResponse extends Error{
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
 
-            const method = "SUBSCRIBE";
-
             let tokenProvider: TokenProvider;
             let retryStrategy = new ExponentialBackoffRetryStrategy(
                 new TokenFetchingRetryStrategy(tokenProvider)
@@ -160,7 +158,6 @@ export class ErrorResponse extends Error{
             let requestOptions: RequestOptions;
             let someOtherOptions: any
 
-            
             //TODO: figure out all of the options...
             let resumableSubscription = new ResumableSubscription(
                 createSubscriptionConstructor(
@@ -170,38 +167,7 @@ export class ErrorResponse extends Error{
                 someOtherOptions,
                 someOtherOptions.listeners);
 
-
-
-
-            // if( !subOptions.retryStrategy ) {
-                // subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                //     logger: this.logger,
-                //     requestMethod: method
-                // });
-
-                
-            // }
-
             return resumableSubscription;
-
-            // let retryStrategy = new RetryStra
-
-
-
-            // return new ResumableSubscription(
-            //     (lastEventID) => {
-            //         this.newBaseSubscription({
-            //             lastEventID
-            //         })
-            //         return this.createXHR(this.baseURL, {
-            //             method: method,
-            //             path: subOptions.path,
-            //             headers: {},
-            //             body: null,
-            //         });
-            //     },
-            //     subOptions
-            // );
         }
 
         private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
