@@ -10,7 +10,19 @@ export interface RetryStrategy {
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );
+    executeRequest(
+        error: any,
+        xhr: XMLHttpRequest
+    ): Promise<any>;
     //TODO: executeRequest();
+}
+
+function createRetryStrategy(options :any): RetryStrategy {
+
+    let tokenProvider: TokenProvider
+
+    return null;
+    //TODO: - constructor might solve these problems for us
 }
 
 export interface RetryStrategyResult {}
@@ -28,7 +40,6 @@ export class DoNotRetry implements RetryStrategyResult {
         this.error = error;
     }
 }
-
 
 export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
@@ -74,7 +85,16 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     resolve();
                 });
             }
+    
+        executeRequest( 
+            error: any,
+            xhr: XMLHttpRequest) {
+                return new Promise<any>( (resolve, reject) => {
+                    //TODO
+            });
         }
+    }
+        
 
         export interface ExponentialBackoffRetryStrategyOptions {
             tokenFetchingRetryStrategy?: RetryStrategy, //Retry strategy that checks for expired token and fetches it
@@ -91,6 +111,14 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
             }
             
             private tokenFetchingRetryStrategy: RetryStrategy
+
+            executeRequest( 
+                error: any,
+                xhr: XMLHttpRequest) {
+                    return new Promise<any>( (resolve, reject) => {
+                        //TODO
+                });
+            }
             
             executeSubscription(
                 error: any,
