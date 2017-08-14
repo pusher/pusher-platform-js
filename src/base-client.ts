@@ -11,6 +11,7 @@ export interface BaseClientOptions {
     timeout?: number;
     XMLHttpRequest?: Function;
     logger?: Logger;
+    retryStrategy?: RetryStrategy
 }
 
 export type Headers = {
@@ -152,7 +153,7 @@ export class ErrorResponse extends Error{
 
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
-            
+
             //TODO: relay resumable subscribe options
 
             let tokenProvider: TokenProvider;

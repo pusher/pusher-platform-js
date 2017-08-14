@@ -4,6 +4,15 @@ export interface TokenProvider {
     invalidateToken(token?: string);
 }
 
+//TODO: fetchToken could be a () => Promise<string>  kind of function that we could return? 
+
+
+//This is how you do a generic function in TS
+function req<T>( arg: () => Promise<number>): Promise<T> {
+
+    return null;
+}
+
 /**
  * Wrapper around the token provider that contains a retry strategy
  * TODO: test
@@ -12,9 +21,13 @@ export interface TokenProvider {
 export class RetryingTokenProvider implements TokenProvider {
     constructor(
         private baseTokenProvider: TokenProvider, 
-        private retryStrategy: RetryStrategy){}
-
+        private retryStrategy: RetryStrategy){
+    }
+    
     fetchToken(){
+        
+        // req<Headers>( () => {return null}).then()
+
         return this.tryFetching();
     }
 
@@ -23,19 +36,25 @@ export class RetryingTokenProvider implements TokenProvider {
     }
 
     private tryFetching(){
-        return new Promise<string>( (resolve, reject ) => {
-            this.baseTokenProvider.fetchToken()
-            .then( token => {
-                resolve(token);
-            }).catch( error => {
-                this.retryStrategy.checkIfRetryable(error)
-                .then(() => {
-                    this.tryFetching();
-                }).catch(error => { 
-                    reject(error); 
-            });
-        });
-        });
+
+        return new Promise<any>( (resolve, reject) => {}); //TODO:
+
+        // this.retryStrategy.executeRequest(){
+
+        // }
+        // return new Promise<string>( (resolve, reject ) => {
+        //     this.baseTokenProvider.fetchToken()
+        //     .then( token => {
+        //         resolve(token);
+        //     }).catch( error => {
+        //         this.retryStrategy.checkIfRetryable(error)
+        //         .then(() => {
+        //             this.tryFetching();
+        //         }).catch(error => { 
+        //             reject(error); 
+        //     });
+        // });
+        // });
     }
 }
 
