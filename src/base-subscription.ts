@@ -69,45 +69,7 @@ export function createSubscriptionConstructor(
             else this.errorCallback = callback;
         }
     }
-    
-    // export interface OptionalSubscriptionListeners {
-    //     onSubscribed?: (headers: Headers) => void;
-    //     onOpen?: () => void;
-    //     onEvent?: (event: SubscriptionEvent) => void;
-    //     onEnd?: (error?: ErrorResponse) => void;
-    //     onError?: (error: any) => void;
-    // }
-    
-    // export interface SubscriptionListeners {
-    //     onSubscribed: (headers: Headers) => void;
-    //     onOpen: () => void;
-    //     onEvent: (event: SubscriptionEvent) => void;
-    //     onEnd: (error?: ErrorResponse) => void;
-    //     onError: (error: any) => void;
-    // }
-    
-    // export interface SubscribeOptions extends OptionalSubscriptionListeners {
-    //     path: string;
-    //     headers: Headers;
-    //     jwt?: string;
         
-    //     logger: Logger;
-    // }
-    
-    /**
-    * Allows avoiding making null check every. Single. Time.
-    * @param options the options that come in
-    * @returns the mutated options
-    * TODO: should this be cloned instead?
-    */
-    // export function replaceUnimplementedListenersWithNoOps(options: OptionalSubscriptionListeners): OptionalSubscriptionListeners {
-    //     if(!options.onOpen) options.onOpen = () => {};
-    //     if(!options.onEvent) options.onEvent = (event) => {};
-    //     if(!options.onEnd) options.onEnd = () => {};
-    //     if(!options.onError) options.onError = (error) => {};
-    //     return options;
-    // }
-    
     export class BaseSubscription {
         
         private state: SubscriptionState = SubscriptionState.UNOPENED;
