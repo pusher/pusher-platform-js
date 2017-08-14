@@ -17,11 +17,6 @@ export interface SubscriptionEvent {
     body: any;
 }
 
-// export interface BaseSubscriptionConstruction {
-//     onComplete( callback: (subscription: BaseSubscription) => void );
-//     onError( callback: (error: any) => void );
-// }
-
 export function createSubscriptionConstructor(
     retryStrategy: RetryStrategy, 
     headers: Headers, 
@@ -38,7 +33,6 @@ export function createSubscriptionConstructor(
         };   
     }
     
-    //TODO: that name is just... ew.
     export class BaseSubscriptionConstruction {
         private subscription: BaseSubscription;
         private error: any;
@@ -76,29 +70,29 @@ export function createSubscriptionConstructor(
         }
     }
     
-    export interface OptionalSubscriptionListeners {
-        onSubscribed?: (headers: Headers) => void;
-        onOpen?: () => void;
-        onEvent?: (event: SubscriptionEvent) => void;
-        onEnd?: (error?: ErrorResponse) => void;
-        onError?: (error: any) => void;
-    }
+    // export interface OptionalSubscriptionListeners {
+    //     onSubscribed?: (headers: Headers) => void;
+    //     onOpen?: () => void;
+    //     onEvent?: (event: SubscriptionEvent) => void;
+    //     onEnd?: (error?: ErrorResponse) => void;
+    //     onError?: (error: any) => void;
+    // }
     
-    export interface SubscriptionListeners {
-        onSubscribed: (headers: Headers) => void;
-        onOpen: () => void;
-        onEvent: (event: SubscriptionEvent) => void;
-        onEnd: (error?: ErrorResponse) => void;
-        onError: (error: any) => void;
-    }
+    // export interface SubscriptionListeners {
+    //     onSubscribed: (headers: Headers) => void;
+    //     onOpen: () => void;
+    //     onEvent: (event: SubscriptionEvent) => void;
+    //     onEnd: (error?: ErrorResponse) => void;
+    //     onError: (error: any) => void;
+    // }
     
-    export interface SubscribeOptions extends OptionalSubscriptionListeners {
-        path: string;
-        headers: Headers;
-        jwt?: string;
+    // export interface SubscribeOptions extends OptionalSubscriptionListeners {
+    //     path: string;
+    //     headers: Headers;
+    //     jwt?: string;
         
-        logger: Logger;
-    }
+    //     logger: Logger;
+    // }
     
     /**
     * Allows avoiding making null check every. Single. Time.
@@ -106,13 +100,13 @@ export function createSubscriptionConstructor(
     * @returns the mutated options
     * TODO: should this be cloned instead?
     */
-    export function replaceUnimplementedListenersWithNoOps(options: OptionalSubscriptionListeners): OptionalSubscriptionListeners {
-        if(!options.onOpen) options.onOpen = () => {};
-        if(!options.onEvent) options.onEvent = (event) => {};
-        if(!options.onEnd) options.onEnd = () => {};
-        if(!options.onError) options.onError = (error) => {};
-        return options;
-    }
+    // export function replaceUnimplementedListenersWithNoOps(options: OptionalSubscriptionListeners): OptionalSubscriptionListeners {
+    //     if(!options.onOpen) options.onOpen = () => {};
+    //     if(!options.onEvent) options.onEvent = (event) => {};
+    //     if(!options.onEnd) options.onEnd = () => {};
+    //     if(!options.onError) options.onError = (error) => {};
+    //     return options;
+    // }
     
     export class BaseSubscription {
         
