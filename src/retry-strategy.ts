@@ -1,4 +1,4 @@
-import { Logger } from './logger';
+import { Logger, EmptyLogger } from './logger';
 import { ErrorResponse, NetworkError } from './base-client';
 import { BaseSubscription } from './base-subscription';
 import { TokenProvider } from './token-provider';
@@ -68,15 +68,27 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     error instanceof ErrorResponse && 
                     error.statusCode === 401 && 
                     error.name == "authentication/jwt/expired"){
-                        
+                    
                         this.tokenProvider.invalidateToken(error.info.token);
                     }
                     resolve();
                 });
             }
         }
+
+        export interface ExponentialBackoffRetryStrategyOptions {
+            tokenFetchingRetryStrategy?: RetryStrategy, //Retry strategy that checks for expired token and fetches it
+            retryUnsafeRequests?: boolean, //Elements doesn't allow unsafe requests to be retried, external calls to filthy APIs might require it
+            limit?: number, //Max number of retries, -1 if unlimited
+            maxBackoffMillis?: number, //Maximum length for backoff
+            defaultBackoffMillis?: number, //Initial backoff we start from
+            logger?: Logger
+        }
         
         export class ExponentialBackoffRetryStrategy implements RetryStrategy {
+            
+            constructor(private options: ExponentialBackoffRetryStrategyOptions){
+            }
             
             private tokenFetchingRetryStrategy: RetryStrategy
             
@@ -96,16 +108,14 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     .catch(error) 
                 }
                 
-                private logger: Logger;
-                private retryUnsafeRequests: boolean = false;
-                
-                private limit: number = -1;
+                private logger = this.options.logger || new EmptyLogger();
+                private retryUnsafeRequests = this.options.retryUnsafeRequests || false;
+                private limit = this.options.limit || false;
+                private maxBackoffMillis = this.options.maxBackoffMillis || 5000;
+                private defaultBackoffMillis = this.options.defaultBackoffMillis || 1000;
+
                 private retryCount = 0;
-                
-                private maxBackoffMillis: number = 5000;
-                private defaultBackoffMillis: number = 1000;
                 private currentBackoffMillis: number = this.defaultBackoffMillis;
-                
                 private pendingTimeouts = new Set<number>();        
                 
                 resolveError(error: any): Promise<any> {

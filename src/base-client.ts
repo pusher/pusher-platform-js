@@ -17,6 +17,7 @@ export type Headers = {
     [key: string]: string;
 }
 
+//TODO: change this
 export interface RequestOptions {
     method: string;
     path: string;
@@ -119,25 +120,28 @@ export class ErrorResponse extends Error{
             });
         }
 
-        newStatelessSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
-            const method = "SUBSCRIBE";
-            if( !subOptions.retryStrategy ) {
-                subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-                    logger: this.logger,
-                    requestMethod: method
-                });
-            }
-            return new NonResumableSubscription(
-                () => {
-                    return this.createXHR(this.baseURL, {
-                        method: method,
-                        path: subOptions.path,
-                        headers: {},
-                        body: null,
-                    });
-                },
-                subOptions
-            );
+        newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
+            // const method = "SUBSCRIBE";
+            // if( !subOptions.retryStrategy ) {
+            //     subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
+            //         logger: this.logger,
+            //         requestMethod: method
+            //     });
+            // }
+            // return new NonResumableSubscription(
+            //     () => {
+            //         return this.createXHR(this.baseURL, {
+            //             method: method,
+            //             path: subOptions.path,
+            //             headers: {},
+            //             body: null,
+            //         });
+            //     },
+            //     subOptions
+            // );
+
+            //TODO:
+            return null;
         }
 
         // private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
@@ -148,10 +152,14 @@ export class ErrorResponse extends Error{
 
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
+            
+            //TODO: relay resumable subscribe options
 
             let tokenProvider: TokenProvider;
-            let retryStrategy = new ExponentialBackoffRetryStrategy(
-                new TokenFetchingRetryStrategy(tokenProvider)
+            let retryStrategy = new ExponentialBackoffRetryStrategy({
+                tokenFetchingRetryStrategy:  new TokenFetchingRetryStrategy(tokenProvider),
+            }
+               
             )
             let headers: Headers;
             let path = "path";
