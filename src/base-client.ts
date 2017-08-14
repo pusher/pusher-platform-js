@@ -11,6 +11,7 @@ export interface BaseClientOptions {
     timeout?: number;
     XMLHttpRequest?: Function;
     logger?: Logger;
+    retryStrategy?: RetryStrategy
 }
 
 export type Headers = {
@@ -47,6 +48,9 @@ export function responseHeadersObj(headerStr: string): Headers {
     }
     return headers;
 }
+
+//Single request
+export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 
 export class ErrorResponse extends Error{
     public statusCode: number;
@@ -100,6 +104,7 @@ export class ErrorResponse extends Error{
             this.logger = options.logger || new ConsoleLogger();
         }
 
+
         request(options: RequestOptions): Promise<any> {
             let xhr = this.createXHR(this.baseURL, options);
 
@@ -121,59 +126,54 @@ export class ErrorResponse extends Error{
         }
 
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
-            // const method = "SUBSCRIBE";
-            // if( !subOptions.retryStrategy ) {
-            //     subOptions.retryStrategy = new ExponentialBackoffRetryStrategy({
-            //         logger: this.logger,
-            //         requestMethod: method
-            //     });
-            // }
-            // return new NonResumableSubscription(
-            //     () => {
-            //         return this.createXHR(this.baseURL, {
-            //             method: method,
-            //             path: subOptions.path,
-            //             headers: {},
-            //             body: null,
-            //         });
-            //     },
-            //     subOptions
-            // );
 
-            //TODO:
-            return null;
+            let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
+            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider) });
+
+            let headers: Headers = subOptions.headers;
+            let path = subOptions.path;
+            let listeners = subOptions.listeners;
+
+            let requestOptions: RequestOptions = {
+                method: "SUBSCRIBE",
+                path: path,
+                headers: headers
+            }
+
+            let resumableSubscription = new NonResumableSubscription(
+                createSubscriptionConstructor(
+                    retryStrategy, 
+                    headers, 
+                    () => this.createXHR(this.baseURL, requestOptions)),
+                subOptions,
+                listeners);
+
+            return resumableSubscription;
         }
-
-        // private createBaseSubscriptionConstructor = (method: string, path: string, retryStrategy: RetryStrategy) => {
-
-        //     // return (error, lastEvent) => { }
-        // }
-
 
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
-            
-            //TODO: relay resumable subscribe options
 
-            let tokenProvider: TokenProvider;
-            let retryStrategy = new ExponentialBackoffRetryStrategy({
-                tokenFetchingRetryStrategy:  new TokenFetchingRetryStrategy(tokenProvider),
+            let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
+            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider) });
+
+            let initialEventId: string = subOptions.initialEventId;
+            let headers: Headers = subOptions.headers;
+            let path = subOptions.path;
+            let listeners = subOptions.listeners;
+
+            let requestOptions: RequestOptions = {
+                method: "SUBSCRIBE",
+                path: path,
             }
-               
-            )
-            let headers: Headers;
-            let path = "path";
-            let requestOptions: RequestOptions;
-            let someOtherOptions: any
 
-            //TODO: figure out all of the options...
             let resumableSubscription = new ResumableSubscription(
                 createSubscriptionConstructor(
                     retryStrategy, 
                     headers, 
-                    () => this.createXHR(path, requestOptions)),
-                someOtherOptions,
-                someOtherOptions.listeners);
+                    () => this.createXHR(this.baseURL, requestOptions)),
+                subOptions,
+                listeners);
 
             return resumableSubscription;
         }

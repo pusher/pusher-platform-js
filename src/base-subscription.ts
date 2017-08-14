@@ -22,12 +22,7 @@ export function createSubscriptionConstructor(
     headers: Headers, 
     xhrSource: () => XMLHttpRequest): 
     (error: any, lastEventId?: string) => BaseSubscriptionConstruction {
-
         let xhr = xhrSource();
-        for (let key in headers) {
-            xhr.setRequestHeader(key, headers[key]);
-        }
-       
         return  (error: any, lastEventId?: string) => { 
             return new BaseSubscriptionConstruction(retryStrategy, xhr, error, lastEventId); 
         };   

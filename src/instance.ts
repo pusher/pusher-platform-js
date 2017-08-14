@@ -1,3 +1,4 @@
+import { NonResumableSubscribeOptions, NonResumableSubscription } from './non-resumable-subscription';
 import { ExponentialBackoffRetryStrategy, RetryStrategy } from './retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
@@ -61,28 +62,21 @@ export default class Instance {
         return this.client.request(options);
     }
     
-    subscribe(options: StatelessSubscribeOptions): StatelessSubscription {
-        this.logger.verbose("Starting to statelessly subscribe");
+    subscribe(options: NonResumableSubscribeOptions): NonResumableSubscription {
+        this.logger.verbose("Starting to subscribe to a non-resumable subscription");
         options.path = this.absPath(options.path);
-        if(!options.logger) options.logger = this.logger;
+        options.logger = this.logger;
 
-        let subscription: StatelessSubscription = 
-        this.client.newStatelessSubscription( { ...options } );
-        subscription.open();
-
-        return subscription;
+        return this.client.newNonResumableSubscription(options);;
     }
     
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
+        this.logger.verbose("Starting to subscribe to a resumable subscription");
+        
         options.path = this.absPath(options.path);
-        if(!options.logger) options.logger = this.logger;
+        options.logger = this.logger;
         
-        return this.client.newResumableSubscription({ ...options });
-        
-        // let resumableSubscription: ResumableSubscription = this.client.newResumableSubscription({ ...options });
-        // resumableSubscription.open();
-        
-        // return resumableSubscription;
+        return this.client.newResumableSubscription(options);
     }
     
     private absPath(relativePath: string): string {
