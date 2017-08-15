@@ -1,7 +1,14 @@
+import { TokenProvider } from './token-provider';
+import { RetryStrategy } from './retry-strategy';
 import { ErrorResponse, Headers } from './base-client';
 import { BaseSubscription, BaseSubscriptionConstruction, SubscriptionEvent } from './base-subscription';
 
 export interface NonResumableSubscribeOptions {
+    headers: Headers,
+    path: string,
+    listeners: NonResumableSubscriptionStateListeners,
+    retryStrategy: RetryStrategy,
+    tokenProvider: TokenProvider
 }   
 
 export interface NonResumableSubscriptionState {}

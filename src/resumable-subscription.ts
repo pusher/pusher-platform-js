@@ -1,5 +1,5 @@
 import { NoOpTokenProvider, TokenProvider } from './token-provider';
-import { ErrorResponse } from './base-client';
+import { ErrorResponse, Headers } from './base-client';
 import {
     RetryStrategy,
     ExponentialBackoffRetryStrategy,
@@ -9,9 +9,7 @@ import {
 import { Logger } from './logger';
 import {
     BaseSubscription,
-    SubscribeOptions,
     SubscriptionEvent,
-    replaceUnimplementedListenersWithNoOps,
     BaseSubscriptionConstruction
 } from './base-subscription'
 
@@ -30,7 +28,12 @@ class SubscriptionConstructor {
 }
 
 export interface ResumableSubscribeOptions {
-    initialEventId?: string
+    headers: Headers;
+    path: string;
+    tokenProvider: TokenProvider;
+    retryStrategy: RetryStrategy;
+    initialEventId?: string,
+    listeners: ResumableSubscriptionStateListeners;
 }
 
 export interface ResumableSubscriptionState {}

@@ -106,7 +106,6 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     error instanceof ErrorResponse && 
                     error.statusCode === 401 && 
                     error.name == "authentication/jwt/expired"){
-                    
                         this.tokenProvider.invalidateToken(error.info.token);
                     }
                     resolve();

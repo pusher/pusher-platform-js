@@ -1,3 +1,4 @@
+import { NonResumableSubscribeOptions, NonResumableSubscription } from './non-resumable-subscription';
 import { ExponentialBackoffRetryStrategy, RetryStrategy } from './retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
@@ -61,7 +62,7 @@ export default class Instance {
         return this.client.request(options);
     }
     
-    subscribe(options: StatelessSubscribeOptions): StatelessSubscription {
+    subscribe(options: NonResumableSubscribeOptions): NonResumableSubscription {
         this.logger.verbose("Starting to statelessly subscribe");
         options.path = this.absPath(options.path);
         if(!options.logger) options.logger = this.logger;
