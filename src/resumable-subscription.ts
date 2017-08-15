@@ -32,8 +32,9 @@ export interface ResumableSubscribeOptions {
     path: string;
     tokenProvider: TokenProvider;
     retryStrategy: RetryStrategy;
-    initialEventId?: string,
+    initialEventId?: string;
     listeners: ResumableSubscriptionStateListeners;
+    logger: Logger;
 }
 
 export interface ResumableSubscriptionState {}
