@@ -49,6 +49,9 @@ export function responseHeadersObj(headerStr: string): Headers {
     return headers;
 }
 
+//Single request
+export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
+
 export class ErrorResponse extends Error{
     public statusCode: number;
     public headers: Headers;
@@ -100,6 +103,7 @@ export class ErrorResponse extends Error{
 
             this.logger = options.logger || new ConsoleLogger();
         }
+
 
         request(options: RequestOptions): Promise<any> {
             let xhr = this.createXHR(this.baseURL, options);

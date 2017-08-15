@@ -1,16 +1,8 @@
+import { ErrorResponse, NetworkRequest } from './base-client';
 import { RetryStrategy } from './retry-strategy';
 export interface TokenProvider {
-    fetchToken(): Promise<string>;
     invalidateToken(token?: string);
-}
-
-//TODO: fetchToken could be a () => Promise<string>  kind of function that we could return? 
-
-
-//This is how you do a generic function in TS
-function req<T>( arg: () => Promise<number>): Promise<T> {
-
-    return null;
+    fetchToken: NetworkRequest<string>;
 }
 
 /**
@@ -23,39 +15,11 @@ export class RetryingTokenProvider implements TokenProvider {
         private baseTokenProvider: TokenProvider, 
         private retryStrategy: RetryStrategy){
     }
+
+    fetchToken = () => 
+        this.retryStrategy.executeRequest(null, this.baseTokenProvider.fetchToken);
     
-    fetchToken(){
-        
-        // req<Headers>( () => {return null}).then()
-
-        return this.tryFetching();
-    }
-
-    invalidateToken(token?: string){
-        this.baseTokenProvider.invalidateToken(token);
-    }
-
-    private tryFetching(){
-
-        return new Promise<any>( (resolve, reject) => {}); //TODO:
-
-        // this.retryStrategy.executeRequest(){
-
-        // }
-        // return new Promise<string>( (resolve, reject ) => {
-        //     this.baseTokenProvider.fetchToken()
-        //     .then( token => {
-        //         resolve(token);
-        //     }).catch( error => {
-        //         this.retryStrategy.checkIfRetryable(error)
-        //         .then(() => {
-        //             this.tryFetching();
-        //         }).catch(error => { 
-        //             reject(error); 
-        //     });
-        // });
-        // });
-    }
+    invalidateToken = this.baseTokenProvider.invalidateToken;    
 }
 
 /**

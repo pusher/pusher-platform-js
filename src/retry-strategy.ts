@@ -1,5 +1,5 @@
 import { Logger, EmptyLogger } from './logger';
-import { ErrorResponse, NetworkError } from './base-client';
+import { ErrorResponse, NetworkError, NetworkRequest } from './base-client';
 import { BaseSubscription } from './base-subscription';
 import { TokenProvider } from './token-provider';
 
@@ -10,11 +10,10 @@ export interface RetryStrategy {
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );
-    executeRequest(
+    executeRequest<T>(
         error: any,
-        xhr: XMLHttpRequest
-    ): Promise<any>;
-    //TODO: executeRequest();
+        request: NetworkRequest<T>
+    ): Promise<T>;
 }
 
 function createRetryStrategy(options :any): RetryStrategy {
@@ -40,6 +39,34 @@ export class DoNotRetry implements RetryStrategyResult {
         this.error = error;
     }
 }
+
+/**
+ * This serves as a no-op implementation of RetryStrategy that just relays whatever it has to the underlying requests. 
+ * Used with ExponentialBackoffRetryStrategy when we don't have a TokenProvider
+ */
+export class UnauthenticatedRetryStrategy implements RetryStrategy {
+    executeSubscription(
+        error: any,
+        xhr: XMLHttpRequest, 
+        subscriptionCallback: (subscription: BaseSubscription) => void, 
+        errorCallback: (error: any) => void) {
+            let subscription = new BaseSubscription(
+                    xhr, 
+                    null, 
+                    (headers) => {
+                        subscriptionCallback(subscription);
+                    }, 
+                    (error) => {
+                        errorCallback(error);
+                    } 
+                );
+    }
+
+    executeRequest<T>(error: any, request: NetworkRequest<T>){
+        return request();
+    }
+}
+
 
 export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
@@ -86,16 +113,19 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                 });
             }
     
-        executeRequest( 
+        executeRequest<T>( 
             error: any,
-            xhr: XMLHttpRequest) {
-                return new Promise<any>( (resolve, reject) => {
-                    //TODO
-            });
+            request: NetworkRequest<T>) {
+                return new Promise<T>( (resolve, reject) => {
+                    this.resolveError(error)
+                    .then( () => this.tokenProvider.fetchToken() )
+                    .then( (token) => { 
+                        resolve (request( { token: token }));
+                    });
+                })       
         }
     }
         
-
         export interface ExponentialBackoffRetryStrategyOptions {
             tokenFetchingRetryStrategy?: RetryStrategy, //Retry strategy that checks for expired token and fetches it
             retryUnsafeRequests?: boolean, //Elements doesn't allow unsafe requests to be retried, external calls to filthy APIs might require it
@@ -110,14 +140,16 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
             constructor(private options: ExponentialBackoffRetryStrategyOptions){
             }
             
-            private tokenFetchingRetryStrategy: RetryStrategy
+            private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy();
 
-            executeRequest( 
+            executeRequest<T>( 
                 error: any,
-                xhr: XMLHttpRequest) {
-                    return new Promise<any>( (resolve, reject) => {
-                        //TODO
-                });
+                request: NetworkRequest<T>) {
+                    return new Promise<T>((resolve, reject) => {
+                        this.resolveError(error).then( () => {
+                            return this.tokenFetchingRetryStrategy.executeRequest<T>(error, request);
+                        });
+                    });
             }
             
             executeSubscription(
@@ -132,8 +164,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                         xhr, 
                         subscriptionCallback, 
                         errorCallback);
-                    })
-                    .catch(error) 
+                    }) 
                 }
                 
                 private logger = this.options.logger || new EmptyLogger();
@@ -172,9 +203,9 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                         case 'HEAD':
                         case 'OPTIONS':
                         case 'SUBSCRIBE':
-                        return true;
+                            return true;
                         default:
-                        return false;
+                            return false;
                     }
                 }
                 
