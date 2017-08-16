@@ -16,8 +16,8 @@ import {
 export interface ResumableSubscribeOptions {
     headers: Headers;
     path: string;
-    tokenProvider: TokenProvider;
-    retryStrategy: RetryStrategy;
+    tokenProvider?: TokenProvider;
+    retryStrategy?: RetryStrategy;
     initialEventId?: string;
     listeners: ResumableSubscriptionStateListeners;
     logger: Logger;
@@ -40,7 +40,7 @@ export interface ResumableSubscriptionStateTransition {
 
 export class ResumableSubscription implements ResumableSubscriptionStateTransition {
 
-    state: ResumableSubscriptionState;
+    private state: ResumableSubscriptionState;
 
     constructor(
         baseSubscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction, //TODO:
@@ -129,7 +129,7 @@ class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
     ){
         const subscriptionConstruction = subscriptionConstructor(null, lastEventId);
         subscriptionConstruction.onComplete( (subscription) => {
-            listeners.onSubscribed(null); //should return `subscription.headers`
+            listeners.onSubscribed(subscription.getHeaders());
             onTransition(new OpenSubscriptionState(
                 subscription,
                 lastEventId,
