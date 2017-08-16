@@ -172,7 +172,10 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     return new Promise( (resolve, reject) => {
                         
                         //Error could be null - in which case 🚀🚀🚀
-                        if(!error) resolve();
+                        if(!error){ 
+                            resolve();
+                            return;
+                        }
 
                         const shouldRetry = this.shouldRetry(error);
                         if(shouldRetry instanceof DoNotRetry) {

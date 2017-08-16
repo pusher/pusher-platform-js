@@ -71,6 +71,8 @@ export default class Instance {
     }
     
     resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
+        this.logger.verbose("Starting to subscribe to a resumable subscription");
+        
         options.path = this.absPath(options.path);
         options.logger = this.logger;
         

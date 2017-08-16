@@ -38,32 +38,35 @@ export interface ResumableSubscriptionStateTransition {
     onTransition(state: ResumableSubscriptionState): void
 }
 
-export class ResumableSubscription implements ResumableSubscriptionStateTransition {
+export class ResumableSubscription implements ResumableSubscriptionStateTransition{
 
-    private state: ResumableSubscriptionState;
+    private state: ResumableSubscriptionState ;
 
     constructor(
         baseSubscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction, //TODO:
         options: ResumableSubscribeOptions,
         listeners: ResumableSubscriptionStateListeners
     ){
+        this.state = new ClosedSubscriptionState();
         
         this.state = new SubscribingResumableSubscriptionState(
             options.initialEventId,
             baseSubscriptionConstructor,
             listeners,
-            this.onTransition
+            this.onTransition.bind(this)
         );
     }  
-    
-    unsubscribe(){
-        //TODO:
-    }
 
-    onTransition(newState: ResumableSubscriptionState){
+    onTransition = function(newState: ResumableSubscriptionState){
         this.state = newState;
     }
+    
+    //TODO:
+    unsubscribe(){
+    }
 }
+
+class ClosedSubscriptionState implements ResumableSubscriptionState {}
 
 class SubscribingResumableSubscriptionState implements ResumableSubscriptionState {
     constructor(
