@@ -13,20 +13,6 @@ import {
     BaseSubscriptionConstruction
 } from './base-subscription'
 
-class SubscriptionConstructor {
-    constructor(
-        error: any,
-        lastEventId: string
-    ){
-        //TODO - init subscription
-    }
-    onComplete(callback: (subscription: BaseSubscription) => void){
-    }
-
-    onError(errorCallback: (error: any) => void){
-    }
-}
-
 export interface ResumableSubscribeOptions {
     headers: Headers;
     path: string;
