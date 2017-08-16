@@ -9,14 +9,14 @@ import Instance from './instance';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
 import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription';
-import { StatelessSubscription, StatelessSubscribeOptions } from './stateless-subscription'; 
-import { RetryStrategy, ExponentialBackoffRetryStrategy } from './retry-strategy';
+import { NonResumableSubscription, NonResumableSubscribeOptions } from './non-resumable-subscription'; 
+import { ExponentialBackoffRetryStrategy, RetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy';
 
 export {
   Instance,
   BaseClient,
   ResumableSubscription, ResumableSubscribeOptions,
-  StatelessSubscription, StatelessSubscribeOptions,
+  NonResumableSubscription, NonResumableSubscribeOptions,
 
   RetryStrategy, ExponentialBackoffRetryStrategy,
   Logger, ConsoleLogger, EmptyLogger, 
@@ -27,9 +27,9 @@ export default {
   Instance,
   BaseClient,
   ResumableSubscription,
-  StatelessSubscription,
+  NonResumableSubscription,
 
-  ExponentialBackoffRetryStrategy,
+  ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy,
   ConsoleLogger, EmptyLogger,
   NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };
