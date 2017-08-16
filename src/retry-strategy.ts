@@ -16,14 +16,6 @@ export interface RetryStrategy {
     ): Promise<T>;
 }
 
-function createRetryStrategy(options :any): RetryStrategy {
-
-    let tokenProvider: TokenProvider
-
-    return null;
-    //TODO: - constructor might solve these problems for us
-}
-
 export interface RetryStrategyResult {}
 
 export class Retry implements RetryStrategyResult {
