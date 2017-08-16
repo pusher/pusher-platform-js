@@ -144,7 +144,7 @@ export class ErrorResponse extends Error{
                 createSubscriptionConstructor(
                     retryStrategy, 
                     headers, 
-                    () => this.createXHR(path, requestOptions)),
+                    () => this.createXHR(this.baseURL, requestOptions)),
                 subOptions,
                 listeners);
 
@@ -171,7 +171,7 @@ export class ErrorResponse extends Error{
                 createSubscriptionConstructor(
                     retryStrategy, 
                     headers, 
-                    () => this.createXHR(path, requestOptions)),
+                    () => this.createXHR(this.baseURL, requestOptions)),
                 subOptions,
                 listeners);
 
