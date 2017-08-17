@@ -1,16 +1,24 @@
+let verboseLogger = new PusherPlatform.ConsoleLogger(1) //Verbose logger 
+
 let instance = new PusherPlatform.Instance({
     instanceId: CONSTANTS.instanceId,
     serviceName: 'feeds',
     serviceVersion: 'v1',
-    logger: new PusherPlatform.ConsoleLogger(1) //Verbose logger
+    logger: verboseLogger
 });
 
+
+
 //This setup is prone to error.
-let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({});
+let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    limit: 6,
+    logger: verboseLogger
+});
 
 let resumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
+    initialEventId: "347720",
     listeners: {
        onSubscribed: headers => console.log("onSubscribed " + headers),
        onOpen: () => console.log("onOpen"),

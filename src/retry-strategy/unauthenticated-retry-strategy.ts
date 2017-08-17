@@ -10,10 +10,15 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
+        lastEventId: string,
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void) {
+            let xhr = xhrSource();
+            if(lastEventId){
+                xhr.setRequestHeader("Last-Event-Id", lastEventId);                
+            }
             let subscription = new BaseSubscription(
-                    xhrSource(), 
+                    xhr, 
                     null, 
                     (headers) => {
                         subscriptionCallback(subscription);

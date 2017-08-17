@@ -11,6 +11,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
+        lastEventId: string,
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void) {
             
@@ -20,6 +21,9 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                 let xhr = xhrSource();
                 if(token){
                     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+                }
+                if(lastEventId){
+                    xhr.setRequestHeader("Last-Event-Id", lastEventId);                    
                 }
                 
                 let subscription = new BaseSubscription(
