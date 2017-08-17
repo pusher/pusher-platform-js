@@ -42,7 +42,14 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 error, 
                 xhrSource, 
                 subscriptionCallback, 
-                errorCallback);
+                (error ) => {
+                    this.executeSubscription(
+                        error,
+                        xhrSource,
+                        subscriptionCallback,
+                        errorCallback
+                     );
+                });
             }) 
     }
 
@@ -67,7 +74,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
             const shouldRetry = this.shouldRetry(error);
             this.logger.debug("ResolveError " + shouldRetry);
-            
+
             if(shouldRetry instanceof DoNotRetry) {
                 reject(error);
             }
