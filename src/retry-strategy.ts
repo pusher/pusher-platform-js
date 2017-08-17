@@ -6,7 +6,7 @@ import { TokenProvider } from './token-provider';
 export interface RetryStrategy {
     executeSubscription(
         error: any,
-        xhr: XMLHttpRequest, 
+        xhrSource: () => XMLHttpRequest, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );
@@ -39,11 +39,11 @@ export class DoNotRetry implements RetryStrategyResult {
 export class UnauthenticatedRetryStrategy implements RetryStrategy {
     executeSubscription(
         error: any,
-        xhr: XMLHttpRequest, 
+        xhrSource: () => XMLHttpRequest, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void) {
             let subscription = new BaseSubscription(
-                    xhr, 
+                    xhrSource(), 
                     null, 
                     (headers) => {
                         subscriptionCallback(subscription);
@@ -67,13 +67,14 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
     
     executeSubscription(
         error: any,
-        xhr: XMLHttpRequest, 
+        xhrSource: () => XMLHttpRequest, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void) {
             
             this.resolveError(error)
             .then( () => this.tokenProvider.fetchToken)
             .then(token => {
+                let xhr = xhrSource();
                 if(token){
                     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
                 }
@@ -145,14 +146,14 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
             
             executeSubscription(
                 error: any,
-                xhr: XMLHttpRequest, 
+                xhrSource: () => XMLHttpRequest, 
                 subscriptionCallback: (subscription: BaseSubscription) => void, 
                 errorCallback: (error: any) => void
             ){
                 this.resolveError(error).then( () => {
                     this.tokenFetchingRetryStrategy.executeSubscription(
                         error, 
-                        xhr, 
+                        xhrSource, 
                         subscriptionCallback, 
                         errorCallback);
                     }) 

@@ -22,9 +22,8 @@ export function createSubscriptionConstructor(
     headers: Headers, 
     xhrSource: () => XMLHttpRequest): 
     (error: any, lastEventId?: string) => BaseSubscriptionConstruction {
-        let xhr = xhrSource();
         return  (error: any, lastEventId?: string) => { 
-            return new BaseSubscriptionConstruction(retryStrategy, xhr, error, lastEventId); 
+            return new BaseSubscriptionConstruction(retryStrategy, xhrSource, error, lastEventId); 
         };   
     }
     
@@ -36,13 +35,13 @@ export function createSubscriptionConstructor(
         
         constructor(
             retryStrategy: RetryStrategy,
-            xhr: XMLHttpRequest,
+            xhrSource: () => XMLHttpRequest,
             error: any,
             lastEventId?: string
         ){
             const subscriptionResult = retryStrategy.executeSubscription( 
                 null,
-                xhr, 
+                xhrSource, 
                 (subscription) => { 
                     if(this.subscriptionCallback) this.subscriptionCallback(subscription); 
                     else this.subscription = subscription;
