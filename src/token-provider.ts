@@ -1,5 +1,5 @@
 import { ErrorResponse, NetworkRequest } from './base-client';
-import { RetryStrategy } from './retry-strategy';
+import { RetryStrategy } from './retry-strategy/retry-strategy';
 export interface TokenProvider {
     invalidateToken(token?: string);
     fetchToken: NetworkRequest<string>;

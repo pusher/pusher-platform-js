@@ -1,5 +1,5 @@
 import { NonResumableSubscribeOptions, NonResumableSubscription } from './non-resumable-subscription';
-import { ExponentialBackoffRetryStrategy, RetryStrategy } from './retry-strategy';
+import { RetryStrategy } from './retry-strategy/retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
 import { RequestOptions } from './base-client';

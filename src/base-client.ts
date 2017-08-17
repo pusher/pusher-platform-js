@@ -1,8 +1,10 @@
+import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
+import { ExponentialBackoffRetryStrategy } from './retry-strategy/exponential-backoff-retry-strategy';
 import { createSubscriptionConstructor } from './base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
-import { RetryStrategy, ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy } from './retry-strategy';
+import { RetryStrategy } from './retry-strategy/retry-strategy';
 import { NonResumableSubscribeOptions, NonResumableSubscription} from './non-resumable-subscription';
 
 export interface BaseClientOptions {

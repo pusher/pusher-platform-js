@@ -1,11 +1,6 @@
 import { NoOpTokenProvider, TokenProvider } from './token-provider';
 import { ErrorResponse, Headers } from './base-client';
-import {
-    RetryStrategy,
-    ExponentialBackoffRetryStrategy,
-    Retry,
-    DoNotRetry
-} from './retry-strategy';
+import { RetryStrategy } from './retry-strategy/retry-strategy';
 import { Logger } from './logger';
 import {
     BaseSubscription,
