@@ -8,6 +8,3 @@ const feeds = new Feeds({instanceId: config.instanceId, key: config.key});
 feeds.publish("my-feed", { name: "Harry Potter"})
     .then(() => console.log("Publish successful"))
     .catch((error) => console.log(error));
-
-
-//TODO: expected `instance` property in instance options -> should be instanceId
