@@ -7,6 +7,7 @@ export interface RetryStrategy {
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
+        lastEventId: string,
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );

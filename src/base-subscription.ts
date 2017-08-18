@@ -42,6 +42,7 @@ export function createSubscriptionConstructor(
             const subscriptionResult = retryStrategy.executeSubscription( 
                 null,
                 xhrSource, 
+                lastEventId,
                 (subscription) => { 
                     if(this.subscriptionCallback) this.subscriptionCallback(subscription); 
                     else this.subscription = subscription;

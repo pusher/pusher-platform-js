@@ -34,18 +34,21 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
+        lastEventId: string,
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     ){
         this.resolveError(error).then( () => {
             this.tokenFetchingRetryStrategy.executeSubscription(
                 error, 
-                xhrSource, 
+                xhrSource,
+                lastEventId,
                 subscriptionCallback, 
                 (error ) => {
                     this.executeSubscription(
                         error,
                         xhrSource,
+                        lastEventId,
                         subscriptionCallback,
                         errorCallback
                      );

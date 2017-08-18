@@ -6,11 +6,14 @@ let instance = new PusherPlatform.Instance({
 });
 
 //This setup is prone to error.
-let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({});
+let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    limit: 10
+});
 
 let resumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
+    initialEventId: "347720",
     listeners: {
        onSubscribed: headers => console.log("onSubscribed " + headers),
        onOpen: () => console.log("onOpen"),
