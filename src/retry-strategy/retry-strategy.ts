@@ -1,6 +1,7 @@
+import { NetworkRequest } from '../request';
 import { Logger, EmptyLogger } from '../logger';
-import { ErrorResponse, NetworkError, NetworkRequest } from '../base-client';
-import { BaseSubscription } from '../base-subscription';
+import { ErrorResponse, NetworkError } from '../base-client';
+import { BaseSubscription } from '../subscription/base-subscription';
 import { TokenProvider } from '../token-provider';
 
 export interface RetryStrategy {

@@ -1,5 +1,5 @@
-import { NetworkRequest } from '../base-client';
-import { BaseSubscription } from '../base-subscription';
+import { NetworkRequest } from '../request';
+import { BaseSubscription } from '../subscription/base-subscription';
 import { RetryStrategy } from './retry-strategy';
 
 /**

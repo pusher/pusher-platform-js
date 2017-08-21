@@ -9,8 +9,8 @@ import {
 import Instance from './instance';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
-import { ResumableSubscription, ResumableSubscribeOptions } from './resumable-subscription';
-import { NonResumableSubscription, NonResumableSubscribeOptions } from './non-resumable-subscription'; 
+import { ResumableSubscription, ResumableSubscribeOptions } from './subscription/resumable-subscription';
+import { NonResumableSubscription, NonResumableSubscribeOptions } from './subscription/non-resumable-subscription'; 
 import { RetryStrategy } from './retry-strategy/retry-strategy';
 import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
 

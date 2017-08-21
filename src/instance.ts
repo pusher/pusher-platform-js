@@ -1,10 +1,10 @@
-import { NonResumableSubscribeOptions, NonResumableSubscription } from './non-resumable-subscription';
+import { RequestOptions } from './request';
+import { NonResumableSubscribeOptions, NonResumableSubscription } from './subscription/non-resumable-subscription';
 import { RetryStrategy } from './retry-strategy/retry-strategy';
 import { TokenProvider } from './token-provider';
 import { BaseClient } from './base-client';
-import { RequestOptions } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
-import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
+import { ResumableSubscribeOptions, ResumableSubscription } from './subscription/resumable-subscription';
 
 const HOST_BASE = "pusherplatform.io";
 

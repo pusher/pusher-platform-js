@@ -1,11 +1,12 @@
+import { executeRequest, NetworkRequest, RequestOptions } from './request';
 import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
 import { ExponentialBackoffRetryStrategy } from './retry-strategy/exponential-backoff-retry-strategy';
-import { createSubscriptionConstructor } from './base-subscription';
+import { createSubscriptionConstructor } from './subscription/base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { ResumableSubscribeOptions, ResumableSubscription } from './resumable-subscription';
+import { ResumableSubscribeOptions, ResumableSubscription } from './subscription/resumable-subscription';
 import { RetryStrategy } from './retry-strategy/retry-strategy';
-import { NonResumableSubscribeOptions, NonResumableSubscription} from './non-resumable-subscription';
+import { NonResumableSubscribeOptions, NonResumableSubscription} from './subscription/non-resumable-subscription';
 
 export interface BaseClientOptions {
     host: string;
@@ -39,8 +40,8 @@ export function responseHeadersObj(headerStr: string): Headers {
     return headers;
 }
 
-//Single request
-export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
+// //Single request
+// export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 
 export class ErrorResponse extends Error{
     public statusCode: number;
@@ -81,15 +82,15 @@ export class ErrorResponse extends Error{
         DONE = 4
     }
 
-    export interface RequestOptions {
-        method: string;
-        path: string;
-        jwt?: string;
-        headers?: Headers;
-        body?: any;
-        retryStrategy?: RetryStrategy;
-        logger?: Logger;
-    }
+    // export interface RequestOptions {
+    //     method: string;
+    //     path: string;
+    //     jwt?: string;
+    //     headers?: Headers;
+    //     body?: any;
+    //     retryStrategy?: RetryStrategy;
+    //     logger?: Logger;
+    // }
 
     export class BaseClient {
         private baseURL: string;
@@ -105,27 +106,8 @@ export class ErrorResponse extends Error{
         }
 
         request(options: RequestOptions): Promise<any> {
-            let networkRequest: NetworkRequest<any> = (
-                createXhr: () => XMLHttpRequest = () => { return this.createXHR(this.baseURL, options); }
-            ) => {
-               
-                return new Promise<any>((resolve, reject) => {
-                    let xhr = createXhr();    
-                    xhr.onreadystatechange = () => {
-                        if (xhr.readyState === 4) {
-                            if (xhr.status === 200) {
-                                resolve(xhr.responseText);
-                            } else if (xhr.status !== 0) {
-                                reject(ErrorResponse.fromXHR(xhr));
-                            } else{
-                                reject(new NetworkError("No Connection"));
-                            }
-                        }
-                    };
-                    xhr.send(JSON.stringify(options.body));
-                });
-            }
-            return options.retryStrategy.executeRequest(null, networkRequest);
+            let createXhr = () => { return this.createXHR(this.baseURL, options); }
+            return executeRequest<any>(createXhr, options);
         }
 
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {

@@ -1,5 +1,6 @@
-import { BaseSubscription } from '../base-subscription';
-import { ErrorResponse, NetworkError, NetworkRequest } from '../base-client';
+import { NetworkRequest } from '../request';
+import { BaseSubscription } from '../subscription/base-subscription';
+import { ErrorResponse, NetworkError } from '../base-client';
 import { UnauthenticatedRetryStrategy } from './unauthenticated-retry-strategy';
 import { EmptyLogger, Logger } from '../logger';
 import { DoNotRetry, Retry, RetryStrategy, RetryStrategyResult } from './retry-strategy';

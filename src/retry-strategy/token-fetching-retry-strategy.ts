@@ -1,5 +1,6 @@
-import { ErrorResponse, NetworkRequest } from '../base-client';
-import { BaseSubscription } from '../base-subscription';
+import { NetworkRequest } from '../request';
+import { ErrorResponse } from '../base-client';
+import { BaseSubscription } from '../subscription/base-subscription';
 import { TokenProvider } from '../token-provider';
 import { RetryStrategy } from './retry-strategy';
 
