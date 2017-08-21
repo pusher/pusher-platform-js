@@ -10,7 +10,7 @@ let instance = new PusherPlatform.Instance({
 //This setup is prone to error.
 //TODO: we probably need to clear up this
 let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    limit: 6,
+    limit: 20,
     logger: verboseLogger
 });
 
@@ -34,11 +34,24 @@ let requestOptions = {
     retryStrategy: myRetryStrategy
 }
 
-instance.request(requestOptions)
-    .then( response => {
-        console.log(response);
-    }).catch( error => {
-        console.log(error);
-    });
+let postRequestOptions = {
+    method: "POST",
+    path: "feeds/my-feed/items",
+    body: { items: [ {name: "kekec"}]},
+    retryStrategy: myRetryStrategy,
+}
 
-// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+// instance.request(postRequestOptions)
+//     .then( response => {
+//         console.log(response);
+//     }).catch( error => {
+//         console.log(error);
+//     });
+// function tryCancelRequest(){
+//     //TODO:
+// }
+
+let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+function tryUnsubscribe(){
+    newResumableSubscription.unsubscribe();
+}

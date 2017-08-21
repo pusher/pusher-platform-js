@@ -18,7 +18,9 @@ export interface ResumableSubscribeOptions {
     logger: Logger;
 }
 
-export interface ResumableSubscriptionState {}
+export interface ResumableSubscriptionState {
+    unsubscribe(): void;
+}
 
 export interface ResumableSubscriptionStateListeners {
     onSubscribed: (headers: Headers) => void;
@@ -38,12 +40,10 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
     private state: ResumableSubscriptionState ;
 
     constructor(
-        baseSubscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction, //TODO:
+        baseSubscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction,
         options: ResumableSubscribeOptions,
         listeners: ResumableSubscriptionStateListeners
-    ){
-        this.state = new ClosedSubscriptionState();
-        
+    ){        
         this.state = new SubscribingResumableSubscriptionState(
             options.initialEventId,
             baseSubscriptionConstructor,
@@ -56,22 +56,21 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
         this.state = newState;
     }
     
-    //TODO:
     unsubscribe(){
+        this.state.unsubscribe();
     }
 }
 
-class ClosedSubscriptionState implements ResumableSubscriptionState {}
-
 class SubscribingResumableSubscriptionState implements ResumableSubscriptionState {
+    private subscriptionConstruction: BaseSubscriptionConstruction;
     constructor(
         initialEventId: string,
         subscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction,
         listeners: ResumableSubscriptionStateListeners,
         onTransition: (newState: ResumableSubscriptionState) => void
     ) { 
-        const subscriptionConstruction = subscriptionConstructor(null, initialEventId);
-        subscriptionConstruction.onComplete( (subscription) => {
+        this.subscriptionConstruction = subscriptionConstructor(null, initialEventId);
+        this.subscriptionConstruction.onComplete( (subscription) => {
             listeners.onSubscribed(null); //should return `subscription.headers`
             onTransition(new OpenSubscriptionState(
                 subscription,
@@ -81,15 +80,19 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
                 onTransition
             ));
         });
-        subscriptionConstruction.onError( (error) => {
+        this.subscriptionConstruction.onError( (error) => {
             onTransition(new FailedSubscriptionState(error, listeners));
         });
-    } 
+    }
+
+    unsubscribe() {
+        this.subscriptionConstruction.cancel();
+    }
 }
 
 class OpenSubscriptionState implements ResumableSubscriptionState {
     constructor(
-        subscription: BaseSubscription,
+        private subscription: BaseSubscription,
         lastEventId: string,
         subscriptionConstructor: (error: any, lastEventId?: string) =>   BaseSubscriptionConstruction,
         listeners: ResumableSubscriptionStateListeners,
@@ -115,9 +118,14 @@ class OpenSubscriptionState implements ResumableSubscriptionState {
             ));
         }
     }
+
+    unsubscribe(){
+        this.subscription.unsubscribe();
+    }
 }
 
 class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
+    private subscriptionConstruction: BaseSubscriptionConstruction;
     constructor(
         error: any,
         lastEventId: string,
@@ -125,8 +133,8 @@ class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
         listeners: ResumableSubscriptionStateListeners,
         onTransition: (newState: ResumableSubscriptionState) => void
     ){
-        const subscriptionConstruction = subscriptionConstructor(null, lastEventId);
-        subscriptionConstruction.onComplete( (subscription) => {
+        this.subscriptionConstruction = subscriptionConstructor(null, lastEventId);
+        this.subscriptionConstruction.onComplete( (subscription) => {
             listeners.onSubscribed(subscription.getHeaders());
             onTransition(new OpenSubscriptionState(
                 subscription,
@@ -136,9 +144,13 @@ class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
                 onTransition
             ));
         });
-        subscriptionConstruction.onError( (error) => {
+        this.subscriptionConstruction.onError( (error) => {
             onTransition(new FailedSubscriptionState(error, listeners));
         });
+    }
+
+    unsubscribe() {
+        this.subscriptionConstruction.cancel();
     }
 }
 
@@ -149,6 +161,9 @@ class FailedSubscriptionState implements ResumableSubscriptionState {
     ){
         listeners.onError(error);
     }
+
+    unsubscribe(){ throw new Error("Tried unsubscribing in failed subscription state"); }
+    
 }
 
 class EndedResumableSubscriptionState implements ResumableSubscriptionState {
@@ -158,4 +173,7 @@ class EndedResumableSubscriptionState implements ResumableSubscriptionState {
     ){
         listeners.onEnd(error);
     }
+
+    unsubscribe(){ throw new Error("Tried unsubscribing in ended subscription state"); }
+    
 }
