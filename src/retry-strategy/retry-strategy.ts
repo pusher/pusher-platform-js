@@ -16,6 +16,8 @@ export interface RetryStrategy {
         error: any,
         request: NetworkRequest<T>
     ): Promise<T>;
+
+    cancelPendingRequest(): void;
 }
 
 export interface RetryStrategyResult {}

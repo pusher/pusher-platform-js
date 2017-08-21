@@ -34,12 +34,12 @@ export function createSubscriptionConstructor(
         private errorCallback: (error: any) => void;
         
         constructor(
-            retryStrategy: RetryStrategy,
+            private retryStrategy: RetryStrategy,
             xhrSource: () => XMLHttpRequest,
             error: any,
             lastEventId?: string
         ){
-            const subscriptionResult = retryStrategy.executeSubscription( 
+            retryStrategy.executeSubscription( 
                 null,
                 xhrSource, 
                 lastEventId,
@@ -62,6 +62,10 @@ export function createSubscriptionConstructor(
         onError( callback: (error: any) => void ){
             if(this.error) callback(this.error);
             else this.errorCallback = callback;
+        }
+
+        cancel(){
+            this.retryStrategy.cancelPendingRequest(); //TODO:
         }
     }
         

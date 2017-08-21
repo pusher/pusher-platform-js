@@ -32,4 +32,8 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
     executeRequest<T>(error: any, request: NetworkRequest<T>){
         return request();
     }
+
+    cancelPendingRequest(){
+        //TODO:
+    }
 }

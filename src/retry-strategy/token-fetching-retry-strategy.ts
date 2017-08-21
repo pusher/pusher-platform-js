@@ -64,4 +64,8 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     });
                 })       
         }
+
+        cancelPendingRequest(){
+            //TODO:
+        }
     }

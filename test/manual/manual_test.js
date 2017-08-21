@@ -34,7 +34,14 @@ let requestOptions = {
     retryStrategy: myRetryStrategy
 }
 
-instance.request(requestOptions)
+let postRequestOptions = {
+    method: "POST",
+    path: "feeds/my-feed/items",
+    body: { items: [ {name: "kekec"}]},
+    retryStrategy: myRetryStrategy,
+}
+
+instance.request(postRequestOptions)
     .then( response => {
         console.log(response);
     }).catch( error => {

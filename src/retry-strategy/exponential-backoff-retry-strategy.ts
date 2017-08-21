@@ -77,6 +77,10 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             }) 
     }
 
+    cancelPendingRequest(){
+        //TODO:
+    }
+
     
 
     resolveError(error: any): Promise<any> {
