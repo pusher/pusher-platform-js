@@ -1,7 +1,7 @@
-import { TokenProvider } from './token-provider';
-import { RetryStrategy } from './retry-strategy/retry-strategy';
-import { Logger } from './logger';
-import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
+import { TokenProvider } from '../token-provider';
+import { RetryStrategy } from '../retry-strategy/retry-strategy';
+import { Logger } from '../logger';
+import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "../base-client";
 
 export enum SubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()

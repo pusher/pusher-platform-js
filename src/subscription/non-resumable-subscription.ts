@@ -1,7 +1,7 @@
-import { Logger } from './logger';
-import { TokenProvider } from './token-provider';
-import { RetryStrategy } from './retry-strategy/retry-strategy';
-import { ErrorResponse, Headers } from './base-client';
+import { Logger } from '../logger';
+import { TokenProvider } from '../token-provider';
+import { RetryStrategy } from '../retry-strategy/retry-strategy';
+import { ErrorResponse, Headers } from '../base-client';
 import { BaseSubscription, BaseSubscriptionConstruction, SubscriptionEvent } from './base-subscription';
 
 export interface NonResumableSubscribeOptions {

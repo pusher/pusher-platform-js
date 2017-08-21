@@ -1,7 +1,7 @@
-import { NoOpTokenProvider, TokenProvider } from './token-provider';
-import { ErrorResponse, Headers } from './base-client';
-import { RetryStrategy } from './retry-strategy/retry-strategy';
-import { Logger } from './logger';
+import { NoOpTokenProvider, TokenProvider } from '../token-provider';
+import { ErrorResponse, Headers } from '../base-client';
+import { RetryStrategy } from '../retry-strategy/retry-strategy';
+import { Logger } from '../logger';
 import {
     BaseSubscription,
     SubscriptionEvent,
