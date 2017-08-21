@@ -7,30 +7,26 @@ let instance = new PusherPlatform.Instance({
     logger: verboseLogger
 });
 
-
-
 //This setup is prone to error.
+//TODO: we probably need to clear up this
 let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
     limit: 6,
     logger: verboseLogger
 });
 
-// let resumableSubscribeOptions = {
-//     path: 'feeds/my-feed/items',
-//     retryStrategy: myRetryStrategy,
-//     initialEventId: "347720",
-//     listeners: {
-//        onSubscribed: headers => console.log("onSubscribed " + headers),
-//        onOpen: () => console.log("onOpen"),
-//        onResuming: () => console.log("onResuming"),
-//        onEvent: event => console.log(event),
-//        onEnd: error => console.log("onEnd " + error),
-//        onError: error => console.log("onError " + error),
-//     },
-// }
-
-// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
-
+let resumableSubscribeOptions = {
+    path: 'feeds/my-feed/items',
+    retryStrategy: myRetryStrategy,
+    initialEventId: "347720",
+    listeners: {
+       onSubscribed: headers => console.log("onSubscribed " + headers),
+       onOpen: () => console.log("onOpen"),
+       onResuming: () => console.log("onResuming"),
+       onEvent: event => console.log(event),
+       onEnd: error => console.log("onEnd " + error),
+       onError: error => console.log("onError " + error),
+    },
+}
 
 let requestOptions = {  
     method: "GET",
@@ -39,9 +35,10 @@ let requestOptions = {
 }
 
 instance.request(requestOptions)
+    .then( response => {
+        console.log(response);
+    }).catch( error => {
+        console.log(error);
+    });
 
-.then( response => {
-    console.log(response);
-}).catch( error => {
-    console.log(error);
-});
+// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);

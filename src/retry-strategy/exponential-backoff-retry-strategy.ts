@@ -7,11 +7,11 @@ import { DoNotRetry, Retry, RetryStrategy, RetryStrategyResult } from './retry-s
 
 export interface ExponentialBackoffRetryStrategyOptions {
     tokenFetchingRetryStrategy?: RetryStrategy, //Retry strategy that checks for expired token and fetches it
-    retryUnsafeRequests?: boolean, //Elements doesn't allow unsafe requests to be retried, external calls to filthy APIs might require it
+    retryUnsafeRequests?: boolean, //Elements doesn't allow unsafe requests to be retried, external calls to non-elements APIs might require it (for token providers, for instance)
     limit?: number, //Max number of retries, -1 if unlimited
     maxBackoffMillis?: number, //Maximum length for backoff
     defaultBackoffMillis?: number, //Initial backoff we start from
-    logger?: Logger
+    logger?: Logger //A lumberjack
 }
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {

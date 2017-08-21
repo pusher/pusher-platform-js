@@ -20,18 +20,6 @@ export type Headers = {
     [key: string]: string;
 }
 
-//TODO: change this
-export interface RequestOptions {
-    method: string;
-    path: string;
-    tokenProvider?: TokenProvider;
-    jwt?: string;
-    headers?: Headers;
-    body?: any;
-    retryStrategy?: RetryStrategy;
-    logger?: Logger;
-}
-
 export function responseHeadersObj(headerStr: string): Headers {
     var headers: Headers = {};
     if (!headerStr) {
@@ -93,6 +81,16 @@ export class ErrorResponse extends Error{
         DONE = 4
     }
 
+    export interface RequestOptions {
+        method: string;
+        path: string;
+        jwt?: string;
+        headers?: Headers;
+        body?: any;
+        retryStrategy?: RetryStrategy;
+        logger?: Logger;
+    }
+
     export class BaseClient {
         private baseURL: string;
         private XMLHttpRequest: any;
@@ -105,7 +103,6 @@ export class ErrorResponse extends Error{
 
             this.logger = options.logger || new ConsoleLogger();
         }
-
 
         request(options: RequestOptions): Promise<any> {
             let networkRequest: NetworkRequest<any> = (
