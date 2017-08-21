@@ -21,6 +21,17 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     
     private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy();
 
+    private logger: Logger = this.options.logger || new EmptyLogger();
+    private retryUnsafeRequests: boolean = this.options.retryUnsafeRequests || false;
+    private limit: number = this.options.limit || -1;
+    private maxBackoffMillis: number = this.options.maxBackoffMillis || 5000;
+    private defaultBackoffMillis: number = this.options.defaultBackoffMillis || 1000;
+
+    private retryCount: number = 0;
+    private currentBackoffMillis: number = this.defaultBackoffMillis;
+    private pendingTimeouts = new Set<number>();    
+
+
     executeRequest<T>( 
         error: any,
         request: NetworkRequest<T>) {
@@ -43,7 +54,12 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 error, 
                 xhrSource,
                 lastEventId,
-                subscriptionCallback, 
+                (subscription) => {
+                    this.logger.verbose("Errror resolved! ARRRRRR");
+                    this.retryCount = 0;
+                    this.currentBackoffMillis = this.defaultBackoffMillis;
+                    subscriptionCallback(subscription);
+                }, 
                 (error ) => {
                     this.executeSubscription(
                         error,
@@ -56,15 +72,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             }) 
     }
 
-    private logger: Logger = this.options.logger || new EmptyLogger();
-    private retryUnsafeRequests: boolean = this.options.retryUnsafeRequests || false;
-    private limit: number = this.options.limit || -1;
-    private maxBackoffMillis: number = this.options.maxBackoffMillis || 5000;
-    private defaultBackoffMillis: number = this.options.defaultBackoffMillis || 1000;
-
-    private retryCount: number = 0;
-    private currentBackoffMillis: number = this.defaultBackoffMillis;
-    private pendingTimeouts = new Set<number>();        
+    
 
     resolveError(error: any): Promise<any> {
         return new Promise( (resolve, reject) => {
@@ -119,7 +127,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             return new Retry(parseInt(error.headers['Retry-After']) * 1000);
         } 
         
-        if (error instanceof NetworkError || this.requestMethodIsSafe("SUBSCRIBE") || this.retryUnsafeRequests) {
+        if (error instanceof NetworkError || this.requestMethodIsSafe("SUBSCRIBE") || this.retryUnsafeRequests) { //TODO: request method safe is problematic
             return this.shouldSafeRetry(error);
         }
         
