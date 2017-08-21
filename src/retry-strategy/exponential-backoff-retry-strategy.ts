@@ -16,8 +16,7 @@ export interface ExponentialBackoffRetryStrategyOptions {
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     
-    constructor(private options: ExponentialBackoffRetryStrategyOptions){
-    }
+    constructor(private options: ExponentialBackoffRetryStrategyOptions){}
     
     private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy();
 
@@ -31,15 +30,21 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private currentBackoffMillis: number = this.defaultBackoffMillis;
     private pendingTimeouts = new Set<number>();    
 
-
     executeRequest<T>( 
         error: any,
         request: NetworkRequest<T>) {
-            return new Promise<T>((resolve, reject) => {
-                this.resolveError(error).then( () => {
-                    return this.tokenFetchingRetryStrategy.executeRequest<T>(error, request);
+
+            if(!error){
+                return request().catch(error => {
+                    this.executeRequest(error, request)
                 });
-            });
+            }
+
+            else{
+                return this.resolveError(error).then( () => {
+                    return this.executeRequest(null, request);
+                })
+            }
     }
     
     executeSubscription(
@@ -55,7 +60,6 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                 xhrSource,
                 lastEventId,
                 (subscription) => {
-                    this.logger.verbose("Errror resolved! ARRRRRR");
                     this.retryCount = 0;
                     this.currentBackoffMillis = this.defaultBackoffMillis;
                     subscriptionCallback(subscription);
@@ -131,6 +135,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             return this.shouldSafeRetry(error);
         }
         
+        debugger
         this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
         return new DoNotRetry(error);
     }

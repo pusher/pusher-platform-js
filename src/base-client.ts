@@ -108,23 +108,27 @@ export class ErrorResponse extends Error{
 
 
         request(options: RequestOptions): Promise<any> {
-            let xhr = this.createXHR(this.baseURL, options);
-
-            //TODO: add retrying
-            return new Promise<any>((resolve, reject) => {
-
-                xhr.onreadystatechange = () => {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            resolve(xhr.responseText);
-                        } else {
-                            reject(ErrorResponse.fromXHR(xhr));
+            let networkRequest: NetworkRequest<any> = (
+                createXhr: () => XMLHttpRequest = () => { return this.createXHR(this.baseURL, options); }
+            ) => {
+               
+                return new Promise<any>((resolve, reject) => {
+                    let xhr = createXhr();    
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                resolve(xhr.responseText);
+                            } else if (xhr.status !== 0) {
+                                reject(ErrorResponse.fromXHR(xhr));
+                            } else{
+                                reject(new NetworkError("No Connection"));
+                            }
                         }
-                    }
-                };
-
-                xhr.send(JSON.stringify(options.body));
-            });
+                    };
+                    xhr.send(JSON.stringify(options.body));
+                });
+            }
+            return options.retryStrategy.executeRequest(null, networkRequest);
         }
 
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
