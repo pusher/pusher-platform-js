@@ -37,7 +37,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
             if(!error){
                 return request().catch(error => {
-                    this.executeRequest(error, request)
+                    return this.executeRequest(error, request)
                 });
             }
 
