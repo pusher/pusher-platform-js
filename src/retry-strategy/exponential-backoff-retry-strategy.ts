@@ -19,9 +19,8 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     
     constructor(private options: ExponentialBackoffRetryStrategyOptions){}
     
-    private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy();
-
     private logger: Logger = this.options.logger || new EmptyLogger();
+    private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy(this.logger);
     private retryUnsafeRequests: boolean = this.options.retryUnsafeRequests || false;
     private limit: number = this.options.limit || -1;
     private maxBackoffMillis: number = this.options.maxBackoffMillis || 5000;

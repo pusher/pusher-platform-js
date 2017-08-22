@@ -113,7 +113,7 @@ export class ErrorResponse extends Error{
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
 
             let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
-            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider) });
+            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider, this.logger) });
 
             let headers: Headers = subOptions.headers;
             let path = subOptions.path;
@@ -140,7 +140,7 @@ export class ErrorResponse extends Error{
         ResumableSubscription {
 
             let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
-            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider) });
+            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider, this.logger) });
 
             let initialEventId: string = subOptions.initialEventId;
             let headers: Headers = subOptions.headers;
