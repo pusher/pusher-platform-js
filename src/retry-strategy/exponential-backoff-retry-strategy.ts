@@ -77,7 +77,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             }) 
     }
 
-    cancelPendingRequest(){
+    stopRetrying(){
         //TODO:
     }
 

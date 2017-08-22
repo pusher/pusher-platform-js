@@ -65,7 +65,7 @@ export function createSubscriptionConstructor(
         }
 
         cancel(){
-            this.retryStrategy.cancelPendingRequest(); //TODO:
+            this.retryStrategy.stopRetrying(); //TODO:
         }
     }
         

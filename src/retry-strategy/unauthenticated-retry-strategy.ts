@@ -33,7 +33,7 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
         return request();
     }
 
-    cancelPendingRequest(){
+    stopRetrying(){
         //TODO:
     }
 }

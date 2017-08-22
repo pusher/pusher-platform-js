@@ -65,7 +65,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                 })       
         }
 
-        cancelPendingRequest(){
+        stopRetrying(){
             //TODO:
         }
     }
