@@ -80,7 +80,7 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
                 onTransition
             ));
         });
-        this.subscriptionConstruction.onError( (error) => {
+        this.subscriptionConstruction.onError( error => {
             onTransition(new FailedSubscriptionState(error, listeners));
         });
     }
@@ -173,7 +173,5 @@ class EndedResumableSubscriptionState implements ResumableSubscriptionState {
     ){
         listeners.onEnd(error);
     }
-
     unsubscribe(){ throw new Error("Tried unsubscribing in ended subscription state"); }
-    
 }

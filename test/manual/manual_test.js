@@ -10,7 +10,7 @@ let instance = new PusherPlatform.Instance({
 //This setup is prone to error.
 //TODO: we probably need to clear up this
 let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    limit: 20,
+    limit: 0,
     logger: verboseLogger
 });
 
@@ -69,8 +69,8 @@ let nonResumableSubscribeOptions = {
 //     //TODO:
 // }
 
-let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
-// let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
+// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
 
 function tryUnsubscribe(){
     // newResumableSubscription.unsubscribe();

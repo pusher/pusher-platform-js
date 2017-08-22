@@ -16,19 +16,35 @@ export interface ExponentialBackoffRetryStrategyOptions {
 }
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {
-    
-    constructor(private options: ExponentialBackoffRetryStrategyOptions){}
-    
-    private logger: Logger = this.options.logger || new EmptyLogger();
-    private tokenFetchingRetryStrategy: RetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy(this.logger);
-    private retryUnsafeRequests: boolean = this.options.retryUnsafeRequests || false;
-    private limit: number = this.options.limit || -1;
-    private maxBackoffMillis: number = this.options.maxBackoffMillis || 5000;
-    private defaultBackoffMillis: number = this.options.defaultBackoffMillis || 1000;
+
+    private logger: Logger;
+    private tokenFetchingRetryStrategy: RetryStrategy;
+    private retryUnsafeRequests: boolean;
+    private limit: number;
+    private maxBackoffMillis: number;
+    private defaultBackoffMillis: number;
 
     private retryCount: number = 0;
-    private currentBackoffMillis: number = this.defaultBackoffMillis;
-    private pendingTimeout: number = 0;    
+    private currentBackoffMillis: number;
+    private pendingTimeout: number = 0;  
+    
+    constructor(private options: ExponentialBackoffRetryStrategyOptions){        
+        this.logger = this.options.logger || new EmptyLogger();
+        this.tokenFetchingRetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy(this.logger);
+        this.retryUnsafeRequests = this.options.retryUnsafeRequests || false;
+
+        if(this.options.limit != null && this.options.limit != undefined){
+             this.limit = this.options.limit;
+        }
+        else{
+            this.limit = -1;
+        }
+        this.maxBackoffMillis = this.options.maxBackoffMillis || 5000;
+        this.defaultBackoffMillis = this.options.defaultBackoffMillis || 1000;
+        this.currentBackoffMillis = this.defaultBackoffMillis;
+    }
+    
+  
 
     executeRequest<T>( 
         error: any,
@@ -43,7 +59,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             else{
                 return this.resolveError(error).then( () => {
                     return this.executeRequest(null, request);
-                })
+                });
             }
     }
     
@@ -73,6 +89,8 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
                         errorCallback
                      );
                 });
+            }).catch( error => {
+                errorCallback(error);
             }) 
     }
 
@@ -95,7 +113,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             }
 
             const shouldRetry = this.shouldRetry(error);
-            this.logger.debug("ResolveError " + shouldRetry);
+            this.logger.debug("ResolveError " + shouldRetry.constructor.name);
 
             if(shouldRetry instanceof DoNotRetry) {
                 reject(error);
@@ -124,7 +142,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     
     private shouldRetry(error: Error): RetryStrategyResult {
         this.logger.verbose(`${this.constructor.name}:  Error received`, error);
-        
+
         if(this.retryCount >= this.limit && this.limit >= 0 ){
             this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
