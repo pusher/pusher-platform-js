@@ -56,7 +56,6 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
         this.state = newState;
     }
     
-    //TODO:
     unsubscribe(){
         this.state.unsubscribe();
     }

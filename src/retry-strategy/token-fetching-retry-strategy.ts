@@ -8,7 +8,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
         private tokenProvider: TokenProvider,
     ){}
-    
+    private subscription: BaseSubscription;
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
@@ -27,11 +27,11 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     xhr.setRequestHeader("Last-Event-Id", lastEventId);                    
                 }
                 
-                let subscription = new BaseSubscription(
+                this.subscription = new BaseSubscription(
                     xhr, 
                     null, 
                     (headers) => {
-                        subscriptionCallback(subscription);
+                        subscriptionCallback(this.subscription);
                     }, 
                     (error) => {
                         errorCallback(error);
@@ -66,6 +66,9 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
         }
 
         stopRetrying(){
-            //TODO:
+            if(this.subscription){
+                this.subscription.unsubscribe();
+            }
+            
         }
     }

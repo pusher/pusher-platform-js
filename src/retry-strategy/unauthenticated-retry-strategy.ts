@@ -7,6 +7,9 @@ import { RetryStrategy } from './retry-strategy';
  * Used with ExponentialBackoffRetryStrategy when we don't have a TokenProvider
  */
 export class UnauthenticatedRetryStrategy implements RetryStrategy {
+    
+    private subscription: BaseSubscription;
+
     executeSubscription(
         error: any,
         xhrSource: () => XMLHttpRequest, 
@@ -17,11 +20,11 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
             if(lastEventId){
                 xhr.setRequestHeader("Last-Event-Id", lastEventId);                
             }
-            let subscription = new BaseSubscription(
+            this.subscription = new BaseSubscription(
                     xhr, 
                     null, 
                     (headers) => {
-                        subscriptionCallback(subscription);
+                        subscriptionCallback(this.subscription);
                     }, 
                     (error) => {
                         errorCallback(error);
@@ -34,6 +37,8 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
     }
 
     stopRetrying(){
-        //TODO:
+        if(this.subscription){
+            this.subscription.unsubscribe();
+        }
     }
 }

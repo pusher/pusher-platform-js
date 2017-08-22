@@ -29,7 +29,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     private retryCount: number = 0;
     private currentBackoffMillis: number = this.defaultBackoffMillis;
-    private pendingTimeouts = new Set<number>();    
+    private pendingTimeout: number = 0;    
 
     executeRequest<T>( 
         error: any,
@@ -78,10 +78,13 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
 
     stopRetrying(){
-        //TODO:
-    }
+        this.tokenFetchingRetryStrategy.stopRetrying();
 
-    
+        if(this.pendingTimeout > 0){
+            window.clearTimeout(this.pendingTimeout);
+            this.pendingTimeout = 0;
+        }
+    }
 
     resolveError(error: any): Promise<any> {
         return new Promise( (resolve, reject) => {
@@ -101,12 +104,9 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
             else if(shouldRetry instanceof Retry){
                 this.retryCount += 1;
                 
-                const timeout = window.setTimeout(() => {
-                    this.pendingTimeouts.delete(timeout);
+                this.pendingTimeout = window.setTimeout(() => {
                     resolve();
-                }, shouldRetry.waitTimeMillis);
-                
-                this.pendingTimeouts.add(timeout);
+                }, shouldRetry.waitTimeMillis);                
             }
         }); 
     }
