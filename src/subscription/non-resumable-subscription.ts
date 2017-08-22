@@ -40,7 +40,7 @@ export class NonResumableSubscription implements NonResumableSubscriptionStateTr
         this.state = new SubscribingNonResumableSubscriptionState ( 
             baseSubscriptionContructor,
             listeners,
-            this.onTransition
+            this.onTransition.bind(this)
         );
     }
 

@@ -41,6 +41,19 @@ let postRequestOptions = {
     retryStrategy: myRetryStrategy,
 }
 
+let nonResumableSubscribeOptions = {
+    path: 'feeds/my-feed/items',
+    retryStrategy: myRetryStrategy,
+    listeners: {
+        onSubscribed: headers => console.log("onSubscribed " + headers),
+        onOpen: () => console.log("onOpen"),
+        onRetrying: () => console.log("onResuming"),
+        onEvent: event => console.log(event),
+        onEnd: error => console.log("onEnd " + error),
+        onError: error => console.log("onError " + error),
+     },
+}
+
 // instance.request(postRequestOptions)
 //     .then( response => {
 //         console.log(response);
@@ -51,7 +64,12 @@ let postRequestOptions = {
 //     //TODO:
 // }
 
-let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
+
 function tryUnsubscribe(){
-    newResumableSubscription.unsubscribe();
+    // newResumableSubscription.unsubscribe();
+    nonResumableSubscription.unsubscribe();    
+
 }
+
