@@ -13,7 +13,9 @@ export interface NonResumableSubscribeOptions {
     logger: Logger;
 }   
 
-export interface NonResumableSubscriptionState {}
+export interface NonResumableSubscriptionState {
+    unsubscribe(): void;    
+}
 
 export interface NonResumableSubscriptionStateListeners {
 
@@ -40,24 +42,31 @@ export class NonResumableSubscription implements NonResumableSubscriptionStateTr
         this.state = new SubscribingNonResumableSubscriptionState ( 
             baseSubscriptionContructor,
             listeners,
-            this.onTransition
+            this.onTransition.bind(this)
         );
     }
 
     onTransition(newState: NonResumableSubscriptionState){
         this.state = newState;
     }
+
+    unsubscribe(){
+        this.state.unsubscribe();
+    }
 }
 
 class SubscribingNonResumableSubscriptionState implements NonResumableSubscriptionState {
+    
+    private subscriptionConstruction: BaseSubscriptionConstruction;
+
     constructor(
         baseSubscriptionConstructor: (error: any) => BaseSubscriptionConstruction,
         listeners: NonResumableSubscriptionStateListeners,
         onTransition: (newState: NonResumableSubscriptionState) => void
     ){
 
-        const subscriptionConstruction = baseSubscriptionConstructor(null);
-        subscriptionConstruction.onComplete( subscription => {
+        this.subscriptionConstruction = baseSubscriptionConstructor(null);
+        this.subscriptionConstruction.onComplete( subscription => {
             listeners.onSubscribed(subscription.getHeaders());
             onTransition( new OpenNonResumableSubscriptionState(
                 subscription,
@@ -66,23 +75,32 @@ class SubscribingNonResumableSubscriptionState implements NonResumableSubscripti
                 onTransition
             ));        
         });
+        this.subscriptionConstruction.onError( error => {
+            onTransition(new FailedSubscriptionState(error, listeners));
+        });
+    }
+
+    unsubscribe() {
+        this.subscriptionConstruction.cancel();
     }
 }
 
 class OpenNonResumableSubscriptionState implements NonResumableSubscriptionState {
     constructor(
-        subscription: BaseSubscription,
+        private subscription: BaseSubscription,
         baseSubscriptionConstructor: (error: any) => BaseSubscriptionConstruction,
         listeners: NonResumableSubscriptionStateListeners,
         onTransition: (newState: NonResumableSubscriptionState) => void
     ){
         subscription.onEvent = listeners.onEvent;
+
         subscription.onEnd = (error) =>{
             onTransition(new EndedSubscriptionState(
                 error,
                 listeners
             ));
         }
+
         subscription.onError = (error) => {
             listeners.onRetrying();
             onTransition( new RetryingNonResumableSubscriptionState(
@@ -93,17 +111,24 @@ class OpenNonResumableSubscriptionState implements NonResumableSubscriptionState
             ));
         }
     }
+    unsubscribe(){
+        this.subscription.unsubscribe();
+    }
 }
 
 class RetryingNonResumableSubscriptionState implements NonResumableSubscriptionState {
+
+    private subscriptionConstruction: BaseSubscriptionConstruction;
+
     constructor(
         error: any,
         baseSubscriptionConstructor: (error: any) => BaseSubscriptionConstruction,
         listeners: NonResumableSubscriptionStateListeners,
         onTransition: (newState: NonResumableSubscriptionState) => void
     ){
-        const subscriptionConstruction = baseSubscriptionConstructor(null);
-        subscriptionConstruction.onComplete( (subscription) => {
+        this.subscriptionConstruction = baseSubscriptionConstructor(null);
+
+        this.subscriptionConstruction.onComplete( (subscription) => {
             listeners.onSubscribed(subscription.getHeaders());
             onTransition( new OpenNonResumableSubscriptionState(
                 subscription,
@@ -111,7 +136,14 @@ class RetryingNonResumableSubscriptionState implements NonResumableSubscriptionS
                 listeners,
                 onTransition
             ));   
-        })
+        });
+
+        this.subscriptionConstruction.onError( error => {
+            onTransition(new FailedSubscriptionState(error, listeners));            
+        });
+    }
+    unsubscribe() {
+        this.subscriptionConstruction.cancel();
     }
 }
 
@@ -122,6 +154,7 @@ class FailedSubscriptionState implements NonResumableSubscriptionState {
     ){
         listeners.onError(error);
     }
+    unsubscribe(){ throw new Error("Tried unsubscribing in failed subscription state"); }
 }
 
 class EndedSubscriptionState implements NonResumableSubscriptionState {
@@ -131,4 +164,6 @@ class EndedSubscriptionState implements NonResumableSubscriptionState {
     ){
         listeners.onEnd(error);
     }
+
+    unsubscribe(){ throw new Error("Tried unsubscribing in ended subscription state"); }
 }

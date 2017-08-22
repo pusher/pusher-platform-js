@@ -1,3 +1,4 @@
+import { Logger } from '../logger';
 import { NetworkRequest } from '../request';
 import { ErrorResponse } from '../base-client';
 import { BaseSubscription } from '../subscription/base-subscription';
@@ -7,6 +8,7 @@ import { RetryStrategy } from './retry-strategy';
 export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
         private tokenProvider: TokenProvider,
+        private logger: Logger,
     ){}
     private subscription: BaseSubscription;
     executeSubscription(
@@ -29,7 +31,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                 
                 this.subscription = new BaseSubscription(
                     xhr, 
-                    null, 
+                    this.logger, 
                     (headers) => {
                         subscriptionCallback(this.subscription);
                     }, 

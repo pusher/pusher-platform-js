@@ -1,3 +1,4 @@
+import { Logger } from '../logger';
 import { NetworkRequest } from '../request';
 import { BaseSubscription } from '../subscription/base-subscription';
 import { RetryStrategy } from './retry-strategy';
@@ -7,7 +8,10 @@ import { RetryStrategy } from './retry-strategy';
  * Used with ExponentialBackoffRetryStrategy when we don't have a TokenProvider
  */
 export class UnauthenticatedRetryStrategy implements RetryStrategy {
-    
+    constructor(
+        private logger: Logger
+    ){}
+
     private subscription: BaseSubscription;
 
     executeSubscription(
@@ -22,7 +26,7 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
             }
             this.subscription = new BaseSubscription(
                     xhr, 
-                    null, 
+                    this.logger, 
                     (headers) => {
                         subscriptionCallback(this.subscription);
                     }, 

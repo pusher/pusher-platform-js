@@ -3,10 +3,11 @@ const { default: PusherPlatform } = require('../../target/pusher-platform.js');
 const PATH_NOT_EXISTING = "subscribe_missing";
 const PATH_FORBIDDEN = "subscribe_forbidden";
 
-const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    requestMethod: "",
-    logger: new PusherPlatform.EmptyLogger(),
-    limit: 0
+let logger = new PusherPlatform.ConsoleLogger(1);
+
+let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    limit: 0,
+    logger: logger
 })
 
 describe('Instance Subscribe errors nicely', () => {
@@ -17,59 +18,82 @@ describe('Instance Subscribe errors nicely', () => {
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
             host: "localhost:10443",
-            logger: new PusherPlatform.EmptyLogger()
+            logger: logger
         });
     })
 
     it('handles 404', (done) => {
         instance.subscribe({
             path: PATH_NOT_EXISTING,
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-                expect(err.statusCode).toBe(404);
-                done();
-            },
-            retryStrategy: noRetryStrategy
+            retryStrategy: noRetryStrategy,
+            listeners: {
+                onSubscribed: headers => {},
+                onOpen: () => {},
+                onEvent: (event) => {
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+                    expect(err.statusCode).toBe(404);
+                    done();
+                },
+            }
         });
     });
 
     it('handles 403', (done) => {
         instance.subscribe({
             path: PATH_FORBIDDEN,
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-
-                expect(err.statusCode).toBe(403);
-                done();
-            },
-            retryStrategy: noRetryStrategy
+            retryStrategy: noRetryStrategy,
+            listeners: {
+                onSubscribed: headers => {},
+                onOpen: () => {},
+                onEvent: (event) => {
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+    
+                    expect(err.statusCode).toBe(403);
+                    done();
+                },
+            }
         });
     });
 
     it('handles 500', (done) => {
         instance.subscribe({
             path: "subscribe_internal_server_error",
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-                expect(err.statusCode).toBe(500);
-                done();
-            },
-            retryStrategy: noRetryStrategy
+            retryStrategy: noRetryStrategy,
+            listeners: {
+                onSubscribed: headers => {
+                    console.log("sub");
+                    
+                },
+                onOpen: () => {
+
+                    console.log("open");
+                    
+                },
+                onEvent: (event) => {
+                    console.log(event);
+                    
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    console.log("end");                    
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+                    console.log(err);
+                    expect(err.statusCode).toBe(500);
+                    done();
+                },
+            }
         });
     });
 
