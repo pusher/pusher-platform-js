@@ -3,10 +3,8 @@ const { default: PusherPlatform } = require('../../target/pusher-platform.js');
 const PATH_NOT_EXISTING = "subscribe_missing";
 const PATH_FORBIDDEN = "subscribe_forbidden";
 
-const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    requestMethod: "",
-    logger: new PusherPlatform.EmptyLogger(),
-    limit: 0
+let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    limit: 1
 })
 
 describe('Instance Subscribe errors nicely', () => {

@@ -4,11 +4,8 @@ const PATH_10_AND_EOS = "subscribe10";
 const PATH_3_AND_OPEN = "subscribe_3_continuous";
 const PATH_0_EOS = "subscribe_0_eos";
 
-
-const noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    requestMethod: "",
-    logger: new PusherPlatform.EmptyLogger(),
-    limit: 0
+let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+    limit: 1
 })
 
 describe('Instance Subscribe', () => {
@@ -29,18 +26,23 @@ describe('Instance Subscribe', () => {
 
     //TODO: use spies and expect methods to be called
 
-    it('subscribes and terminates on EOS after receiving all events', (done) => {
+    fit('subscribes and terminates on EOS after receiving all events', (done) => {
         instance.subscribe({
             path: PATH_10_AND_EOS,
-            onEvent: (event) => {
-                eventCount += 1;
-            },
-            onEnd: () => {
-                expect(eventCount).toBe(10);
-                done();
-            },
-            onError: (err) => {
-                fail();
+            retryStrategy: noRetryStrategy,
+            listeners: {
+                onSubscribed: headers => {},
+                onOpen: () => {},
+                onEvent: (event) => {
+                    eventCount += 1;
+                },
+                onEnd: () => {
+                    expect(eventCount).toBe(10);
+                    done();
+                },
+                onError: (err) => {
+                    fail();
+                } 
             }
         });
     });
