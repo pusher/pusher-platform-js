@@ -17,14 +17,16 @@ let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
 let resumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
-    initialEventId: "347720",
     listeners: {
-       onSubscribed: headers => console.log("onSubscribed " + headers),
-       onOpen: () => console.log("onOpen"),
-       onResuming: () => console.log("onResuming"),
-       onEvent: event => console.log(event),
-       onEnd: error => console.log("onEnd " + error),
-       onError: error => console.log("onError " + error),
+        onSubscribed: headers => {
+            console.log("onSubscribed headers:");
+            console.log(headers);
+        },
+        onOpen: () => console.log("onOpen"),
+        onResuming: () => console.log("onResuming"),
+        onEvent: event => console.log(event),
+        onEnd: error => console.log("onEnd " + error),
+        onError: error => console.log("onError " + error),
     },
 }
 
@@ -45,7 +47,10 @@ let nonResumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
     listeners: {
-        onSubscribed: headers => console.log("onSubscribed " + headers),
+        onSubscribed: headers => {
+            console.log("onSubscribed headers:");
+            console.log(headers);
+        },
         onOpen: () => console.log("onOpen"),
         onRetrying: () => console.log("onResuming"),
         onEvent: event => console.log(event),
@@ -64,8 +69,8 @@ let nonResumableSubscribeOptions = {
 //     //TODO:
 // }
 
-// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
-let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
+let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+// let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
 
 function tryUnsubscribe(){
     // newResumableSubscription.unsubscribe();

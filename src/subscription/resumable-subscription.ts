@@ -71,7 +71,7 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
     ) { 
         this.subscriptionConstruction = subscriptionConstructor(null, initialEventId);
         this.subscriptionConstruction.onComplete( (subscription) => {
-            listeners.onSubscribed(null); //should return `subscription.headers`
+            listeners.onSubscribed(subscription.getHeaders());
             onTransition(new OpenSubscriptionState(
                 subscription,
                 initialEventId,
