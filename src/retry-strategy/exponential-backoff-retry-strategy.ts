@@ -5,7 +5,6 @@ import { UnauthenticatedRetryStrategy } from './unauthenticated-retry-strategy';
 import { EmptyLogger, Logger } from '../logger';
 import { DoNotRetry, Retry, RetryStrategy, RetryStrategyResult } from './retry-strategy';
 
-
 export interface ExponentialBackoffRetryStrategyOptions {
     tokenFetchingRetryStrategy?: RetryStrategy, //Retry strategy that checks for expired token and fetches it
     retryUnsafeRequests?: boolean, //Elements doesn't allow unsafe requests to be retried, external calls to non-elements APIs might require it (for token providers, for instance)
@@ -43,8 +42,6 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         this.defaultBackoffMillis = this.options.defaultBackoffMillis || 1000;
         this.currentBackoffMillis = this.defaultBackoffMillis;
     }
-    
-  
 
     executeRequest<T>( 
         error: any,
