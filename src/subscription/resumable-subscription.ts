@@ -24,11 +24,12 @@ export interface ResumableSubscriptionState {
 
 export interface ResumableSubscriptionStateListeners {
     onOpen: (headers: Headers) => void;
-    onConnected: () => void;
-    onResuming: () => void;
     onEvent: (event: SubscriptionEvent) => void;
-    onEnd: (error?: ErrorResponse) => void;
-    onError: (error: any) => void;
+    onError: (error: any) => void;    
+    
+    onConnected?: () => void;
+    onResuming?: () => void;
+    onEnd?: (error?: ErrorResponse) => void;
 }
 
 export interface ResumableSubscriptionStateTransition {
@@ -44,6 +45,11 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
         options: ResumableSubscribeOptions,
         listeners: ResumableSubscriptionStateListeners
     ){        
+        if(!listeners.onConnected) listeners.onConnected = () => {};
+        if(!listeners.onResuming) listeners.onResuming = () => {};
+        if(!listeners.onEnd) listeners.onEnd = (error?) => {};
+
+
         this.state = new SubscribingResumableSubscriptionState(
             options.initialEventId,
             baseSubscriptionConstructor,
