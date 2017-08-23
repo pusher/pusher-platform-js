@@ -8,8 +8,8 @@ export interface NonResumableSubscribeOptions {
     headers: Headers;
     path: string;
     listeners: NonResumableSubscriptionStateListeners;
-    retryStrategy: RetryStrategy;
-    tokenProvider: TokenProvider;
+    retryStrategy?: RetryStrategy;
+    tokenProvider?: TokenProvider;
     logger: Logger;
 }   
 
@@ -18,7 +18,6 @@ export interface NonResumableSubscriptionState {
 }
 
 export interface NonResumableSubscriptionStateListeners {
-
     onOpen: (headers: Headers) => void;
     onEvent: (event: SubscriptionEvent) => void;    
     onError: (error: any) => void;

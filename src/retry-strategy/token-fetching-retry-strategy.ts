@@ -50,10 +50,10 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     error.statusCode === 401 && 
                     error.name == "authentication/jwt/expired"){
                         this.tokenProvider.invalidateToken(error.info.token);
-                    }
-                    resolve();
-                });
-            }
+                }
+                resolve();
+            });
+        }
     
         executeRequest<T>( 
             error: any,
@@ -64,13 +64,12 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
                     .then( (token) => { 
                         resolve (request( { token: token }));
                     });
-                })       
+                });       
         }
 
         stopRetrying(){
             if(this.subscription){
                 this.subscription.unsubscribe();
-            }
-            
+            }   
         }
     }

@@ -1,6 +1,9 @@
 import { executeRequest, NetworkRequest, RequestOptions } from './request';
 import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
-import { ExponentialBackoffRetryStrategy } from './retry-strategy/exponential-backoff-retry-strategy';
+import {
+    ExponentialBackoffRetryStrategy,
+    ExponentialBackoffRetryStrategyOptions,
+} from './retry-strategy/exponential-backoff-retry-strategy';
 import { createSubscriptionConstructor } from './subscription/base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
@@ -39,9 +42,6 @@ export function responseHeadersObj(headerStr: string): Headers {
     }
     return headers;
 }
-
-// //Single request
-// export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 
 export class ErrorResponse extends Error{
     public statusCode: number;
@@ -82,16 +82,6 @@ export class ErrorResponse extends Error{
         DONE = 4
     }
 
-    // export interface RequestOptions {
-    //     method: string;
-    //     path: string;
-    //     jwt?: string;
-    //     headers?: Headers;
-    //     body?: any;
-    //     retryStrategy?: RetryStrategy;
-    //     logger?: Logger;
-    // }
-
     export class BaseClient {
         private baseURL: string;
         private XMLHttpRequest: any;
@@ -111,9 +101,21 @@ export class ErrorResponse extends Error{
         }
 
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
+            
+            let retryStrategy: RetryStrategy;            
 
-            let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
-            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider, this.logger) });
+            if(subOptions.retryStrategy){
+                retryStrategy = subOptions.retryStrategy;
+            }
+            else{
+                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
+                    logger: this.logger
+                };
+                if(subOptions.tokenProvider){
+                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
+                }
+                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+            }
 
             let headers: Headers = subOptions.headers;
             let path = subOptions.path;
@@ -139,8 +141,20 @@ export class ErrorResponse extends Error{
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
 
-            let tokenProvider: TokenProvider = subOptions.tokenProvider; //TODO: do we need this guy here? Can the RetryStrategy encapsulate the whole shebang?
-            let retryStrategy: RetryStrategy = subOptions.retryStrategy || new ExponentialBackoffRetryStrategy({tokenFetchingRetryStrategy: new TokenFetchingRetryStrategy(tokenProvider, this.logger) });
+            let retryStrategy: RetryStrategy;            
+            
+            if(subOptions.retryStrategy){
+                retryStrategy = subOptions.retryStrategy;
+            }
+            else{
+                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
+                    logger: this.logger
+                };
+                if(subOptions.tokenProvider){
+                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
+                }
+                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+            }
 
             let initialEventId: string = subOptions.initialEventId;
             let headers: Headers = subOptions.headers;

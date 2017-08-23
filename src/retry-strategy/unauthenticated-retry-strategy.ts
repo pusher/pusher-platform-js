@@ -19,22 +19,23 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
         xhrSource: () => XMLHttpRequest, 
         lastEventId: string,
         subscriptionCallback: (subscription: BaseSubscription) => void, 
-        errorCallback: (error: any) => void) {
-            let xhr = xhrSource();
-            if(lastEventId){
-                xhr.setRequestHeader("Last-Event-Id", lastEventId);                
-            }
-            this.subscription = new BaseSubscription(
-                    xhr, 
-                    this.logger, 
-                    (headers) => {
-                        subscriptionCallback(this.subscription);
-                    }, 
-                    (error) => {
-                        errorCallback(error);
-                    } 
-                );
-    }
+        errorCallback: (error: any) => void
+    ){
+        let xhr = xhrSource();
+        if(lastEventId){
+            xhr.setRequestHeader("Last-Event-Id", lastEventId);                
+        }
+        this.subscription = new BaseSubscription(
+            xhr, 
+            this.logger, 
+            (headers) => {
+                subscriptionCallback(this.subscription);
+            }, 
+            (error) => {
+                errorCallback(error);
+            } 
+        );
+    }   
 
     executeRequest<T>(error: any, request: NetworkRequest<T>){
         return request();
