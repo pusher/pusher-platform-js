@@ -4,6 +4,9 @@ const {default: PusherPlatform } = require('../../target/pusher-platform.js');
 describe('Instance requests - failing', () => {
 
     let instance;
+    let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+        limit: 1
+    })
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
@@ -17,7 +20,8 @@ describe('Instance requests - failing', () => {
     it('fails on 400 error', (done) => {
         instance.request({
             method: "GET",
-            path: "get_400"
+            path: "get_400",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -29,7 +33,8 @@ describe('Instance requests - failing', () => {
     it('fails on 403 error', (done) => {
         instance.request({
             method: "GET",
-            path: "get_403"
+            path: "get_403",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -41,7 +46,8 @@ describe('Instance requests - failing', () => {
     it('fails on 404 error', (done) => {
         instance.request({
             method: "GET",
-            path: "get_404"
+            path: "get_404",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -53,7 +59,8 @@ describe('Instance requests - failing', () => {
     it('fails on 500 error', (done) => {
         instance.request({
             method: "GET",
-            path: "get_500"
+            path: "get_500",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {
@@ -65,7 +72,8 @@ describe('Instance requests - failing', () => {
     it('fails on 503 error', (done) => {
         instance.request({
             method: "GET",
-            path: "get_503"
+            path: "get_503",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             fail('Expecting error');
         }).catch(error => {

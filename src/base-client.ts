@@ -1,53 +1,46 @@
+import { executeRequest, NetworkRequest, RequestOptions } from './request';
+import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
+import {
+    ExponentialBackoffRetryStrategy,
+    ExponentialBackoffRetryStrategyOptions,
+} from './retry-strategy/exponential-backoff-retry-strategy';
+import { createSubscriptionConstructor } from './subscription/base-subscription';
+import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { Subscription, SubscribeOptions } from './subscription';
-import { ResumableSubscribeOptions, ResumableSubscription} from './resumable-subscription';
-import { RetryStrategy, RetryStrategyResult, Retry, DoNotRetry, ExponentialBackoffRetryStrategy } from './retry-strategy';
+import { ResumableSubscribeOptions, ResumableSubscription } from './subscription/resumable-subscription';
+import { RetryStrategy } from './retry-strategy/retry-strategy';
+import { NonResumableSubscribeOptions, NonResumableSubscription} from './subscription/non-resumable-subscription';
 
 export interface BaseClientOptions {
     host: string;
-
     encrypted?: boolean;
     timeout?: number;
     XMLHttpRequest?: Function;
+    logger?: Logger;
+    retryStrategy?: RetryStrategy
 }
 
 export type Headers = {
-  [key: string]: string;
-}
-
-export interface Event {
-  eventId: string;
-  headers: Headers;
-  body: any;
-}
-
-export interface RequestOptions {
-  method: string;
-  path: string;
-  tokenProvider?: TokenProvider;
-  jwt?: string;
-  headers?: Headers;
-  body?: any;
-  retryStrategy?: RetryStrategy;
+    [key: string]: string;
 }
 
 export function responseHeadersObj(headerStr: string): Headers {
-  var headers: Headers = {};
-  if (!headerStr) {
-    return headers;
-  }
-
-  var headerPairs = headerStr.split('\u000d\u000a');
-  for (var i = 0; i < headerPairs.length; i++) {
-    var headerPair = headerPairs[i];
-    var index = headerPair.indexOf('\u003a\u0020');
-    if (index > 0) {
-      var key = headerPair.substring(0, index);
-      var val = headerPair.substring(index + 2);
-      headers[key] = val;
+    var headers: Headers = {};
+    if (!headerStr) {
+        return headers;
     }
-  }
-  return headers;
+
+    var headerPairs = headerStr.split('\u000d\u000a');
+    for (var i = 0; i < headerPairs.length; i++) {
+        var headerPair = headerPairs[i];
+        var index = headerPair.indexOf('\u003a\u0020');
+        if (index > 0) {
+            var key = headerPair.substring(0, index);
+            var val = headerPair.substring(index + 2);
+            headers[key] = val;
+        }
+    }
+    return headers;
 }
 
 export class ErrorResponse extends Error{
@@ -61,109 +54,150 @@ export class ErrorResponse extends Error{
         this.statusCode = statusCode;
         this.headers = headers;
         this.info = info;
-  }
+    }
 
-  static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
+    static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
         return new ErrorResponse(
             xhr.status, responseHeadersObj(xhr.getAllResponseHeaders()), xhr.responseText);
-  }
-}
-
-export class NetworkError extends Error {
-    public error: string;
-
-    constructor(error: string){
-        super(error);
-        //TODO: ugly hack to make the instanceof calls work. We might have to find a better solution.
-        Object.setPrototypeOf(this, NetworkError.prototype);
-        this.error = error;
-    }
-}
-
-// Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
-export enum XhrReadyState {
-  UNSENT = 0,
-  OPENED = 1,
-  HEADERS_RECEIVED = 2,
-  LOADING = 3,
-  DONE = 4
-}
-
-export class BaseClient {
-    private baseURL: string;
-    private XMLHttpRequest: any;
-
-    constructor(private options: BaseClientOptions) {
-        let host = options.host.replace(/\/$/, '');
-        this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
-        this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
+        }
     }
 
-    request(options: RequestOptions): Promise<any> {
-        let xhr = this.createXHR(this.baseURL, options);
+    export class NetworkError extends Error {
+        public error: string;
 
-        return new Promise<any>((resolve, reject) => {
+        constructor(error: string){
+            super(error);
+            //TODO: ugly hack to make the instanceof calls work. We might have to find a better solution.
+            Object.setPrototypeOf(this, NetworkError.prototype);
+            this.error = error;
+        }
+    }
 
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        resolve(xhr.responseText);
-                    } else {
-                        reject(ErrorResponse.fromXHR(xhr));
-                    }
+    // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+    export enum XhrReadyState {
+        UNSENT = 0,
+        OPENED = 1,
+        HEADERS_RECEIVED = 2,
+        LOADING = 3,
+        DONE = 4
+    }
+
+    export class BaseClient {
+        private baseURL: string;
+        private XMLHttpRequest: any;
+        private logger: Logger;
+
+        constructor(private options: BaseClientOptions) {
+            let host = options.host.replace(/\/$/, '');
+            this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
+            this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
+
+            this.logger = options.logger || new ConsoleLogger();
+        }
+
+        request(options: RequestOptions): Promise<any> {
+            let createXhr = () => { return this.createXHR(this.baseURL, options); }
+            return executeRequest<any>(createXhr, options);
+        }
+
+        newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
+            
+            let retryStrategy: RetryStrategy;            
+
+            if(subOptions.retryStrategy){
+                retryStrategy = subOptions.retryStrategy;
+            }
+            else{
+                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
+                    logger: this.logger
+                };
+                if(subOptions.tokenProvider){
+                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
                 }
-            };
+                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+            }
 
-            xhr.send(JSON.stringify(options.body));
-        });
-    }
+            let headers: Headers = subOptions.headers;
+            let path = subOptions.path;
+            let listeners = subOptions.listeners;
 
-    newSubscription(subOptions: SubscribeOptions): Subscription {
-        return new Subscription(
-            this.createXHR(this.baseURL, {
+            let requestOptions: RequestOptions = {
                 method: "SUBSCRIBE",
-                path: subOptions.path,
-                headers: {},
-                body: null,
-            }),
-            subOptions
-        );
-    }
+                path: path,
+                headers: headers
+            }
 
-    newResumableSubscription(subOptions: ResumableSubscribeOptions): ResumableSubscription {
-        return new ResumableSubscription(
-            () => {
-                return this.createXHR(this.baseURL, {
-                    method: "SUBSCRIBE",
-                    path: subOptions.path,
-                    headers: {},
-                    body: null,
-                });
-            },
-            subOptions
-        );
-    }
+            let resumableSubscription = new NonResumableSubscription(
+                createSubscriptionConstructor(
+                    retryStrategy, 
+                    headers, 
+                    () => this.createXHR(this.baseURL, requestOptions)),
+                subOptions,
+                listeners);
 
-    private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-        let XMLHttpRequest: any = this.XMLHttpRequest;
-        let xhr = new XMLHttpRequest();
-        let path = options.path.replace(/^\/+/, "");
-        let endpoint = `${baseURL}/${path}`;
-
-        xhr.open(options.method.toUpperCase(), endpoint, true);
-
-        if (options.body) {
-            xhr.setRequestHeader("content-type", "application/json");
+            return resumableSubscription;
         }
 
-        if (options.jwt) {
-            xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
+        newResumableSubscription(subOptions: ResumableSubscribeOptions):          
+        ResumableSubscription {
+
+            let retryStrategy: RetryStrategy;            
+            
+            if(subOptions.retryStrategy){
+                retryStrategy = subOptions.retryStrategy;
+            }
+            else{
+                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
+                    logger: this.logger
+                };
+                if(subOptions.tokenProvider){
+                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
+                }
+                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+            }
+
+            let initialEventId: string = subOptions.initialEventId;
+            let headers: Headers = subOptions.headers;
+            let path = subOptions.path;
+            let listeners = subOptions.listeners;
+
+            let requestOptions: RequestOptions = {
+                method: "SUBSCRIBE",
+                path: path,
+            }
+
+            let resumableSubscription = new ResumableSubscription(
+                createSubscriptionConstructor(
+                    retryStrategy, 
+                    headers, 
+                    () => this.createXHR(this.baseURL, requestOptions)),
+                subOptions,
+                listeners);
+
+            return resumableSubscription;
         }
 
-        for (let key in options.headers) {
-            xhr.setRequestHeader(key, options.headers[key]);
-        }
+        private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
+            let XMLHttpRequest: any = this.XMLHttpRequest;
+            let xhr = new XMLHttpRequest();
+            let path = options.path.replace(/^\/+/, "");
+            let endpoint = `${baseURL}/${path}`;
 
-        return xhr;
+            xhr.open(options.method.toUpperCase(), endpoint, true);
+
+            if (options.body) {
+                xhr.setRequestHeader("content-type", "application/json");
+            }
+
+            if (options.jwt) {
+                xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
+            }
+
+            for (let key in options.headers) {
+                xhr.setRequestHeader(key, options.headers[key]);
+            }
+
+            return xhr;
+        }
     }
-}
+

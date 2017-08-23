@@ -1,24 +1,37 @@
+import { ExponentialBackoffRetryStrategy } from './retry-strategy/exponential-backoff-retry-strategy';
+import { 
+  FixedTokenProvider, 
+  RetryingTokenProvider, 
+  NoOpTokenProvider, 
+  TokenProvider 
+} from './token-provider';
+
 import Instance from './instance';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, EmptyLogger, Logger } from './logger';
-import { ResumableSubscription } from './resumable-subscription';
-import { RetryStrategy, ExponentialBackoffRetryStrategy } from './retry-strategy';
-import { Subscription } from './subscription';
+import { ResumableSubscription, ResumableSubscribeOptions } from './subscription/resumable-subscription';
+import { NonResumableSubscription, NonResumableSubscribeOptions } from './subscription/non-resumable-subscription'; 
+import { RetryStrategy } from './retry-strategy/retry-strategy';
+import { TokenFetchingRetryStrategy } from './retry-strategy/token-fetching-retry-strategy';
 
 export {
   Instance,
   BaseClient,
-  ResumableSubscription, Subscription,
+  ResumableSubscription, ResumableSubscribeOptions,
+  NonResumableSubscription, NonResumableSubscribeOptions,
 
   RetryStrategy, ExponentialBackoffRetryStrategy,
   Logger, ConsoleLogger, EmptyLogger, 
+  TokenProvider, NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };
 
 export default {
   Instance,
   BaseClient,
-  ResumableSubscription, Subscription,
+  ResumableSubscription,
+  NonResumableSubscription,
 
-  ExponentialBackoffRetryStrategy,
-  ConsoleLogger, EmptyLogger
+  ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy,
+  ConsoleLogger, EmptyLogger,
+  NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };
