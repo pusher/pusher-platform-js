@@ -43,9 +43,6 @@ export function responseHeadersObj(headerStr: string): Headers {
     return headers;
 }
 
-// //Single request
-// export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
-
 export class ErrorResponse extends Error{
     public statusCode: number;
     public headers: Headers;
@@ -85,16 +82,6 @@ export class ErrorResponse extends Error{
         DONE = 4
     }
 
-    // export interface RequestOptions {
-    //     method: string;
-    //     path: string;
-    //     jwt?: string;
-    //     headers?: Headers;
-    //     body?: any;
-    //     retryStrategy?: RetryStrategy;
-    //     logger?: Logger;
-    // }
-
     export class BaseClient {
         private baseURL: string;
         private XMLHttpRequest: any;
@@ -114,7 +101,6 @@ export class ErrorResponse extends Error{
         }
 
         newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
-
             
             let retryStrategy: RetryStrategy;            
 
@@ -157,19 +143,18 @@ export class ErrorResponse extends Error{
 
             let retryStrategy: RetryStrategy;            
             
-                        if(subOptions.retryStrategy){
-                            retryStrategy = subOptions.retryStrategy;
-                        }
-                        else{
-                            let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
-                                logger: this.logger
-                            };
-                            if(subOptions.tokenProvider){
-                                retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
-                            }
-                            retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
-                        }
-            
+            if(subOptions.retryStrategy){
+                retryStrategy = subOptions.retryStrategy;
+            }
+            else{
+                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
+                    logger: this.logger
+                };
+                if(subOptions.tokenProvider){
+                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
+                }
+                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+            }
 
             let initialEventId: string = subOptions.initialEventId;
             let headers: Headers = subOptions.headers;
