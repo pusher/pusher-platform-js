@@ -10,7 +10,7 @@ let instance = new PusherPlatform.Instance({
 //This setup is prone to error.
 //TODO: we probably need to clear up this
 let myRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    limit: 0,
+    limit: 10,
     logger: verboseLogger
 });
 
@@ -18,11 +18,11 @@ let resumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
     listeners: {
-        onSubscribed: headers => {
+        onOpen: headers => {
             console.log("onSubscribed headers:");
             console.log(headers);
         },
-        onOpen: () => console.log("onOpen"),
+        onConnected: () => console.log("onConnected"),
         onResuming: () => console.log("onResuming"),
         onEvent: event => console.log(event),
         onEnd: error => console.log("onEnd " + error),
@@ -47,15 +47,15 @@ let nonResumableSubscribeOptions = {
     path: 'feeds/my-feed/items',
     retryStrategy: myRetryStrategy,
     listeners: {
-        onSubscribed: headers => {
-            console.log("onSubscribed headers:");
+        onOpen: headers => {
+            console.log("0 onOpen headers:");
             console.log(headers);
         },
-        onOpen: () => console.log("onOpen"),
-        onRetrying: () => console.log("onResuming"),
+        onConnected: () => console.log("2 onConnected"),
+        onRetrying: () => console.log("1 onRetrying"),
         onEvent: event => console.log(event),
-        onEnd: error => console.log("onEnd " + error),
-        onError: error => console.log("onError " + error),
+        onEnd: error => console.log("3 onEnd " + error),
+        onError: error => console.log("4 onError " + error),
      },
 }
 
@@ -69,8 +69,8 @@ let nonResumableSubscribeOptions = {
 //     //TODO:
 // }
 
-// let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
-let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
+let newResumableSubscription = instance.resumableSubscribe(resumableSubscribeOptions);
+// let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
 
 function tryUnsubscribe(){
     // newResumableSubscription.unsubscribe();

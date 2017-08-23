@@ -19,8 +19,8 @@ export interface NonResumableSubscriptionState {
 
 export interface NonResumableSubscriptionStateListeners {
 
-    onSubscribed: (headers: Headers) => void;
-    onOpen: () => void;
+    onOpen: (headers: Headers) => void; //TODO: rename to onOpen - most important event in the world!
+    onConnected: () => void;
     onRetrying: () => void;
     onEvent: (event: SubscriptionEvent) => void;
     onEnd: (error?: ErrorResponse) => void;
@@ -67,7 +67,7 @@ class SubscribingNonResumableSubscriptionState implements NonResumableSubscripti
 
         this.subscriptionConstruction = baseSubscriptionConstructor(null);
         this.subscriptionConstruction.onComplete( subscription => {
-            listeners.onSubscribed(subscription.getHeaders());
+            listeners.onOpen(subscription.getHeaders());
             onTransition( new OpenNonResumableSubscriptionState(
                 subscription,
                 baseSubscriptionConstructor,
@@ -92,6 +92,7 @@ class OpenNonResumableSubscriptionState implements NonResumableSubscriptionState
         listeners: NonResumableSubscriptionStateListeners,
         onTransition: (newState: NonResumableSubscriptionState) => void
     ){
+        listeners.onConnected();
         subscription.onEvent = listeners.onEvent;
 
         subscription.onEnd = (error) =>{
@@ -102,7 +103,6 @@ class OpenNonResumableSubscriptionState implements NonResumableSubscriptionState
         }
 
         subscription.onError = (error) => {
-            listeners.onRetrying();
             onTransition( new RetryingNonResumableSubscriptionState(
                 error,
                 baseSubscriptionConstructor,
@@ -126,10 +126,11 @@ class RetryingNonResumableSubscriptionState implements NonResumableSubscriptionS
         listeners: NonResumableSubscriptionStateListeners,
         onTransition: (newState: NonResumableSubscriptionState) => void
     ){
+        listeners.onRetrying();        
         this.subscriptionConstruction = baseSubscriptionConstructor(null);
 
         this.subscriptionConstruction.onComplete( (subscription) => {
-            listeners.onSubscribed(subscription.getHeaders());
+            listeners.onOpen(subscription.getHeaders());
             onTransition( new OpenNonResumableSubscriptionState(
                 subscription,
                 baseSubscriptionConstructor,
