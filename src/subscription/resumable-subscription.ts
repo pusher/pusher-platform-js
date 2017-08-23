@@ -23,8 +23,8 @@ export interface ResumableSubscriptionState {
 }
 
 export interface ResumableSubscriptionStateListeners {
-    onSubscribed: (headers: Headers) => void;
-    onOpen: () => void;
+    onOpen: (headers: Headers) => void;
+    onConnected: () => void;
     onResuming: () => void;
     onEvent: (event: SubscriptionEvent) => void;
     onEnd: (error?: ErrorResponse) => void;
@@ -71,7 +71,7 @@ class SubscribingResumableSubscriptionState implements ResumableSubscriptionStat
     ) { 
         this.subscriptionConstruction = subscriptionConstructor(null, initialEventId);
         this.subscriptionConstruction.onComplete( (subscription) => {
-            listeners.onSubscribed(subscription.getHeaders());
+            listeners.onOpen(subscription.getHeaders());
             onTransition(new OpenSubscriptionState(
                 subscription,
                 initialEventId,
@@ -98,6 +98,7 @@ class OpenSubscriptionState implements ResumableSubscriptionState {
         listeners: ResumableSubscriptionStateListeners,
         onTransition: (newState: ResumableSubscriptionState) => void
     ){
+        listeners.onConnected();        
         subscription.onEvent = (event) => {
             lastEventId = event.eventId;
             listeners.onEvent(event);
@@ -108,7 +109,6 @@ class OpenSubscriptionState implements ResumableSubscriptionState {
                 listeners));
         };
         subscription.onError = (error) => {
-            listeners.onResuming();
             onTransition( new ResumingResumableSubscriptionState(
                 error,
                 lastEventId,
@@ -133,9 +133,9 @@ class ResumingResumableSubscriptionState implements ResumableSubscriptionState {
         listeners: ResumableSubscriptionStateListeners,
         onTransition: (newState: ResumableSubscriptionState) => void
     ){
+        listeners.onResuming();        
         this.subscriptionConstruction = subscriptionConstructor(null, lastEventId);
         this.subscriptionConstruction.onComplete( (subscription) => {
-            listeners.onSubscribed(subscription.getHeaders());
             onTransition(new OpenSubscriptionState(
                 subscription,
                 lastEventId,
