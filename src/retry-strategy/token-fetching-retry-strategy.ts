@@ -5,6 +5,7 @@ import { BaseSubscription } from '../subscription/base-subscription';
 import { TokenProvider } from '../token-provider';
 import { RetryStrategy } from './retry-strategy';
 
+//TODO just use a token provider? :o
 export class TokenFetchingRetryStrategy implements RetryStrategy {
     constructor(
         private tokenProvider: TokenProvider,
@@ -12,9 +13,7 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
     ){}
     private subscription: BaseSubscription;
     executeSubscription(
-        error: any,
-        xhrSource: () => XMLHttpRequest, 
-        lastEventId: string,
+        xhrSource: (headers: Headers) => BaseSubscription, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void) {
             

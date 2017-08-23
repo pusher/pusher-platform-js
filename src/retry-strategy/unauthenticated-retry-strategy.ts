@@ -15,9 +15,7 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
     private subscription: BaseSubscription;
 
     executeSubscription(
-        error: any,
-        xhrSource: () => XMLHttpRequest, 
-        lastEventId: string,
+        xhrSource: (headers: Headers) => BaseSubscription, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     ){
@@ -37,7 +35,7 @@ export class UnauthenticatedRetryStrategy implements RetryStrategy {
         );
     }   
 
-    executeRequest<T>(error: any, request: NetworkRequest<T>){
+    executeRequest<T>(request: NetworkRequest<T>){
         return request();
     }
 

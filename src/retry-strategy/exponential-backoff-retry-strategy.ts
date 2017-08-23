@@ -1,6 +1,8 @@
+import { NoOpTokenProvider } from '../../declarations/token-provider';
+import { TokenProvider } from '../token-provider';
 import { NetworkRequest } from '../request';
-import { BaseSubscription } from '../subscription/base-subscription';
-import { ErrorResponse, NetworkError } from '../base-client';
+import { BaseSubscription, BaseSubscriptionConstruction } from '../subscription/base-subscription';
+import { ErrorResponse, NetworkError, Headers } from '../base-client';
 import { UnauthenticatedRetryStrategy } from './unauthenticated-retry-strategy';
 import { EmptyLogger, Logger } from '../logger';
 import { DoNotRetry, Retry, RetryStrategy, RetryStrategyResult } from './retry-strategy';
@@ -12,12 +14,12 @@ export interface ExponentialBackoffRetryStrategyOptions {
     maxBackoffMillis?: number, //Maximum length for backoff
     defaultBackoffMillis?: number, //Initial backoff we start from
     logger?: Logger //A lumberjack
+    tokenProvider?: TokenProvider;
 }
 
 export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     private logger: Logger;
-    private tokenFetchingRetryStrategy: RetryStrategy;
     private retryUnsafeRequests: boolean;
     private limit: number;
     private maxBackoffMillis: number;
@@ -26,12 +28,12 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private retryCount: number = 0;
     private currentBackoffMillis: number;
     private pendingTimeout: number = 0;  
+    private tokenProvider: TokenProvider;
     
     constructor(private options: ExponentialBackoffRetryStrategyOptions){        
         this.logger = this.options.logger || new EmptyLogger();
-        this.tokenFetchingRetryStrategy = this.options.tokenFetchingRetryStrategy || new UnauthenticatedRetryStrategy(this.logger);
         this.retryUnsafeRequests = this.options.retryUnsafeRequests || false;
-
+        this.tokenProvider = options.tokenProvider || new NoOpTokenProvider();
         if(this.options.limit != null && this.options.limit != undefined){
              this.limit = this.options.limit;
         }
@@ -43,63 +45,55 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
         this.currentBackoffMillis = this.defaultBackoffMillis;
     }
 
-    executeRequest<T>( 
-        error: any,
-        request: NetworkRequest<T>) {
-
-            if(!error){
-                return request().catch(error => {
-                    return this.executeRequest(error, request)
-                });
+    executeRequest<T>( request: NetworkRequest<T>): Promise<T> {
+        return request()
+            .catch( error => {
+                return this.resolveError(error)
+                    .then ( () => {
+                        return this.executeRequest<T>(request) as Promise<T>;
+                    });
             }
-
-            else{
-                return this.resolveError(error).then( () => {
-                    return this.executeRequest(null, request);
-                });
-            }
+        );
     }
     
     executeSubscription(
-        error: any,
-        xhrSource: () => XMLHttpRequest, 
-        lastEventId: string,
+        subscriptionSource: (headers: Headers) => Promise<BaseSubscription>, //Takes token and last event ID to create a sub. //Actually no, the last even ID should be already set at this point.
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     ){
-        this.resolveError(error).then( () => {
-            this.tokenFetchingRetryStrategy.executeSubscription(
-                error, 
-                xhrSource,
-                lastEventId,
-                (subscription) => {
-                    this.retryCount = 0;
-                    this.currentBackoffMillis = this.defaultBackoffMillis;
-                    subscriptionCallback(subscription);
-                }, 
-                (error ) => {
-                    this.executeSubscription(
-                        error,
-                        xhrSource,
-                        lastEventId,
-                        subscriptionCallback,
-                        errorCallback
-                     );
-                });
-            }).catch( error => {
-                errorCallback(error);
-            }) 
+        this.tokenProvider.fetchToken()
+            .then( token => {
+                let headers: Headers = { [ "jwt"]: token };
+                return subscriptionSource(headers)                 
+            })
+            .then( subscription => {
+                subscriptionCallback(subscription);
+            })
+            .catch( error => {
+                return this.resolveError(error)
+            })
+            .then( () => {
+                this.executeSubscription(
+                    subscriptionSource,
+                    subscriptionCallback,
+                    errorCallback
+                );
+            })
+            .catch( nonRetryableError => {
+                errorCallback(nonRetryableError);
+            });
     }
 
     stopRetrying(){
-        this.tokenFetchingRetryStrategy.stopRetrying();
-
+        this.tokenProvider.stopFetch();
+        // this.tokenFetchingRetryStrategy.stopRetrying();
         if(this.pendingTimeout > 0){
             window.clearTimeout(this.pendingTimeout);
             this.pendingTimeout = 0;
         }
     }
 
+    //TODO: check for token being invalid and refresh then.
     resolveError(error: any): Promise<any> {
         return new Promise( (resolve, reject) => {
             

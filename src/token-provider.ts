@@ -4,12 +4,14 @@ import { RetryStrategy } from './retry-strategy/retry-strategy';
 export interface TokenProvider {
     invalidateToken(token?: string);
     fetchToken: NetworkRequest<string>;
+    stopFetch(): void;
 }
 
 /**
  * Wrapper around the token provider that contains a retry strategy
  * TODO: test
  * Currently not used anywhere
+ * TODO: it really does fuck all
  */
 export class RetryingTokenProvider implements TokenProvider {
     constructor(
@@ -17,10 +19,9 @@ export class RetryingTokenProvider implements TokenProvider {
         private retryStrategy: RetryStrategy){
     }
 
-    fetchToken = () => 
-        this.retryStrategy.executeRequest(null, this.baseTokenProvider.fetchToken);
-    
-    invalidateToken = this.baseTokenProvider.invalidateToken;    
+    fetchToken(params: any): Promise<string> { return null;}
+    invalidateToken = this.baseTokenProvider.invalidateToken;   
+    stopFetch(){}    
 }
 
 /**
@@ -34,6 +35,7 @@ export class NoOpTokenProvider implements TokenProvider {
         });
     }
     invalidateToken(token?: string) {}
+    stopFetch(){}
 }
 
 /**
@@ -47,4 +49,5 @@ export class FixedTokenProvider implements TokenProvider {
         });
     }
     invalidateToken(token?: string) {}
+    stopFetch(){}
 }

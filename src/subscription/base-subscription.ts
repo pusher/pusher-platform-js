@@ -39,6 +39,7 @@ export function createSubscriptionConstructor(
             error: any,
             lastEventId?: string
         ){
+            
             retryStrategy.executeSubscription( 
                 null,
                 xhrSource, 

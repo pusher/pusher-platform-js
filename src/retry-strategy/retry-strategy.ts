@@ -1,19 +1,16 @@
 import { NetworkRequest } from '../request';
 import { Logger, EmptyLogger } from '../logger';
-import { ErrorResponse, NetworkError } from '../base-client';
+import { ErrorResponse, NetworkError, Headers } from '../base-client';
 import { BaseSubscription } from '../subscription/base-subscription';
 import { TokenProvider } from '../token-provider';
 
 export interface RetryStrategy {
     executeSubscription(
-        error: any,
-        xhrSource: () => XMLHttpRequest, 
-        lastEventId: string,
+        subscriptionRequest: (headers: Headers) => Promise<BaseSubscription>, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     );
     executeRequest<T>(
-        error: any,
         request: NetworkRequest<T>
     ): Promise<T>;
 
