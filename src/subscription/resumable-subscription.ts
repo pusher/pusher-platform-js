@@ -11,11 +11,11 @@ import {
 export interface ResumableSubscribeOptions {
     headers: Headers;
     path: string;
-    tokenProvider?: TokenProvider;
     retryStrategy?: RetryStrategy;
     initialEventId?: string;
     listeners: ResumableSubscriptionStateListeners;
     logger: Logger;
+    tokenProvider?: TokenProvider;
 }
 
 export interface ResumableSubscriptionState {
@@ -48,7 +48,6 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
         if(!listeners.onConnected) listeners.onConnected = () => {};
         if(!listeners.onResuming) listeners.onResuming = () => {};
         if(!listeners.onEnd) listeners.onEnd = (error?) => {};
-
 
         this.state = new SubscribingResumableSubscriptionState(
             options.initialEventId,
