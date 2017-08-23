@@ -19,12 +19,13 @@ export interface NonResumableSubscriptionState {
 
 export interface NonResumableSubscriptionStateListeners {
 
-    onOpen: (headers: Headers) => void; //TODO: rename to onOpen - most important event in the world!
-    onConnected: () => void;
-    onRetrying: () => void;
-    onEvent: (event: SubscriptionEvent) => void;
-    onEnd: (error?: ErrorResponse) => void;
+    onOpen: (headers: Headers) => void;
+    onEvent: (event: SubscriptionEvent) => void;    
     onError: (error: any) => void;
+    
+    onConnected?: () => void;
+    onRetrying?: () => void;
+    onEnd?: (error?: ErrorResponse) => void;
 }
 
 export interface NonResumableSubscriptionStateTransition {
@@ -39,6 +40,10 @@ export class NonResumableSubscription implements NonResumableSubscriptionStateTr
         options: NonResumableSubscribeOptions,
         listeners: NonResumableSubscriptionStateListeners
     ){
+        if(!listeners.onConnected) listeners.onConnected = () => {};
+        if(!listeners.onRetrying) listeners.onRetrying = () => {};
+        if(!listeners.onEnd) listeners.onEnd = (error?) => {};
+
         this.state = new SubscribingNonResumableSubscriptionState ( 
             baseSubscriptionContructor,
             listeners,
