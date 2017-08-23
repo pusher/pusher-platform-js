@@ -3,6 +3,9 @@ const { default: PusherPlatform} = require('../../target/pusher-platform.js');
 describe('Instance Requests - Successful', () => {
 
     let instance;
+    let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
+        limit: 1
+    })
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
@@ -16,7 +19,8 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful GET request', (done) => {
         instance.request({
             method: "GET",
-            path: "get_ok"
+            path: "get_ok",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             done();
         });
@@ -25,7 +29,8 @@ describe('Instance Requests - Successful', () => {
    it('makes a successful POST request', (done) => {
         instance.request({
             method: "POST",
-            path: "post_ok"
+            path: "post_ok",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             done();
         });
@@ -38,7 +43,8 @@ describe('Instance Requests - Successful', () => {
             path: "post_ok",
             body: {
                 test: "123"
-            }
+            },
+            retryStrategy: noRetryStrategy
         }).then( res => {
             expect(JSON.parse(res).test).toEqual("123");
             done();
@@ -49,7 +55,8 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful PUT request', (done) => {
         instance.request({
             method: "PUT",
-            path: "put_ok"
+            path: "put_ok",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             done();
         });
@@ -58,7 +65,8 @@ describe('Instance Requests - Successful', () => {
     it('makes a successful DELETE request', (done) => {
         instance.request({
             method: "DELETE",
-            path: "delete_ok"
+            path: "delete_ok",
+            retryStrategy: noRetryStrategy
         }).then((res) => {
             done();
         });
