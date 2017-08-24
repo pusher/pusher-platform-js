@@ -8,7 +8,8 @@ export interface RetryStrategy {
     executeSubscription(
         subscriptionRequest: (headers: Headers) => Promise<BaseSubscription>, 
         subscriptionCallback: (subscription: BaseSubscription) => void, 
-        errorCallback: (error: any) => void
+        errorCallback: (error: any) => void,
+        error?: any
     );
     executeRequest<T>(
         request: NetworkRequest<T>

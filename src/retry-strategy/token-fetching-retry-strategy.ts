@@ -55,7 +55,6 @@ export class TokenFetchingRetryStrategy implements RetryStrategy {
         }
     
         executeRequest<T>( 
-            error: any,
             request: NetworkRequest<T>) {
                 return new Promise<T>( (resolve, reject) => {
                     this.resolveError(error)

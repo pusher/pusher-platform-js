@@ -1,5 +1,4 @@
-import { NoOpTokenProvider } from '../../declarations/token-provider';
-import { TokenProvider } from '../token-provider';
+import { NoOpTokenProvider, TokenProvider } from '../token-provider';
 import { NetworkRequest } from '../request';
 import { BaseSubscription, BaseSubscriptionConstruction } from '../subscription/base-subscription';
 import { ErrorResponse, NetworkError, Headers } from '../base-client';
@@ -57,7 +56,7 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
     
     executeSubscription(
-        subscriptionSource: (headers: Headers) => Promise<BaseSubscription>, //Takes token and last event ID to create a sub. //Actually no, the last even ID should be already set at this point.
+        subscriptionSource: (headers: Headers) => Promise<BaseSubscription>, //Takes token to create a sub.
         subscriptionCallback: (subscription: BaseSubscription) => void, 
         errorCallback: (error: any) => void
     ){
@@ -86,7 +85,6 @@ export class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
     stopRetrying(){
         this.tokenProvider.stopFetch();
-        // this.tokenFetchingRetryStrategy.stopRetrying();
         if(this.pendingTimeout > 0){
             window.clearTimeout(this.pendingTimeout);
             this.pendingTimeout = 0;

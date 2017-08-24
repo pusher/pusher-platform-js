@@ -4,7 +4,7 @@ import {
     ExponentialBackoffRetryStrategy,
     ExponentialBackoffRetryStrategyOptions,
 } from './retry-strategy/exponential-backoff-retry-strategy';
-import { createSubscriptionConstructor } from './subscription/base-subscription';
+import { BaseSubscription, createSubscriptionConstructor } from './subscription/base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { ResumableSubscribeOptions, ResumableSubscription } from './subscription/resumable-subscription';
@@ -143,18 +143,28 @@ export class ErrorResponse extends Error{
 
             let retryStrategy: RetryStrategy;            
             
-            if(subOptions.retryStrategy){
-                retryStrategy = subOptions.retryStrategy;
-            }
-            else{
-                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
-                    logger: this.logger
-                };
-                if(subOptions.tokenProvider){
-                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
+            let subCreator9000: (headers: Headers) => Promise<BaseSubscription> = (headers: Headers) => {
+                let requestOptions: RequestOptions = {
+                    method: "SUBSCRIBE",
+                    path: path,
                 }
-                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
+                let xhrGenerator3000 = () => this.createXHR(this.baseURL, requestOptions); 
+                
+                return new Promise<BaseSubscription>( (resolve, reject) => {
+                    let xhr = xhrGenerator3000();
+                    for (let key in headers) {
+                        xhr.setRequestHeader(key, headers[key]);
+                    }
+                    let sub = new BaseSubscription(
+                        xhr, 
+                        this.logger, 
+                        headers => resolve(sub),
+                        error => reject(error)
+                    );
+                });
             }
+
+
 
             let initialEventId: string = subOptions.initialEventId;
             let headers: Headers = subOptions.headers;
@@ -171,7 +181,7 @@ export class ErrorResponse extends Error{
                     retryStrategy, 
                     headers, 
                     () => this.createXHR(this.baseURL, requestOptions)),
-                subOptions,
+                subOptions.initialEventId,
                 listeners);
 
             return resumableSubscription;
