@@ -2,19 +2,14 @@ import { ErrorResponse } from '../base-client';
 import { DoNotRetry, Retry, RetryStrategyResult } from './retry-strategy';
 import { Logger } from '../logger';
 import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscription';
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import { RetryResolution } from "./exponential-backoff-retry-strategy";
 
 class SubscriptionConstruction {
     constructor(private subscriptionCallback: (subscription: BaseSubscription) => void){}
     
     cancel(){
         //TODO;
-    }
-
-    
+    }   
 }
 
 class FakeClient {
@@ -87,7 +82,7 @@ type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscripti
  * Configuration for the retry strategy backoff. Defaults to indefinite retries doubling each time with the max backoff of 5s. First retry is after 1s.
  * Used for creating both resuming and non-resuming (just retrying) subs
  */
-interface RetryStrategyOptions {
+export interface RetryStrategyOptions {
     initialTimeoutMillis: number,    
     maxTimeoutMillis: number,
     limit: number,
@@ -118,8 +113,8 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
     
     (retryOptions, initialEventId, nextSubscribeStrategy) => {
 
-        
         retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
+        let retryResolution = new RetryResolution(retryOptions);
     
     let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
 
@@ -130,7 +125,7 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
             }
             
             let resolveError: (error: any) => RetryStrategyResult = (error) => {
-                return DoNotRetry; //TODO
+                return retryResolution.attemptRetry(error);
             }
 
             let executeStrategyWithLastEventId = () => executeStrategy(lastEventId);
@@ -164,14 +159,15 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribe
 
     (retryOptions, nextSubscribeStrategy) => {
 
-        retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);        
+        retryOptions = createRetryStrategyOptionsOrDefault(retryOptions); 
+        let retryResolution = new RetryResolution(retryOptions);        
 
     let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
         
         let executeStrategy: () => BaseSubscription = () => {
             
             let resolveError: (error: any) => RetryStrategyResult = (error) => {
-                return DoNotRetry; //TODO
+                return retryResolution.attemptRetry(error);
             }
     
             return nextSubscribeStrategy(
