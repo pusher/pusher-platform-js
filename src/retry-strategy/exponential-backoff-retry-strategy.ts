@@ -1,6 +1,6 @@
 import { NoOpTokenProvider, TokenProvider } from '../token-provider';
 import { NetworkRequest } from '../request';
-import { BaseSubscription, BaseSubscriptionConstruction } from '../subscription/base-subscription';
+import { BaseSubscription } from '../subscription/base-subscription';
 import { ErrorResponse, NetworkError, Headers } from '../base-client';
 import { UnauthenticatedRetryStrategy } from './unauthenticated-retry-strategy';
 import { EmptyLogger, Logger } from '../logger';

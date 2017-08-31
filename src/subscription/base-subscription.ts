@@ -17,58 +17,7 @@ export interface SubscriptionEvent {
     body: any;
 }
 
-// export function createSubscriptionConstructor(
-//     retryStrategy: RetryStrategy, 
-//     headers: Headers, 
-//     xhrSource: () => XMLHttpRequest): 
-//     (error: any, lastEventId?: string) => BaseSubscriptionConstruction {
-//         return  (error: any, lastEventId?: string) => { 
-//             return new BaseSubscriptionConstruction(retryStrategy, xhrSource, error, lastEventId); 
-//         };   
-//     }
-    
-    // export class BaseSubscriptionConstruction {
-    //     private subscription: BaseSubscription;
-    //     private error: any;
-    //     private subscriptionCallback: (subscription: BaseSubscription) => void;
-    //     private errorCallback: (error: any) => void;
-        
-    //     constructor(
-    //         private retryStrategy: RetryStrategy,
-    //         xhrSource: () => XMLHttpRequest,
-    //         error: any,
-    //         lastEventId?: string
-    //     ){
-            
-    //         retryStrategy.executeSubscription( 
-    //             null,
-    //             xhrSource, 
-    //             lastEventId,
-    //             (subscription) => { 
-    //                 if(this.subscriptionCallback) this.subscriptionCallback(subscription); 
-    //                 else this.subscription = subscription;
-    //             },
-    //             (error) => {
-    //                 if(this.errorCallback) this.errorCallback(error);
-    //                 else this.error = error;
-    //             }
-    //         );
-    //     }
-        
-    //     //These either execute immediately, or whenever the sub is created (or error is raised)
-    //     onComplete( callback: (subscription: BaseSubscription) => void ){
-    //         if(this.subscription) callback(this.subscription);
-    //         else this.subscriptionCallback = callback;
-    //     }
-    //     onError( callback: (error: any) => void ){
-    //         if(this.error) callback(this.error);
-    //         else this.errorCallback = callback;
-    //     }
-
-    //     cancel(){
-    //         this.retryStrategy.stopRetrying(); //TODO:
-    //     }
-    // }
+export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSubscription>;
         
     export class BaseSubscription {
         
@@ -76,20 +25,19 @@ export interface SubscriptionEvent {
         
         //new public api.
         //no-ops at construction time.
-        public onOpen: (headers: Headers) => void = () => {};
-        public onEvent: (event: SubscriptionEvent) => void = () => {};
-        public onEnd: (error?: ErrorResponse) => void = () => {};
-        public onError: (error: any) => void = () => {};
+        // public onOpen: (headers: Headers) => void = () => {};
+        // public onEvent: (event: SubscriptionEvent) => void = () => {};
+        // public onEnd: (error?: ErrorResponse) => void = () => {};
+        // public onError: (error: any) => void = () => {};
         
         constructor(
             private xhr: XMLHttpRequest,
             private logger: Logger,
-            onOpen: (headers: Headers) => void,
-            onError: (error: any) => void, 
-        ){
-            this.onOpen = onOpen;
-            this.onError = onError;
-            
+            private onOpen: (headers: Headers) => void = headers => {},
+            private onError: (error: any) => void = error => {}, 
+            private onEvent: (event: SubscriptionEvent) => void = event => {},
+            private onEnd: (error?: any) => void = error => {}
+        ){            
             xhr.onreadystatechange = () => {
                 switch(this.xhr.readyState) {
                     case XhrReadyState.UNSENT:

@@ -4,7 +4,7 @@ import {
     ExponentialBackoffRetryStrategy,
     ExponentialBackoffRetryStrategyOptions,
 } from './retry-strategy/exponential-backoff-retry-strategy';
-import { BaseSubscription, createSubscriptionConstructor } from './subscription/base-subscription';
+import { BaseSubscription } from './subscription/base-subscription';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { ResumableSubscribeOptions, ResumableSubscription } from './subscription/resumable-subscription';
@@ -141,7 +141,11 @@ export class ErrorResponse extends Error{
         newResumableSubscription(subOptions: ResumableSubscribeOptions):          
         ResumableSubscription {
 
-            let retryStrategy: RetryStrategy;            
+            let retryStrategy: RetryStrategy;   //TODO  
+            let path = subOptions.path;
+            let initialEventId: string = subOptions.initialEventId;
+            let headers: Headers = subOptions.headers;
+            let listeners = subOptions.listeners;
             
             let subCreator9000: (headers: Headers) => Promise<BaseSubscription> = (headers: Headers) => {
                 let requestOptions: RequestOptions = {
@@ -164,25 +168,29 @@ export class ErrorResponse extends Error{
                 });
             }
 
+            
 
 
-            let initialEventId: string = subOptions.initialEventId;
-            let headers: Headers = subOptions.headers;
-            let path = subOptions.path;
-            let listeners = subOptions.listeners;
 
-            let requestOptions: RequestOptions = {
-                method: "SUBSCRIBE",
-                path: path,
-            }
+
+
 
             let resumableSubscription = new ResumableSubscription(
-                createSubscriptionConstructor(
-                    retryStrategy, 
-                    headers, 
-                    () => this.createXHR(this.baseURL, requestOptions)),
-                subOptions.initialEventId,
+                subConstructor(subCreator9000, retryStrategy),
+                initialEventId,
                 listeners);
+                
+
+            // let resumableSubscription = new ResumableSubscription(
+            //     subCreator9000,
+
+            //     createSubscriptionConstructor(
+            //         retryStrategy, 
+            //         headers, 
+            //         () => this.createXHR(this.baseURL, requestOptions)),
+            //     subOptions,
+            //     subOptions.initialEventId,
+            //     listeners);
 
             return resumableSubscription;
         }

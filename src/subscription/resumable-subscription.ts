@@ -44,7 +44,6 @@ export class ResumableSubscription implements ResumableSubscriptionStateTransiti
         initialEventId: string,
         listeners: ResumableSubscriptionStateListeners,        
     ){
-
         this.state = new SubscribingResumableSubscriptionState(
             subscriptionConstructor,
             retryStrategy,
