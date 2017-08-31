@@ -273,21 +273,32 @@ class FakeClient {
     }
 
     subscribeResumable(
-        path, headers, listeners, retryStrategyOptions, tokenProvider
-     ){
+        path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider
+     ): BaseSubscription {
         let xhrFactory = this.xhrConstructor(path);
 
         let subscriptionConstructor: SubscriptionConstructor = (headers, onOpen, onError, onEvent) => {
             return new BaseSubscription(xhrFactory(headers), this.logger, onOpen, onError, onEvent);
         };
 
-        return createResumingStrategy(
-            retryStrategyOptions)( 
+        let subscriptionStrategy = createResumingStrategy(
+            retryStrategyOptions, 
+            initialEventId,
+            createTokenProvidingStrategy(
+                tokenProvider,
+                createH2TransportStrategy()
+            )
+        );
+
+        return subscriptionStrategy(
             listeners.onOpen,
             listeners.onError,
             listeners.onEvent,
             headers,
-            subscriptionConstructor); //TODO - how to chain these fuckers together? Maybe move the nextSubscribeStrategy passing into the constructor?
+            subscriptionConstructor);
+
+        
+        //TODO - how to chain these fuckers together? Maybe move the nextSubscribeStrategy passing into the constructor?
 
     }
 
@@ -296,18 +307,26 @@ class FakeClient {
 
 type SubscriptionConstructor = (headers, onOpen, onError, onEvent) => BaseSubscription;
 
-type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor, subscribeStrategy?: SubscribeStrategy) => BaseSubscription;
+type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor) => BaseSubscription;
 
+/**
+ * Configuration for the retry strategy backoff. Defaults to indefinite retries doubling each time with the max backoff of 5s. First retry is after 1s.
+ */
 interface RetryStrategyOptions {
     initialTimeoutMillis: number = 1000,    
     maxTimeoutMillis: number = 5000,    
     limit: number = -1,
-    increaseTimeout: (timeout: number) => number = number => 2 * number <= this.maxTimeoutMillis ? 2*number : this.maxTimeoutMillis;
+    increaseTimeout: (timeout: number) => number = number => 2 * number <= this.maxTimeoutMillis ? 2*number : this.maxTimeoutMillis; // Increase exponentially until maxTimeoutMillis has been reached.
 }
 
-let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId?: string) => SubscribeStrategy = (retryOptions, initialEventId?) => {
-
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor, nextSubscribeStrategy?) => {
+let createResumingStrategy: (
+    retryingOptions: RetryStrategyOptions, 
+    initialEventId?: string, 
+    nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
+    
+    (retryOptions, initialEventId?, nextSubscribeStrategy) => {
+    
+    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
 
         let executeStrategy: (lastEventId?: string) => BaseSubscription = (lastEventId) => {
 
@@ -335,8 +354,7 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
                     onEvent(event);
                 },
                 headers,
-                constructor,
-                nextSubscribeStrategy
+                constructor
             );
         }
         return executeStrategy(initialEventId);
@@ -345,8 +363,8 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
     return strategy;
 }
 
-let createRetryingStrategy: (retryingOption: RetryStrategyOptions) => SubscribeStrategy = retryOptions => {
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor, nextSubscribeStrategy?) => {
+let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (retryOptions, nextSubscribeStrategy) => {
+    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
         
         let executeStrategy: (lastEventId?: string) => BaseSubscription = (lastEventId) => {
             
@@ -369,8 +387,7 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions) => SubscribeS
                 },
                 onEvent,
                 headers,
-                constructor,
-                nextSubscribeStrategy
+                constructor
             );
         }
         return executeStrategy();
@@ -383,9 +400,9 @@ interface SynchronousTokenProvider {
     clearToken();
 }
 
-let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider) => SubscribeStrategy = (tokenProvider) => {
+let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy) => {
 
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor, nextSubscribeStrategy?) => {
+    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
 
         let executeStrategy: () => BaseSubscription = () => {
             let token = tokenProvider.fetchToken();
@@ -414,8 +431,7 @@ let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider) => S
                 },
                 onEvent,
                 headers,
-                constructor,
-                nextSubscribeStrategy
+                constructor
             );
         }
 
@@ -424,12 +440,12 @@ let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider) => S
     return strategy;
 } 
 
-let H2TransportStrategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
-
+let createH2TransportStrategy: () => SubscribeStrategy = () => {
+    //TODO:
     return null;
 }
 
-let WebSocketTransportStrategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
-
+let createWebSocketTransportStrategy: () => SubscribeStrategy = () => {
+    //TODO:
     return null;
 }
