@@ -5,12 +5,19 @@ import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscr
 import { RetryResolution } from "./exponential-backoff-retry-strategy";
 
 class SubscriptionConstruction {
-    constructor(private subscriptionCallback: (subscription: BaseSubscription) => void){}
+    constructor(
+        private subscriptionCallback: (subscription: BaseSubscription) => void,
+        private errorCallback: (error: any) => void
+    ){
+        //TODO: use workers to init this fella??
+        //TODO: what about canceling it?
+    }
     
     cancel(){
         //TODO;
     }   
 }
+
 
 class FakeClient {
 
@@ -41,8 +48,10 @@ class FakeClient {
     
         return subscriptionStrategy(
             listeners.onOpen,
+            listeners.onSubscribe,
             listeners.onError,
             listeners.onEvent,
+            listeners.onEnd,
             headers,
             subscriptionConstructor);
     }
@@ -67,8 +76,10 @@ class FakeClient {
 
         return subscriptionStrategy(
             listeners.onOpen,
+            listeners.onSubscribe,
             listeners.onError,
             listeners.onEvent,
+            listeners.onEnd,
             headers,
             subscriptionConstructor);
     }
@@ -76,7 +87,7 @@ class FakeClient {
 
 type SubscriptionConstructor = (headers, onOpen, onError, onEvent) => BaseSubscription;
 
-type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor) => BaseSubscription;
+type SubscribeStrategy = (onOpen, onSubscribe, onError, onEvent, onEnd, headers: Headers, subscriptionConstructor: SubscriptionConstructor) => BaseSubscription;
 
 /**
  * Configuration for the retry strategy backoff. Defaults to indefinite retries doubling each time with the max backoff of 5s. First retry is after 1s.
@@ -116,7 +127,9 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
         retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
         let retryResolution = new RetryResolution(retryOptions);
     
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
+    let strategy: SubscribeStrategy = (onOpen, onSubscribe, onError, onEvent, onEnd, headers, constructor) => {
+        
+        let alreadyOpened = false;
 
         let executeStrategy: (lastEventId?: string) => BaseSubscription = (lastEventId) => {
 
@@ -131,7 +144,13 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
             let executeStrategyWithLastEventId = () => executeStrategy(lastEventId);
 
             return nextSubscribeStrategy(
-                onOpen, //TODO: track first onOpen - then onSubscribe
+                headers => {
+                    if(!alreadyOpened){
+                        alreadyOpened = true;
+                        onOpen(headers);
+                    }
+                },
+                onSubscribe, //TODO: track first onOpen - then onSubscribe
                 error => {
                     let errorResolution = resolveError(error);
                     if(errorResolution instanceof Retry){
@@ -145,6 +164,7 @@ let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEvent
                     lastEventId = (event as SubscriptionEvent).eventId;
                     onEvent(event);
                 },
+                onEnd,
                 headers,
                 constructor
             );
@@ -162,7 +182,9 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribe
         retryOptions = createRetryStrategyOptionsOrDefault(retryOptions); 
         let retryResolution = new RetryResolution(retryOptions);        
 
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
+    let strategy: SubscribeStrategy = (onOpen, onSubscribe, onError, onEvent, onEnd, headers, constructor) => {
+
+        let alreadyOpened = false;
         
         let executeStrategy: () => BaseSubscription = () => {
             
@@ -171,7 +193,13 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribe
             }
     
             return nextSubscribeStrategy(
-                onOpen,
+                headers => {
+                    if(!alreadyOpened){
+                        alreadyOpened = true;
+                        onOpen(headers);
+                    }
+                },
+                onSubscribe,
                 error => {
                     let errorResolution = resolveError(error);
                     if(errorResolution instanceof Retry){
@@ -182,6 +210,7 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribe
                     }
                 },
                 onEvent,
+                onError,
                 headers,
                 constructor
             );
@@ -201,7 +230,7 @@ interface SynchronousTokenProvider {
 
 let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy) => {
 
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
+    let strategy: SubscribeStrategy = (onOpen, onSubscribe, onError, onEvent, onEnd, headers, constructor) => {
 
         let executeStrategy: () => BaseSubscription = () => {
             let token = tokenProvider.fetchToken();
@@ -217,8 +246,10 @@ let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider, next
                 ); 
             }
             
+            
             return nextSubscribeStrategy(
                 onOpen,
+                onSubscribe,
                 error => {
                     if(isTokenExpiredError(error)){
                         tokenProvider.clearToken();
@@ -230,6 +261,7 @@ let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider, next
                     }
                 },
                 onEvent,
+                onEnd,
                 headers,
                 constructor
             );

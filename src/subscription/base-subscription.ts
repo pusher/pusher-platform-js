@@ -23,13 +23,6 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         
         private state: SubscriptionState = SubscriptionState.UNOPENED;
         
-        //new public api.
-        //no-ops at construction time.
-        // public onOpen: (headers: Headers) => void = () => {};
-        // public onEvent: (event: SubscriptionEvent) => void = () => {};
-        // public onEnd: (error?: ErrorResponse) => void = () => {};
-        // public onError: (error: any) => void = () => {};
-        
         constructor(
             private xhr: XMLHttpRequest,
             private logger: Logger,
