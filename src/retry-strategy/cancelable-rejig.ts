@@ -1,4 +1,4 @@
-import { SubscribeStrategy, SubscriptionConstruction, SubscriptionConstructor } from './rejig';
+import { SubscribeStrategy, CancelableSubscription, SubscriptionConstructor } from './rejig';
 import { BaseSubscription } from '../subscription/base-subscription';
 
 
@@ -11,17 +11,6 @@ class Client {
 
             return null;
         };
-
-        
-
-        // let subscriptionStrategy = createResumingStrategy(
-        //     retryStrategyOptions, 
-        //     initialEventId,
-        //     createTokenProvidingStrategy(
-        //         tokenProvider,
-        //         createH2TransportStrategy()
-        //     )
-        // );
 
         let subscriptionStrategy = createFakeStrategy();
 
@@ -39,16 +28,6 @@ class Client {
 function createFakeStrategy() {
 
     return (onOpen, onSubscribe, onError, onEvent, onEnd, headers, subConstructor) => {
-        interface Foo {
-            bar();
-        }
-        class Bla implements Foo {
-            bar(){
-
-                onOpen();
-            }
-            
-        }
 
         return new class {
             private subscription;
