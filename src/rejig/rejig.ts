@@ -8,10 +8,8 @@ export interface Subscription {
     unsubscribe();
 }
 
-export class ResumingSubscription implements Subscription {
-    unsubscribe(){
-        throw new Error("Not implemented");
-    }
+export interface SubscriptionStateTransition {
+    onTransition(newState: SubscriptionState): void;
 }
 
 export class RetryingSubscription implements Subscription {
@@ -32,6 +30,10 @@ export class H2TransportSubscription implements Subscription {
     }
 }
 
+export interface SubscriptionState {
+    unsubscribe();
+}
+
 export type SubscriptionConstructor = (headers, onOpen, onError, onEvent) => BaseSubscription;
 
 export type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor) => Subscription;
@@ -45,12 +47,10 @@ class FakeClient {
 
     private logger: Logger;
 
-    //TODO: Should we block until returning on use a callback/promise for it?
     subscribe(
         path, headers, listeners, retryStrategyOptions, tokenProvider
     ): Subscription {
 
-        // let subscription =  new Subscription();
         let xhrFactory = this.xhrConstructor(path);
         
         let subscriptionConstructor: SubscriptionConstructor = (headers, onOpen, onError, onEvent) => {
@@ -92,14 +92,14 @@ class FakeClient {
     subscribeResumable(
         path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider
      ): Subscription {
-
+         
         let xhrFactory = this.xhrConstructor(path);
 
         let subscriptionConstructor: SubscriptionConstructor = (headers, onOpen, onError, onEvent) => {
             return new BaseSubscription(xhrFactory(headers), this.logger, onOpen, onError, onEvent);
         };
 
-        let subscriptionStrategy = createResumingStrategy(
+        let resumingSubscriptionStrategy = createResumingStrategy(
             retryStrategyOptions, 
             initialEventId,
             createTokenProvidingStrategy(
@@ -108,7 +108,7 @@ class FakeClient {
             )
         );
 
-        return subscriptionStrategy(
+        return resumingSubscriptionStrategy(
             listeners.onOpen,
             listeners.onError,
             listeners.onEvent,
@@ -128,7 +128,7 @@ export interface RetryStrategyOptions {
     increaseTimeout: (timeout: number) => number,
 }
 
-let createRetryStrategyOptionsOrDefault: (RetryStrategyOptions) => RetryStrategyOptions = (options: RetryStrategyOptions) => {
+export let createRetryStrategyOptionsOrDefault: (RetryStrategyOptions) => RetryStrategyOptions = (options: RetryStrategyOptions) => {
 
     let initialTimeoutMillis = 1000;
     let maxTimeoutMillis = 5000;
@@ -148,51 +148,87 @@ let createRetryStrategyOptionsOrDefault: (RetryStrategyOptions) => RetryStrategy
     }
 }
 
-let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
-    
-    (retryOptions, initialEventId, nextSubscribeStrategy) => {
+// export class ResumingSubscription implements Subscription {
+//     constructor(
+//         retryingOptions: RetryStrategyOptions,
+//         initialEventId: string,
+//         nextSubscribeStrategy: SubscribeStrategy)
 
-        retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
-        let retryResolution = new RetryResolution(retryOptions);
-    
-        let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
-        
-        let executeStrategy: (lastEventId?: string) => Subscription = (lastEventId) => {
+//     unsubscribe(){
+//         throw new Error("Not implemented");
+//     }
+// }
 
-            if(lastEventId){
-                headers["Last-Event-Id"] = lastEventId;
-            }
+// let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
+    
+//     (retryOptions, initialEventId, nextSubscribeStrategy) => {
+
+//         retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
+//         let retryResolution = new RetryResolution(retryOptions);
+    
+//         class ResumingSubscription implements Subscription {
+//             private state: SubscriptionState;
+
+//             constructor(
+//                 onOpen, 
+//                 onError, 
+//                 onEvent, 
+//                 headers, 
+//                 constructor
+//             ){
+//                 this.state = 
+//                 let executeStrategy: (lastEventId?: string) => Subscription = (lastEventId) => {
+                    
+//                                 if(lastEventId){
+//                                     headers["Last-Event-Id"] = lastEventId;
+//                                 }
+                                
+//                                 let resolveError: (error: any) => RetryStrategyResult = (error) => {
+//                                     return retryResolution.attemptRetry(error);
+//                                 }
+                    
+//                                 let executeStrategyWithLastEventId = () => executeStrategy(lastEventId);
+                    
+//                                 return nextSubscribeStrategy(
+//                                     onOpen,
+//                                     error => {
+//                                         let errorResolution = resolveError(error);
+//                                         if(errorResolution instanceof Retry){
+//                                             window.setTimeout( executeStrategyWithLastEventId, errorResolution.waitTimeMillis); //TODO:
+//                                         }
+//                                         else{
+//                                             onError(error);
+//                                         }
+//                                     },
+//                                     event => {
+//                                         lastEventId = (event as SubscriptionEvent).eventId;
+//                                         onEvent(event);
+//                                     },
+//                                     headers,
+//                                     constructor
+//                                 );
+//                             }
+//                 return executeStrategy(initialEventId);
             
-            let resolveError: (error: any) => RetryStrategyResult = (error) => {
-                return retryResolution.attemptRetry(error);
-            }
+                
+//             }   
+            
+            
+//             unsubscribe(){
+//                 this.state.unsubscribe();
+//                 throw new Error("Not implemented");
+//             }
+//         }
 
-            let executeStrategyWithLastEventId = () => executeStrategy(lastEventId);
 
-            return nextSubscribeStrategy(
-                onOpen,
-                error => {
-                    let errorResolution = resolveError(error);
-                    if(errorResolution instanceof Retry){
-                        window.setTimeout( executeStrategyWithLastEventId, errorResolution.waitTimeMillis); //TODO:
-                    }
-                    else{
-                        onError(error);
-                    }
-                },
-                event => {
-                    lastEventId = (event as SubscriptionEvent).eventId;
-                    onEvent(event);
-                },
-                headers,
-                constructor
-            );
-        }
-        return executeStrategy(initialEventId);
-    };
+//         let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
 
-    return strategy;
-}
+//             return new ResumingSubscription(onOpen, onError, onEvent, headers, constructor);
+//         }
+       
+//         return strategy;        
+      
+//     };
 
 let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
 
