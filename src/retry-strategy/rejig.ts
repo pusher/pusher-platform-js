@@ -4,34 +4,28 @@ import {Logger} from '../logger';
 import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscription';
 import { RetryResolution } from "./exponential-backoff-retry-strategy";
 
-export interface CancelableSubscription {
-    unsubscribe(): void;
+export interface Subscription {
+    unsubscribe();
 }
 
-export interface SubscriptionWrapper {
-    setBaseSubscription(baseSubscription: BaseSubscription): void;
-    isSubscriptionRunning(): boolean;
-}
-
-class Subscription implements SubscriptionWrapper, CancelableSubscription {
-    private subscriptionRunning: boolean = true;
-    private currentBaseSubscription: BaseSubscription;
-
-    public isSubscriptionRunning(){
-        return this.subscriptionRunning;
-    }
-
-    public unsubscribe(): void {
-        this.subscriptionRunning = false;
-        if(this.currentBaseSubscription){
-            this.currentBaseSubscription.unsubscribe();
-        }
-    }
-
-    public setBaseSubscription(baseSubscription: BaseSubscription): void {
-        this.currentBaseSubscription = baseSubscription;
+export class ResumingSubscription implements Subscription {
+    unsubscribe(){
+        throw new Error("Not implemented");
     }
 }
+
+export class TokenProvidingSubscription implements Subscription {
+    unsubscribe(){
+        throw new Error("Not implemented");
+    }
+}
+
+export class H2TransportSubscription implements Subscription {
+    unsubscribe(){
+        throw new Error("Not implemented");
+    }
+}
+
 
 class FakeClient {
 
@@ -46,8 +40,7 @@ class FakeClient {
         path, headers, listeners, retryStrategyOptions, tokenProvider
     ): CancelableSubscription {
 
-        let subscriptionWrapper =  new Subscription();
-
+        let subscription =  new Subscription();
         let xhrFactory = this.xhrConstructor(path);
         
         let subscriptionConstructor: SubscriptionConstructor = (headers, onOpen, onError, onEvent) => {
@@ -83,7 +76,7 @@ class FakeClient {
             listeners.onEvent,
             headers,
             subscriptionConstructor,
-            subscriptionWrapper
+            subscription
         );
     }
 
@@ -91,7 +84,7 @@ class FakeClient {
         path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider
      ): CancelableSubscription {
 
-        let resumableSub = new ResumableSubscription();
+        let subscription = new Subscription();
         let xhrFactory = this.xhrConstructor(path);
 
         let subscriptionConstructor: SubscriptionConstructor = (headers, onOpen, onError, onEvent) => {
@@ -113,13 +106,13 @@ class FakeClient {
             listeners.onEvent,
             headers,
             subscriptionConstructor,
-            resumableSub);
+            subscription);
     }
 }
 
 export type SubscriptionConstructor = (headers, onOpen, onError, onEvent) => BaseSubscription;
 
-export type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor, subscriptionWrapper: CancelableSubscription ) => CancelableSubscription;
+export type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor, subscriptionWrapper: Subscription ) => CancelableSubscription;
 
 /**
  * Configuration for the retry strategy backoff. Defaults to indefinite retries doubling each time with the max backoff of 5s. First retry is after 1s.
@@ -217,7 +210,7 @@ let createRetryingStrategy: (retryingOption: RetryStrategyOptions, nextSubscribe
             return nextSubscribeStrategy(
                 onOpen,
                 error => {
-                    if((subWrapper as ResumableSubscription).subscriptionRunning){
+                    if(subWrapper.isSubscriptionRunning()){
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
                             window.setTimeout( executeStrategy, errorResolution.waitTimeMillis); //TODO:
@@ -292,9 +285,12 @@ let createTokenProvidingStrategy: (tokenProvider: SynchronousTokenProvider, next
 let createH2TransportStrategy: () => SubscribeStrategy = () => {
 
     let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor, subscriptionWrapper) => {
-        if((subscriptionWrapper as ResumableSubscription).subscriptionRunning){
-            return constructor(onOpen, onError, onEvent, headers);
-        }
+
+        subscriptionWrapper.setBaseSubscription(constructor(onOpen, onError, onEvent, headers))
+        return subscriptionWrapper;
+        // if(subscriptionWrapper.isSubscriptionRunning()){
+        //     return constructor(onOpen, onError, onEvent, headers);
+        // }
     }
     return strategy;
 }

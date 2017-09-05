@@ -1,4 +1,4 @@
-import { SubscribeStrategy, CancelableSubscription, SubscriptionConstructor } from './rejig';
+import { SubscribeStrategy, SubscriptionConstructor } from './rejig';
 import { BaseSubscription } from '../subscription/base-subscription';
 
 
