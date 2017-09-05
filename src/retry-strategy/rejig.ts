@@ -1,38 +1,35 @@
 import {Headers, ErrorResponse} from '../base-client';
 import {RetryStrategyResult, Retry} from './retry-strategy';
 import {Logger} from '../logger';
-import {BaseSubscription, SubscriptionEvent} from '../subscription/base-subscription';
+import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscription';
 import { RetryResolution } from "./exponential-backoff-retry-strategy";
-
-// class SubscriptionConstruction {
-//     constructor(
-//         private subscriptionCallback: (subscription: BaseSubscription) => void,
-//         private errorCallback: (error: any) => void
-//     ){
-//         //TODO: use workers to init this fella??
-//         //TODO: what about canceling it?
-//     }
-    
-//     cancel(){
-//         //TODO;
-//     }   
-// }
 
 export interface CancelableSubscription {
     unsubscribe(): void;
 }
 
-class ResumableSubscription implements CancelableSubscription {
-    public subscriptionRunning: boolean = true;
-    unsubscribe(){
-        this.subscriptionRunning = false;
-    }
+export interface SubscriptionWrapper {
+    setBaseSubscription(baseSubscription: BaseSubscription): void;
+    isSubscriptionRunning(): boolean;
 }
 
-class NonResumableSubscription implements CancelableSubscription {
-    public subscriptionRunning: boolean = true;
-    unsubscribe(){
+class Subscription implements SubscriptionWrapper, CancelableSubscription {
+    private subscriptionRunning: boolean = true;
+    private currentBaseSubscription: BaseSubscription;
+
+    public isSubscriptionRunning(){
+        return this.subscriptionRunning;
+    }
+
+    public unsubscribe(): void {
         this.subscriptionRunning = false;
+        if(this.currentBaseSubscription){
+            this.currentBaseSubscription.unsubscribe();
+        }
+    }
+
+    public setBaseSubscription(baseSubscription: BaseSubscription): void {
+        this.currentBaseSubscription = baseSubscription;
     }
 }
 
@@ -49,8 +46,7 @@ class FakeClient {
         path, headers, listeners, retryStrategyOptions, tokenProvider
     ): CancelableSubscription {
 
-        
-        let subscriptionWrapper: CancelableSubscription = new ResumableSubscription();
+        let subscriptionWrapper =  new Subscription();
 
         let xhrFactory = this.xhrConstructor(path);
         
