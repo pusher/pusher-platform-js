@@ -29,34 +29,37 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             headers, 
             constructor
         ){
-
             class OpeningSubscriptionState implements SubscriptionState {
-
-                private lastEventId: string = initialEventId;
                 private underlyingSubscription: Subscription;
 
-                constructor(private onTransition: (state: SubscriptionState) => void){
+                constructor(private onTransition: (newState) => void){
+                    let lastEventId = initialEventId;
+
+                    if(lastEventId){
+                        headers["Last-Event-Id"] = initialEventId;
+                    }
+                    
                     this.underlyingSubscription = nextSubscribeStrategy(
                         headers => {
-                            onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition))
+                            //TODO: callback onOpen???
+                            onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
                         },
                         error => {
-                            onTransition(new ResumingSubscriptionState(error, this.lastEventId, onTransition));
+                            onTransition(new ResumingSubscriptionState(error, lastEventId, onTransition));
                         },
                         event => {
-                            this.lastEventId = (event as SubscriptionEvent).eventId;
-                            onEvent(event);
+                            let lastEventId = event.eventId;
                         },
                         headers,
                         constructor
-                    );
+                    )
                 }
-                
-              unsubscribe() {
-                this.underlyingSubscription.unsubscribe();
-                this.onTransition(new EndedSubscriptionState());
-              }
+                unsubscribe() {
+                    this.underlyingSubscription.unsubscribe();
+                    this.onTransition(new EndedSubscriptionState());
+                }
             }
+            
             class OpenSubscriptionState implements SubscriptionState {
                 constructor(private subscription: Subscription, private onTransition: (state: SubscriptionState) => void){}
 
@@ -131,38 +134,6 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     throw new Error("Subscription has already ended");
                   }
             }
-
-        //     let executeStrategy: (lastEventId?: string) => Subscription = (lastEventId) => {
-                
-
-                
-        //         let resolveError: (error: any) => RetryStrategyResult =(error) => {
-        //             return retryResolution.attemptRetry(error);
-        //         }
-            
-        //         let executeStrategyWithLastEventId = () => executeStrategy(lastEventId);
-                
-        //         return nextSubscribeStrategy(
-        //             onOpen,
-        //             error => {
-        //                 let errorResolution = resolveError(error);
-        //                 if(errorResolution instanceof Retry){
-        //                     window.setTimeout( executeStrategyWithLastEventId, errorResolution.waitTimeMillis); //TODO:
-        //                 }
-        //                 else{
-        //                     onError(error);
-        //                 }
-        //             },
-        //             event => {
-        //                 lastEventId = (event as SubscriptionEvent).eventId;
-        //                 onEvent(event);
-        //             },
-        //             headers,
-        //             constructor
-        //         );
-        //         }
-        //     executeStrategy(initialEventId);    
-        // }
     }
 }
 

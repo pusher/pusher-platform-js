@@ -1,8 +1,8 @@
 import {Headers, ErrorResponse} from '../base-client';
-import {RetryStrategyResult, Retry} from './retry-strategy';
+import {RetryStrategyResult, Retry} from '../retry-strategy/retry-strategy';
 import {Logger} from '../logger';
 import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscription';
-import { RetryResolution } from "./exponential-backoff-retry-strategy";
+import { RetryResolution } from "../retry-strategy/exponential-backoff-retry-strategy";
 
 export interface Subscription {
     unsubscribe();
@@ -34,9 +34,20 @@ export interface SubscriptionState {
     unsubscribe();
 }
 
-export type SubscriptionConstructor = (headers, onOpen, onError, onEvent) => BaseSubscription;
+export type SubscriptionConstructor = (
+    headers: Headers, 
+    onOpen: (headers:Headers) => void , 
+    onError: (error: any) => void, 
+    onEvent: (event: SubscriptionEvent) => void
+) => BaseSubscription;
 
-export type SubscribeStrategy = (onOpen, onError, onEvent, headers: Headers, subscriptionConstructor: SubscriptionConstructor) => Subscription;
+export type SubscribeStrategy = (
+    onOpen: (headers:Headers) => void, 
+    onError: (error: any) => void, 
+    onEvent: (event: SubscriptionEvent) => void,
+    headers: Headers,
+    subscriptionConstructor: SubscriptionConstructor
+) => Subscription;
 
 
 class FakeClient {
