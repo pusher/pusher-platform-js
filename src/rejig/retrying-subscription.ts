@@ -7,7 +7,6 @@ import {
     SubscriptionState,
 } from './rejig';
 import { RetryResolution } from '../retry-strategy/exponential-backoff-retry-strategy';
-import { SubscriptionState, Subscription } from './rejig';
 import { RetryStrategyResult, Retry } from '../retry-strategy/retry-strategy';
 export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (retryOptions, nextSubscribeStrategy) => {
     
