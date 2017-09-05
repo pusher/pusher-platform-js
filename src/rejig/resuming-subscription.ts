@@ -59,7 +59,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     this.onTransition(new EndedSubscriptionState());
                 }
             }
-            
+
             class OpenSubscriptionState implements SubscriptionState {
                 constructor(private subscription: Subscription, private onTransition: (state: SubscriptionState) => void){}
 
@@ -72,7 +72,6 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             class ResumingSubscriptionState implements SubscriptionState {
 
                 private timeout: number;
-                // private underlyingSubscription: Subscription;                
 
                 constructor(error: any, lastEventId: string, private onTransition: (newState: SubscriptionState) => 
                 void){
@@ -92,7 +91,6 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     }
                 
                     let executeNextSubscribeStrategy = (lastEventId: string) => {
-                        
                         if(lastEventId){
                             headers["Last-Event-Id"] = lastEventId;
                         }
@@ -105,7 +103,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                 executeSubscriptionOnce(lastEventId);
                             },
                             event => {
-                                lastEventId = lastEventId;
+                                lastEventId = event.eventId;
                                 onEvent(event);
                             },
                             headers,
@@ -134,9 +132,11 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     throw new Error("Subscription has already ended");
                   }
             }
+
+            //Here we init the state transition shenaningans
+            this.state = new OpeningSubscriptionState(this.onTransition);
     }
 }
-
 
     let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
         return new ResumingSubscription(onOpen, onError, onEvent, headers, constructor);
