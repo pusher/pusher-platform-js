@@ -67,7 +67,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                 unsubscribe() {
                     this.subscription.unsubscribe();
                     this.onTransition(new EndedSubscriptionState());
-                  }
+                }
             }
 
             class ResumingSubscriptionState implements SubscriptionState {

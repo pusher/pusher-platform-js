@@ -13,17 +13,6 @@ export interface SubscriptionStateTransition {
     onTransition(newState: SubscriptionState): void;
 }
 
-export class RetryingSubscription implements Subscription {
-    unsubscribe(){
-        throw new Error("Not implemented");
-    }
-}
-
-export class TokenProvidingSubscription implements Subscription {
-    unsubscribe(){
-        throw new Error("Not implemented");
-    }
-}
 
 export class H2TransportSubscription implements Subscription {
     unsubscribe(){
