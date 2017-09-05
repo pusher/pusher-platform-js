@@ -27,8 +27,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             onError, 
             onEvent, 
             headers, 
-            constructor
+            subscriptionConstructor
         ){
+            //All of the classes here are created as inner classes so we don't have to redefine the listeners every single time - is that a good idea?
             class OpeningSubscriptionState implements SubscriptionState {
                 private underlyingSubscription: Subscription;
 
@@ -41,7 +42,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     
                     this.underlyingSubscription = nextSubscribeStrategy(
                         headers => {
-                            //TODO: callback onOpen???
+                            onOpen(headers);
                             onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
                         },
                         error => {
@@ -51,7 +52,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                             let lastEventId = event.eventId;
                         },
                         headers,
-                        constructor
+                        subscriptionConstructor
                     )
                 }
                 unsubscribe() {
@@ -107,7 +108,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                 onEvent(event);
                             },
                             headers,
-                            constructor
+                            subscriptionConstructor
                         )
                     }
                 }
@@ -136,11 +137,10 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             //Here we init the state transition shenaningans
             this.state = new OpeningSubscriptionState(this.onTransition);
     }
-}
+}   
 
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, headers, constructor) => {
-        return new ResumingSubscription(onOpen, onError, onEvent, headers, constructor);
-    }
-   
-    return strategy;        
+    //All the magic in the world.
+    return (onOpen, onError, onEvent, headers, constructor) => 
+        new ResumingSubscription(onOpen, onError, onEvent, headers, constructor);
+            
 };

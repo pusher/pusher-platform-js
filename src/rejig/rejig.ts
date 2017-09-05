@@ -3,6 +3,7 @@ import {RetryStrategyResult, Retry} from '../retry-strategy/retry-strategy';
 import {Logger} from '../logger';
 import { BaseSubscription, SubscriptionEvent } from '../subscription/base-subscription';
 import { RetryResolution } from "../retry-strategy/exponential-backoff-retry-strategy";
+import { createResumingStrategy } from './resuming-subscription';
 
 export interface Subscription {
     unsubscribe();
