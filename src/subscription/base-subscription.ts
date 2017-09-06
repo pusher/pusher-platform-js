@@ -2,8 +2,9 @@ import { TokenProvider } from '../token-provider';
 import { RetryStrategy } from '../retry-strategy/retry-strategy';
 import { Logger } from '../logger';
 import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "../base-client";
+import { SubscriptionEvent } from '../rejig/subscription';
 
-export enum SubscriptionState {
+export enum BaseSubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()
     OPENING,      // called xhr.send(); not yet received response headers
     OPEN,         // received response headers; called onOpen(); expecting message
@@ -11,17 +12,11 @@ export enum SubscriptionState {
     ENDED         // called onEnd() or onError(err)
 }
 
-export interface SubscriptionEvent {
-    eventId: string;
-    headers: Headers;
-    body: any;
-}
-
 export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSubscription>;
         
     export class BaseSubscription {
         
-        private state: SubscriptionState = SubscriptionState.UNOPENED;
+        private state: BaseSubscriptionState = BaseSubscriptionState.UNOPENED;
         
         constructor(
             private xhr: XMLHttpRequest,
@@ -36,7 +31,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                     case XhrReadyState.UNSENT:
                     case XhrReadyState.OPENED:
                     case XhrReadyState.HEADERS_RECEIVED:
-                    this.assertStateIsIn(SubscriptionState.OPENING);
+                    this.assertStateIsIn(BaseSubscriptionState.OPENING);
                     break;
                     
                     case XhrReadyState.LOADING:
@@ -48,12 +43,12 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                     break;
                 }
             }
-            this.state = SubscriptionState.OPENING;
+            this.state = BaseSubscriptionState.OPENING;
             this.xhr.send();
         }  
         
         public unsubscribe(): void {
-            this.state = SubscriptionState.ENDED;
+            this.state = BaseSubscriptionState.ENDED;
             this.xhr.abort();
             this.onEnd();
         }
@@ -63,21 +58,21 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         }
         
         private onLoading(): void {
-            this.assertStateIsIn(SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDING);
+            this.assertStateIsIn(BaseSubscriptionState.OPENING, BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
             if(this.xhr.status === 200){
                 
                 //Check if we just transitioned to the open state
-                if(this.state === SubscriptionState.OPENING) {
-                    this.state = SubscriptionState.OPEN;
+                if(this.state === BaseSubscriptionState.OPENING) {
+                    this.state = BaseSubscriptionState.OPEN;
                     this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
                 
-                this.assertStateIsIn(SubscriptionState.OPEN);
+                this.assertStateIsIn(BaseSubscriptionState.OPEN);
                 let err = this.onChunk(); // might transition our state from OPEN -> ENDING
-                this.assertStateIsIn(SubscriptionState.OPEN, SubscriptionState.ENDING);
+                this.assertStateIsIn(BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
                 
                 if (err) {
-                    this.state = SubscriptionState.ENDED;
+                    this.state = BaseSubscriptionState.ENDED;
                     if((err as ErrorResponse).statusCode != 204){
                         this.onError(err);
                     }
@@ -93,21 +88,21 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         
         private onDone(): void {
             if (this.xhr.status === 200) {
-                if (this.state === SubscriptionState.OPENING) {
-                    this.state = SubscriptionState.OPEN;
+                if (this.state === BaseSubscriptionState.OPENING) {
+                    this.state = BaseSubscriptionState.OPEN;
                     this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
                 }
-                this.assertStateIsIn( SubscriptionState.OPEN, SubscriptionState.ENDING );
+                this.assertStateIsIn( BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING );
                 let err = this.onChunk();
                 if (err) {
-                    this.state = SubscriptionState.ENDED;
+                    this.state = BaseSubscriptionState.ENDED;
                     if ( (err as any).statusCode === 204 ) { //TODO: That cast is horrific
                         this.onEnd();
                     }
                     else {
                         this.onError(err);
                     }
-                } else if (this.state <= SubscriptionState.ENDING) {
+                } else if (this.state <= BaseSubscriptionState.ENDING) {
                     this.onError(new Error("HTTP response ended without receiving EOS message"));
                 } else {
                     // Stream ended normally.
@@ -116,9 +111,9 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
             }
             
             else {
-                this.assertStateIsIn(SubscriptionState.OPENING, SubscriptionState.OPEN, SubscriptionState.ENDED);
+                this.assertStateIsIn(BaseSubscriptionState.OPENING, BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDED);
                 
-                if (this.state === SubscriptionState.ENDED) {
+                if (this.state === BaseSubscriptionState.ENDED) {
                     // We aborted the request deliberately, and called onError/onEnd elsewhere.
                     return;
                 }
@@ -135,7 +130,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         private lastNewlineIndex: number = 0;
         
         private onChunk(): Error {
-            this.assertStateIsIn(SubscriptionState.OPEN);
+            this.assertStateIsIn(BaseSubscriptionState.OPEN);
             let response = this.xhr.responseText;
             let newlineIndex = response.lastIndexOf("\n");
             if (newlineIndex > this.lastNewlineIndex) {
@@ -167,7 +162,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
         */
         private onMessage(message: any[]): Error {
-            this.assertStateIsIn(SubscriptionState.OPEN);
+            this.assertStateIsIn(BaseSubscriptionState.OPEN);
             this.verifyMessage(message);
             
             switch (message[0]) {
@@ -184,7 +179,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         
         // EITHER calls options.onEvent, OR returns an error
         private onEventMessage(eventMessage: any[]): Error {
-            this.assertStateIsIn(SubscriptionState.OPEN);
+            this.assertStateIsIn(BaseSubscriptionState.OPEN);
             
             if (eventMessage.length !== 4) {
                 return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
@@ -205,7 +200,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         */
         
         private onEOSMessage(eosMessage: any[]): Error {
-            this.assertStateIsIn(SubscriptionState.OPEN);
+            this.assertStateIsIn(BaseSubscriptionState.OPEN);
             
             if (eosMessage.length !== 4) {
                 return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
@@ -218,7 +213,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                 return new Error("Invalid EOS Headers");
             }
             
-            this.state = SubscriptionState.ENDING;
+            this.state = BaseSubscriptionState.ENDING;
             return new ErrorResponse(statusCode, headers, info);
         }
         
@@ -230,11 +225,11 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         * Asserts whether this subscription falls in one of the expected states and logs a warning if it's not.
         * @param validStates Array of possible states this subscription could be in.
         */
-        private assertStateIsIn(...validStates: SubscriptionState[]){
+        private assertStateIsIn(...validStates: BaseSubscriptionState[]){
             const stateIsValid = validStates.some( validState => validState === this.state );
             if(!stateIsValid){
-                const expectedStates = validStates.map( state => SubscriptionState[state]).join(', ');
-                const actualState = SubscriptionState[this.state];
+                const expectedStates = validStates.map( state => BaseSubscriptionState[state]).join(', ');
+                const actualState = BaseSubscriptionState[this.state];
                 this.logger.warn(`Expected this.state to be one of [${expectedStates}] but it is ${actualState}`);
             }
         }

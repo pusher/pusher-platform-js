@@ -1,6 +1,5 @@
 import {
     createRetryStrategyOptionsOrDefault,
-    RetryingSubscription,
     RetryStrategyOptions,
     SubscribeStrategy,
     Subscription,

@@ -1,21 +1,13 @@
-import { SubscribeStrategy, Subscription, SubscriptionConstructor, SubscriptionState } from './rejig';
 import { ErrorResponse } from '../base-client';
+import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
 
-/**
- * Can we provide token synchronously? I think this would make it a lot simpler  to chain all the events
- */
-interface SynchronousTokenProvider {
-    fetchToken(): string;
-    clearToken(): void;
-}
-
-interface AsynchronousTokenProvider {
-    fetchToken(onToken: (token: string) => void, onError: (error: any) => void); //Maybe make return a TokenRequest that we can cancel???
+export interface AsynchronousTokenProvider {
+    fetchToken(onToken: (token: string) => void, onError: (error: any) => void); //Maybe make return a TokenRequest that we can cancel??? Encapsulated promises? 
     clearToken(token?: string);
-    cancelFetch(): void;
+    cancelFetch(): void; //Go to the token request object
 }
 
-let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvider, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy) => {
+export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvider, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy) => {
 
     class TokenProvidingSubscription implements Subscription {
 
@@ -108,8 +100,6 @@ let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvider, nex
                 }
             }
 
-            
-
             this.state = new TokenProvidingState(this.onTransition);
         }
 
@@ -121,8 +111,6 @@ let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvider, nex
             this.state.unsubscribe();
         }
     }
-
-
 
     return (onOpen, onError, onEvent, headers, subscriptionConstructor) => new  TokenProvidingSubscription(onOpen, onError, onEvent, headers, subscriptionConstructor);
 }
