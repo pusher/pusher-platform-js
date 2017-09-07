@@ -10,15 +10,15 @@ import { createRetryingStrategy } from './retrying-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 
 
-interface CancellablePromise<T> {
+export interface CancellablePromise<T> {
     then(onResult: (result: T) => void);
     catch(onError: (error: any) => void);
     cancel();
 }
 
-interface TokenPromise implements CancellablePromise<string> {}
+export interface TokenPromise implements CancellablePromise<string> {}
 
-interface TokenProvider {
+export interface TokenProvider {
     fetchToken(tokenParams?: any): TokenPromise;
     clearToken(token?: string);
 }
