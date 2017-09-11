@@ -1,5 +1,5 @@
 import { BaseSubscription } from './base-subscription';
-import { Headers } from './base-client';
+import { ElementsHeaders } from './network';
 
 export interface Subscription {
     unsubscribe();
@@ -15,12 +15,12 @@ export interface SubscriptionState {
 
 export interface SubscriptionEvent {
     eventId: string;
-    headers: Headers;
+    headers: ElementsHeaders;
     body: any;
 }
 
 export interface SubscriptionListeners {
-    onOpen?: (headers: Headers) => void;
+    onOpen?: (headers: ElementsHeaders) => void;
     onSubscribe?: () => void;
     onEvent?: (event: SubscriptionEvent) => void;
     onError?: (error: any) => void;
@@ -47,18 +47,18 @@ export let replaceMissingListenersWithNoOps: (listeners: SubscriptionListeners) 
 }
 
 export type SubscriptionConstructor = (
-    headers: Headers, 
-    onOpen: (headers:Headers) => void , 
+    headers: ElementsHeaders, 
+    onOpen: (headers:ElementsHeaders) => void , 
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
     onEnd: (error: any) => void
 ) => BaseSubscription;
 
 export type SubscribeStrategy = (
-    onOpen: (headers:Headers) => void, 
+    onOpen: (headers:ElementsHeaders) => void, 
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
     onEnd: (error: any) => void,
-    headers: Headers,
+    headers: ElementsHeaders,
     subscriptionConstructor: SubscriptionConstructor
 ) => Subscription;

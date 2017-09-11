@@ -79,7 +79,7 @@ export interface RequestOptions {
   path: string;
   tokenProvider?: TokenProvider;
   jwt?: string;
-  headers?: Headers;
+  headers?: ElementsHeaders;
   body?: any;
   retryStrategy?: RetryStrategy;
 }

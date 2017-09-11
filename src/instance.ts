@@ -1,10 +1,9 @@
 import { ElementsHeaders } from './network';
-import { Subscription } from './subscription';
+import { Subscription, SubscriptionListeners } from './subscription';
 import { RequestOptions, NetworkResponse } from './request';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
-import { SubscriptionListeners } from '../declarations/subscription';
 import { RetryStrategyOptions } from './retry-strategy';
 
 const HOST_BASE = "pusherplatform.io";
