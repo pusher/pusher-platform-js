@@ -1,11 +1,18 @@
-import { RetryResolution } from '../retry-strategy/exponential-backoff-retry-strategy';
-import { RetryStrategyResult, Retry } from '../retry-strategy/retry-strategy';
-import { RetryStrategyOptions } from '../../declarations/retry-strategy/rejig';
+import {
+    createRetryStrategyOptionsOrDefault,
+    Retry,
+    RetryResolution,
+    RetryStrategyOptions,
+    RetryStrategyResult,
+} from './retry-strategy';
+import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
+import { Logger } from '../logger';
 
-export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
+export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
 
-(retryOptions, initialEventId, nextSubscribeStrategy) => {
+(retryOptions, initialEventId, nextSubscribeStrategy, logger) => {
 
+    
     retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
     let retryResolution = new RetryResolution(retryOptions);
 
@@ -15,6 +22,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
         onTransition(newState: SubscriptionState){
             this.state = newState;
+            // logger.info("Transitioning to ")
         }
         
         unsubscribe(){
@@ -28,15 +36,16 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             headers, 
             subscriptionConstructor
         ){
-            //All of the classes here are created as inner classes so we don't have to redefine the listeners every single time - is that a good idea?
             class OpeningSubscriptionState implements SubscriptionState {
                 private underlyingSubscription: Subscription;
 
                 constructor(private onTransition: (newState) => void){
                     let lastEventId = initialEventId;
+                    logger.info(`ResumingSubscription: transitioning to OpeningSubscriptionState`)
 
                     if(lastEventId){
-                        headers["Last-Event-Id"] = initialEventId;
+                        headers["Last-Event-Id"] = lastEventId;
+                        logger.info(`ResumingSubscription: initialEventId is ${lastEventId}`)                        
                     }
                     
                     this.underlyingSubscription = nextSubscribeStrategy(
@@ -61,7 +70,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             }
 
             class OpenSubscriptionState implements SubscriptionState {
-                constructor(private subscription: Subscription, private onTransition: (state: SubscriptionState) => void){}
+                constructor(private subscription: Subscription, private onTransition: (state: SubscriptionState) => void){
+                    logger.info(`ResumingSubscription: transitioning to OpenSubscriptionState`)
+                }
 
                 unsubscribe() {
                     this.subscription.unsubscribe();
@@ -75,9 +86,10 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
                 constructor(error: any, lastEventId: string, private onTransition: (newState: SubscriptionState) => 
                 void){
-
-                    let executeSubscriptionOnce = (lastEventId: string) => {
-                        let resolveError: (error: any) => RetryStrategyResult =(error) => {
+                    logger.info(`ResumingSubscription: transitioning to ResumingSubscriptionState`)
+                    
+                    let executeSubscriptionOnce = (error: any, lastEventId: string) => {
+                        let resolveError: (error: any) => RetryStrategyResult = (error) => {
                             return retryResolution.attemptRetry(error);
                         }
     
@@ -91,7 +103,10 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     }
                 
                     let executeNextSubscribeStrategy = (lastEventId: string) => {
+
+                        logger.info(`ResumingSubscription: trying to re-establish the subscription`);                      
                         if(lastEventId){
+                            logger.info(`ResumingSubscription: lastEventId: ${lastEventId}`);
                             headers["Last-Event-Id"] = lastEventId;
                         }
 
@@ -100,7 +115,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                 onTransition(new OpenSubscriptionState(underlyingSubscription, onTransition));
                             },
                             error => {
-                                executeSubscriptionOnce(lastEventId);
+                                executeSubscriptionOnce(error, lastEventId);
                             },
                             event => {
                                 lastEventId = event.eventId;
@@ -110,6 +125,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                             subscriptionConstructor
                         )
                     }
+                    executeSubscriptionOnce(error, lastEventId);
                 }
 
                 unsubscribe() {
@@ -119,6 +135,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             }
 
             class EndedSubscriptionState implements SubscriptionState{
+                constructor(){
+                    logger.info(`ResumingSubscription: transitioning to EndedSubscriptionState`);
+                }
                 unsubscribe() {
                     throw new Error("Subscription has already ended");
                   }
@@ -126,6 +145,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
             class FailedSubscriptionState implements SubscriptionState {
                 constructor(error: any){
+                    logger.info(`ResumingSubscription: transitioning to FailedSubscriptionState`, error);                                  
                     onError(error);
                 }
                 unsubscribe() {

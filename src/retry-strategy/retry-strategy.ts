@@ -1,35 +1,37 @@
-import { NetworkRequest } from '../request';
-import { Logger, EmptyLogger } from '../logger';
-import { ErrorResponse, NetworkError, Headers } from '../base-client';
-import { BaseSubscription } from '../subscription/base-subscription';
-import { TokenProvider } from '../token-provider';
+//TODO: delete, replace with the other fucker
 
-export interface RetryStrategy {
-    executeSubscription(
-        subscriptionRequest: (headers: Headers) => Promise<BaseSubscription>, 
-        subscriptionCallback: (subscription: BaseSubscription) => void, 
-        errorCallback: (error: any) => void,
-        error?: any
-    );
-    executeRequest<T>(
-        request: NetworkRequest<T>
-    ): Promise<T>;
+// import { NetworkRequest } from '../request';
+// import { Logger, EmptyLogger } from '../logger';
+// import { ErrorResponse, NetworkError, Headers } from '../base-client';
+// import { BaseSubscription } from '../subscription/base-subscription';
+// import { TokenProvider } from '../token-provider';
 
-    stopRetrying(): void;
-}
+// export interface RetryStrategy {
+//     executeSubscription(
+//         subscriptionRequest: (headers: Headers) => Promise<BaseSubscription>, 
+//         subscriptionCallback: (subscription: BaseSubscription) => void, 
+//         errorCallback: (error: any) => void,
+//         error?: any
+//     );
+//     executeRequest<T>(
+//         request: NetworkRequest<T>
+//     ): Promise<T>;
 
-export interface RetryStrategyResult {}
+//     stopRetrying(): void;
+// }
 
-export class Retry implements RetryStrategyResult {
-    waitTimeMillis: number;
-    constructor(waitTimeMillis: number){
-        this.waitTimeMillis = waitTimeMillis;
-    }
-}
+// export interface RetryStrategyResult {}
 
-export class DoNotRetry implements RetryStrategyResult {
-    error: Error;
-    constructor(error: Error){
-        this.error = error;
-    }
-}
+// export class Retry implements RetryStrategyResult {
+//     waitTimeMillis: number;
+//     constructor(waitTimeMillis: number){
+//         this.waitTimeMillis = waitTimeMillis;
+//     }
+// }
+
+// export class DoNotRetry implements RetryStrategyResult {
+//     error: Error;
+//     constructor(error: Error){
+//         this.error = error;
+//     }
+// }

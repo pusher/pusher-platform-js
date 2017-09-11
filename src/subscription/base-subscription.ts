@@ -1,5 +1,4 @@
 import { TokenProvider } from '../token-provider';
-import { RetryStrategy } from '../retry-strategy/retry-strategy';
 import { Logger } from '../logger';
 import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "../base-client";
 import { SubscriptionEvent } from '../rejig/subscription';

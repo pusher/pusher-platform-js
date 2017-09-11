@@ -1,47 +1,49 @@
-import { Logger } from '../logger';
-import { NetworkRequest } from '../request';
-import { BaseSubscription } from '../subscription/base-subscription';
-import { RetryStrategy } from './retry-strategy';
+//TODO: replace
 
-/**
- * This serves as a no-op implementation of RetryStrategy that just relays whatever it has to the underlying requests. 
- * Used with ExponentialBackoffRetryStrategy when we don't have a TokenProvider
- */
-export class UnauthenticatedRetryStrategy implements RetryStrategy {
-    constructor(
-        private logger: Logger
-    ){}
+// import { Logger } from '../logger';
+// import { NetworkRequest } from '../request';
+// import { BaseSubscription } from '../subscription/base-subscription';
+// import { RetryStrategy } from './retry-strategy';
 
-    private subscription: BaseSubscription;
+// /**
+//  * This serves as a no-op implementation of RetryStrategy that just relays whatever it has to the underlying requests. 
+//  * Used with ExponentialBackoffRetryStrategy when we don't have a TokenProvider
+//  */
+// export class UnauthenticatedRetryStrategy implements RetryStrategy {
+//     constructor(
+//         private logger: Logger
+//     ){}
 
-    executeSubscription(
-        xhrSource: (headers: Headers) => BaseSubscription, 
-        subscriptionCallback: (subscription: BaseSubscription) => void, 
-        errorCallback: (error: any) => void
-    ){
-        let xhr = xhrSource();
-        if(lastEventId){
-            xhr.setRequestHeader("Last-Event-Id", lastEventId);                
-        }
-        this.subscription = new BaseSubscription(
-            xhr, 
-            this.logger, 
-            (headers) => {
-                subscriptionCallback(this.subscription);
-            }, 
-            (error) => {
-                errorCallback(error);
-            } 
-        );
-    }   
+//     private subscription: BaseSubscription;
 
-    executeRequest<T>(request: NetworkRequest<T>){
-        return request();
-    }
+//     executeSubscription(
+//         xhrSource: (headers: Headers) => BaseSubscription, 
+//         subscriptionCallback: (subscription: BaseSubscription) => void, 
+//         errorCallback: (error: any) => void
+//     ){
+//         let xhr = xhrSource();
+//         if(lastEventId){
+//             xhr.setRequestHeader("Last-Event-Id", lastEventId);                
+//         }
+//         this.subscription = new BaseSubscription(
+//             xhr, 
+//             this.logger, 
+//             (headers) => {
+//                 subscriptionCallback(this.subscription);
+//             }, 
+//             (error) => {
+//                 errorCallback(error);
+//             } 
+//         );
+//     }   
 
-    stopRetrying(){
-        if(this.subscription){
-            this.subscription.unsubscribe();
-        }
-    }
-}
+//     executeRequest<T>(request: NetworkRequest<T>){
+//         return request();
+//     }
+
+//     stopRetrying(){
+//         if(this.subscription){
+//             this.subscription.unsubscribe();
+//         }
+//     }
+// }
