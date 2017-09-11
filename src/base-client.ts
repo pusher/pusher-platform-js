@@ -72,6 +72,7 @@ export class BaseClient {
             onEvent,
             onEnd
         );
+
         let subscriptionStrategy = createResumingStrategy(
             retryStrategyOptions,
             initialEventId,

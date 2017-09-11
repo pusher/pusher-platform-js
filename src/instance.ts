@@ -78,7 +78,7 @@ export default class Instance {
         
         const headers: ElementsHeaders = options.headers || {};
         const retryStrategyOptions = options.retryStrategyOptions || {};
-        const tokenProvider = options.tokenProvider || null; //TODO: no token provider?
+        const tokenProvider = options.tokenProvider;
     
         return this.client.subscribeNonResuming(
             this.absPath(options.path), 
@@ -93,7 +93,7 @@ export default class Instance {
 
         const headers: ElementsHeaders = options.headers || {};
         const retryStrategyOptions = options.retryStrategyOptions || {};
-        const tokenProvider = options.tokenProvider || null; //TODO: no token provider?
+        const tokenProvider = options.tokenProvider;
     
         return this.client.subscribeResuming(
             this.absPath(options.path), 

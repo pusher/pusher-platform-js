@@ -131,5 +131,13 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
         }
     }
 
-    return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => new  TokenProvidingSubscription(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
+    //Token provider might not be there. If missing, go straight to the underlying subscribe strategy
+    if(tokenProvider){
+        return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => new TokenProvidingSubscription(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
+    }
+
+    else{
+        return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => 
+            nextSubscribeStrategy(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
+    }
 }
