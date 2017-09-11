@@ -1,5 +1,11 @@
-import { ErrorResponse } from './base-client';
-import { SubscribeStrategy, Subscription, SubscriptionState, SubscriptionConstructor } from './subscription';
+import { ErrorResponse, ElementsHeaders } from './network';
+import {
+    SubscribeStrategy,
+    Subscription,
+    SubscriptionConstructor,
+    SubscriptionEvent,
+    SubscriptionState,
+} from './subscription';
 import { Logger } from './logger';
 import { TokenProvider, TokenPromise } from './token-provider';
 
@@ -11,9 +17,10 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
         private state: SubscriptionState;
 
         constructor(
-            onOpen,
-            onError,
-            onEvent,
+            onOpen: (headers: ElementsHeaders) => void, 
+            onError: (error: any) => void, 
+            onEvent: (event: SubscriptionEvent) => void, 
+            onEnd: (error: any) => void,
             headers,
             subscriptionConstructor: SubscriptionConstructor
         ){
@@ -56,6 +63,9 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                                         }
                                     },
                                     onEvent,
+                                    error => {
+                                        onTransition(new EndedSubscriptionState(error));
+                                    },
                                     headers,
                                     subscriptionConstructor
                                 )
@@ -100,8 +110,9 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             }
 
             class EndedSubscriptionState implements SubscriptionState {
-                constructor(){
+                constructor(error?: any){
                     logger.info(`TokenProvidingSubscription: transitioning to EndedSubscriptionState`);
+                    onEnd(error);
                 }
                 unsubscribe(){
                     throw new Error("Subscription has already ended");
@@ -120,5 +131,5 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
         }
     }
 
-    return (onOpen, onError, onEvent, headers, subscriptionConstructor) => new  TokenProvidingSubscription(onOpen, onError, onEvent, headers, subscriptionConstructor);
+    return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => new  TokenProvidingSubscription(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
 }

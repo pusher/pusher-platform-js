@@ -1,6 +1,7 @@
+// import {BaseSubscriptionState} from './subscription/base-subscription';
 import { TokenProvider } from './token-provider';
 import { Logger } from './logger';
-import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
+import { XhrReadyState, ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError } from './network';
 import { SubscriptionEvent } from './subscription';
 
 export enum BaseSubscriptionState {
@@ -11,7 +12,7 @@ export enum BaseSubscriptionState {
     ENDED         // called onEnd() or onError(err)
 }
 
-export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSubscription>;
+export type BaseSubscriptionConstruction = (headers: ElementsHeaders) => Promise<BaseSubscription>;
         
     export class BaseSubscription {
         
@@ -20,7 +21,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         constructor(
             private xhr: XMLHttpRequest,
             private logger: Logger,
-            private onOpen: (headers: Headers) => void = headers => {},
+            private onOpen: (headers: ElementsHeaders) => void = headers => {},
             private onError: (error: any) => void = error => {}, 
             private onEvent: (event: SubscriptionEvent) => void = event => {},
             private onEnd: (error?: any) => void = error => {}
@@ -52,8 +53,8 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
             this.onEnd();
         }
 
-        public getHeaders(): Headers {
-            return responseHeadersObj(this.xhr.getAllResponseHeaders());
+        public getHeaders(): ElementsHeaders {
+            return responseToHeadersObject(this.xhr.getAllResponseHeaders());
         }
         
         private onLoading(): void {
@@ -63,7 +64,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                 //Check if we just transitioned to the open state
                 if(this.state === BaseSubscriptionState.OPENING) {
                     this.state = BaseSubscriptionState.OPEN;
-                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseToHeadersObject(this.xhr.getAllResponseHeaders()));
                 }
                 
                 this.assertStateIsIn(BaseSubscriptionState.OPEN);
@@ -72,7 +73,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                 
                 if (err) {
                     this.state = BaseSubscriptionState.ENDED;
-                    if((err as ErrorResponse).statusCode != 204){
+                    if(err instanceof ErrorResponse && err.statusCode != 204){
                         this.onError(err);
                     }
                     // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
@@ -89,7 +90,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
             if (this.xhr.status === 200) {
                 if (this.state === BaseSubscriptionState.OPENING) {
                     this.state = BaseSubscriptionState.OPEN;
-                    this.onOpen(responseHeadersObj(this.xhr.getAllResponseHeaders()));
+                    this.onOpen(responseToHeadersObject(this.xhr.getAllResponseHeaders()));
                 }
                 this.assertStateIsIn( BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING );
                 let err = this.onChunk();
@@ -198,7 +199,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
         * @param eosMessage final message of the subscription
         */
         
-        private onEOSMessage(eosMessage: any[]): Error {
+        private onEOSMessage(eosMessage: any[]): any {
             this.assertStateIsIn(BaseSubscriptionState.OPEN);
             
             if (eosMessage.length !== 4) {
@@ -209,7 +210,7 @@ export type BaseSubscriptionConstruction = (headers: Headers) => Promise<BaseSub
                 return new Error("Invalid EOS Status Code");
             }
             if (typeof headers !== "object" || Array.isArray(headers)) {
-                return new Error("Invalid EOS Headers");
+                return new Error("Invalid EOS ElementsHeaders");
             }
             
             this.state = BaseSubscriptionState.ENDING;

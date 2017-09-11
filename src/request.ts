@@ -1,4 +1,4 @@
-import { ErrorResponse, NetworkError, Headers } from './base-client';
+import { ErrorResponse, NetworkError, ElementsHeaders } from './network';
 import { Logger } from './logger';
 import { CancellablePromise } from './cancelable-promise';
 
@@ -8,7 +8,7 @@ export interface RequestOptions {
     method: string;
     path: string;
     jwt?: string;
-    headers?: Headers;
+    headers?: ElementsHeaders;
     body?: any;
     logger?: Logger;
 }

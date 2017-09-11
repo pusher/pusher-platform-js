@@ -5,8 +5,15 @@ import {
     RetryStrategyOptions,
     RetryStrategyResult,
 } from './retry-strategy';
-import { SubscribeStrategy, Subscription, SubscriptionConstructor, SubscriptionState } from './subscription';
+import {
+    SubscribeStrategy,
+    Subscription,
+    SubscriptionConstructor,
+    SubscriptionEvent,
+    SubscriptionState,
+} from './subscription';
 import { Logger } from './logger';
+import { ElementsHeaders } from './network';
 
 export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
 
@@ -28,10 +35,11 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
         }
 
         constructor(
-            onOpen, 
-            onError, 
-            onEvent, 
-            headers, 
+            onOpen: (headers: ElementsHeaders) => void, 
+            onError: (error: any) => void, 
+            onEvent: (event: SubscriptionEvent) => void, 
+            onEnd: (error: any) => void,
+            headers: ElementsHeaders, 
             subscriptionConstructor: SubscriptionConstructor
         ){
             class OpeningSubscriptionState implements SubscriptionState {
@@ -56,6 +64,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                         },
                         event => {
                             let lastEventId = event.eventId;
+                        },
+                        error => {
+                            onTransition(new EndedSubscriptionState(error));
                         },
                         headers,
                         subscriptionConstructor
@@ -119,6 +130,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                 lastEventId = event.eventId;
                                 onEvent(event);
                             },
+                            error => {
+                                onTransition(new EndedSubscriptionState(error));
+                            },
                             headers,
                             subscriptionConstructor
                         )
@@ -133,12 +147,13 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             }
 
             class EndedSubscriptionState implements SubscriptionState{
-                constructor(){
+                constructor(error?: any){
                     logger.info(`ResumingSubscription: transitioning to EndedSubscriptionState`);
+                    onEnd(error);
                 }
                 unsubscribe() {
                     throw new Error("Subscription has already ended");
-                  }
+                }
             }
 
             class FailedSubscriptionState implements SubscriptionState {
@@ -157,7 +172,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 }   
 
     //All the magic in the world.
-    return (onOpen, onError, onEvent, headers, constructor) => 
-        new ResumingSubscription(onOpen, onError, onEvent, headers, constructor);
+    return (onOpen, onError, onEvent, onEnd, headers, constructor) => 
+        new ResumingSubscription(onOpen, onError, onEvent, onEnd, headers, constructor);
             
 };

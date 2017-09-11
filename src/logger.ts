@@ -1,4 +1,3 @@
-import { ErrorResponse } from './base-client';
 export enum LogLevel {
      VERBOSE = 1,
      DEBUG = 2,
