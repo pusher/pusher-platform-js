@@ -13,7 +13,7 @@ import {
     SubscriptionState,
 } from './subscription';
 import { Logger } from './logger';
-import { ElementsHeaders } from './network';
+import { ElementsHeaders, ErrorResponse } from './network';
 
 export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
 
@@ -99,6 +99,11 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     
                     let executeSubscriptionOnce = (error: any, lastEventId: string) => {
                         let resolveError: (error: any) => RetryStrategyResult = (error) => {
+                            
+                            if(error instanceof ErrorResponse){
+                                error.headers    ["Request-Method"] = "SUBSCRIBE";
+                            }
+
                             return retryResolution.attemptRetry(error);
                         }
     

@@ -54,6 +54,11 @@ export class DoNotRetry implements RetryStrategyResult {
     }
 }
 
+let requestMethodIsSafe: (method: string) => boolean = (method) => {
+    method = method.toUpperCase();
+    return method === 'GET' || method === 'HEAD' || method === 'OPTIONS' || method === 'SUBSCRIBE';
+}
+
 export class RetryResolution{
     private initialTimeoutMillis
     private maxTimeoutMillis
@@ -63,7 +68,7 @@ export class RetryResolution{
     private currentRetryCount = 0;
     private currentBackoffMillis: number;
 
-    constructor(private options: RetryStrategyOptions, private logger: Logger){
+    constructor(private options: RetryStrategyOptions, private logger: Logger, private retryUnsafeRequests?: boolean){
         this.initialTimeoutMillis = options.initialTimeoutMillis;
         this.maxTimeoutMillis = options.maxTimeoutMillis;
         this.limit = options.limit;
@@ -84,9 +89,9 @@ export class RetryResolution{
             return new Retry(parseInt(error.headers['Retry-After']) * 1000);
         } 
         
-        // if (error instanceof NetworkError || this.requestMethodIsSafe("SUBSCRIBE") || this.retryUnsafeRequests) { //TODO: request method safe is problematic
-        //     return this.shouldSafeRetry(error);
-        // }
+        if (error instanceof NetworkError ||(error instanceof ErrorResponse && requestMethodIsSafe(error.headers["Request-Method"]))  || this.retryUnsafeRequests) { 
+            return this.shouldSafeRetry(error);
+        }
         if(error instanceof NetworkError) return this.shouldSafeRetry(error);
         
         this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
@@ -99,14 +104,10 @@ export class RetryResolution{
             return new Retry(this.calulateMillisToRetry());
         }
         
-        if(error instanceof ErrorResponse) {
+        else if(error instanceof ErrorResponse) {
             if(error.statusCode >= 500 && error.statusCode < 600){
                 this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
                 return new Retry(this.calulateMillisToRetry());
-            }
-            if(error.statusCode === 401){
-                // this.logger.verbose(`${this.constructor.name}: Error 401 - probably expired token, retrying immediately`);
-                return new Retry(0) //Token expired - can retry immediately //TODO: this is wonky.
             }
         }
         this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
@@ -127,5 +128,4 @@ export class RetryResolution{
         return this.currentBackoffMillis;
         
     }
-    
 }
