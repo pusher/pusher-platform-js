@@ -29,12 +29,6 @@ export class H2TransportSubscription implements Subscription {
     }
 }
 
-
-
-
-
-
-
 class FakeClient {
 
     private xhrConstructor: (path: string) => (headers: Headers) => XMLHttpRequest = (path) => {

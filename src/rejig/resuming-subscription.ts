@@ -1,7 +1,6 @@
-import { createRetryStrategyOptionsOrDefault, Subscription, SubscriptionState, SubscribeStrategy, RetryStrategyOptions, SubscriptionStateTransition } from './rejig';
 import { RetryResolution } from '../retry-strategy/exponential-backoff-retry-strategy';
 import { RetryStrategyResult, Retry } from '../retry-strategy/retry-strategy';
-import { SubscriptionEvent } from '../subscription/base-subscription';
+import { RetryStrategyOptions } from '../../declarations/retry-strategy/rejig';
 
 export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = 
 
