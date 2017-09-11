@@ -31,7 +31,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
                 constructor(private onTransition: (SubscriptionState) => void){
 
-                    logger.info(`TokenProvidingSubscription: transitioning to TokenProvidingState`);
+                    logger.verbose(`TokenProvidingSubscription: transitioning to TokenProvidingState`);
 
                     let isTokenExpiredError: (error: any) => boolean = error => {
                         return (
@@ -47,7 +47,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                             .then( token => {
                                 if(token){
                                     headers['Authorization'] = `Bearer ${token}`;
-                                    logger.info(`TokenProvidingSubscription: token fetched: ${token}`);
+                                    logger.verbose(`TokenProvidingSubscription: token fetched: ${token}`);
                                 }
                                 this.underlyingSubscription = nextSubscribeStrategy(
                                     headers => {
@@ -88,7 +88,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
             class OpenSubscriptionState implements SubscriptionState {
                 constructor(private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
-                    logger.info(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
+                    logger.verbose(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
                 }
 
                 unsubscribe(){
@@ -100,7 +100,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             class FailedSubscriptionState implements SubscriptionState {
                 constructor(error: any){
                     
-                    logger.info(`TokenProvidingSubscription: transitioning to FailedSubscriptionState`, error);
+                    logger.verbose(`TokenProvidingSubscription: transitioning to FailedSubscriptionState`, error);
 
                     onError(error);
                 }
@@ -111,7 +111,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
             class EndedSubscriptionState implements SubscriptionState {
                 constructor(error?: any){
-                    logger.info(`TokenProvidingSubscription: transitioning to EndedSubscriptionState`);
+                    logger.verbose(`TokenProvidingSubscription: transitioning to EndedSubscriptionState`);
                     onEnd(error);
                 }
                 unsubscribe(){
