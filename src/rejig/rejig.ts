@@ -9,20 +9,6 @@ import { SubscriptionConstructor, Subscription } from './subscription';
 import { createRetryingStrategy } from './retrying-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 
-
-export interface CancellablePromise<T> {
-    then(onResult: (result: T) => void);
-    catch(onError: (error: any) => void);
-    cancel();
-}
-
-export interface TokenPromise implements CancellablePromise<string> {}
-
-export interface TokenProvider {
-    fetchToken(tokenParams?: any): TokenPromise;
-    clearToken(token?: string);
-}
-
 export class H2TransportSubscription implements Subscription {
     unsubscribe(){
         throw new Error("Not implemented");

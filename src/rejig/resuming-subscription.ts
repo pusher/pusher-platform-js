@@ -12,9 +12,8 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
 (retryOptions, initialEventId, nextSubscribeStrategy, logger) => {
 
-    
     retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
-    let retryResolution = new RetryResolution(retryOptions);
+    let retryResolution = new RetryResolution(retryOptions, logger);
 
     class ResumingSubscription implements Subscription{
 
@@ -22,7 +21,6 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
         onTransition(newState: SubscriptionState){
             this.state = newState;
-            // logger.info("Transitioning to ")
         }
         
         unsubscribe(){

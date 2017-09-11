@@ -1,10 +1,10 @@
 import { ErrorResponse, NetworkError } from '../base-client';
 
 export interface RetryStrategyOptions {
-    initialTimeoutMillis:  number,
-    maxTimeoutMillis: number,
-    limit: number,
-    increaseTimeout: (currentTimeout: number) => number;
+    initialTimeoutMillis?:  number,
+    maxTimeoutMillis?: number,
+    limit?: number,
+    increaseTimeout?: (currentTimeout: number) => number;
 }
 
 export let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) => RetryStrategyOptions = (options: RetryStrategyOptions) => {
@@ -62,7 +62,7 @@ export class RetryResolution{
     private currentRetryCount = 0;
     private currentBackoffMillis: number;
 
-    constructor(private options: RetryStrategyOptions){
+    constructor(private options: RetryStrategyOptions, private logger: Logger){
         this.initialTimeoutMillis = options.initialTimeoutMillis;
         this.maxTimeoutMillis = options.maxTimeoutMillis;
         this.limit = options.limit;
@@ -71,15 +71,15 @@ export class RetryResolution{
     }
 
     public attemptRetry(error: any): RetryStrategyResult {
-        // this.logger.verbose(`${this.constructor.name}:  Error received`, error);
+        this.logger.verbose(`${this.constructor.name}:  Error received`, error);
         
         if(this.currentRetryCount >= this.limit && this.limit >= 0 ){
-            // this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
+            this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
         }
         
         if (error instanceof ErrorResponse && error.headers['Retry-After']){
-            // this.logger.verbose(`${this.constructor.name}:  Retry-After header is present, retrying in ${error.headers['Retry-After']}`);
+            this.logger.verbose(`${this.constructor.name}:  Retry-After header is present, retrying in ${error.headers['Retry-After']}`);
             return new Retry(parseInt(error.headers['Retry-After']) * 1000);
         } 
         
@@ -88,27 +88,27 @@ export class RetryResolution{
         // }
         if(error instanceof NetworkError) return this.shouldSafeRetry(error);
         
-        // this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
         return new DoNotRetry(error);
     }
     
     private shouldSafeRetry(error: Error){
         if(error instanceof NetworkError){
-            // this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
+            this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
             return new Retry(this.calulateMillisToRetry());
         }
         
         if(error instanceof ErrorResponse) {
             if(error.statusCode >= 500 && error.statusCode < 600){
-                // this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
+                this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
                 return new Retry(this.calulateMillisToRetry());
             }
             if(error.statusCode === 401){
                 // this.logger.verbose(`${this.constructor.name}: Error 401 - probably expired token, retrying immediately`);
-                return new Retry(0) //Token expired - can retry immediately
+                return new Retry(0) //Token expired - can retry immediately //TODO: this is wonky.
             }
         }
-        // this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
         return new DoNotRetry(error);
     }
         
@@ -122,7 +122,7 @@ export class RetryResolution{
             this.currentBackoffMillis = this.currentBackoffMillis * 2;
         }
         
-        // this.logger.verbose(`Retrying in ${this.currentBackoffMillis}ms`);
+        this.logger.verbose(`${this.constructor.name}: Retrying in ${this.currentBackoffMillis}ms`);
         return this.currentBackoffMillis;
         
     }

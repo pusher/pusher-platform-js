@@ -1,51 +1,16 @@
-import { TokenProvider } from '../../declarations/token-provider';
 import { ErrorResponse } from '../base-client';
 import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
+import { CancellablePromise } from './cancelable-promise';
+import { Logger } from '../logger';
 
-export interface AsynchronousTokenProvider {
-    fetchToken(resolve: (token: string) => void, reject: (error: any) => void, tokenParams?: any): NetworkRequest //Maybe make return a TokenRequest that we can cancel??? Encapsulated promises? 
-    clearToken(token?: string);
-    // cancelFetch(): void; //Go to the token request object
-    // fetchToken2(tokenParams: any): NetworkRequest;
-}
+export interface TokenPromise extends CancellablePromise<string> {}
 
 export interface TokenProvider {
-    fetchToken(resolve: (token: string) => void, reject: (error: any) => void, tokenParams?: any): NetworkRequest
+    fetchToken(tokenParams?: any): TokenPromise;
     clearToken(token?: string);
 }
 
-export interface NetworkRequest{
-    cancel();
-}
-
-let fetchToken: (resolve: (token: string) => void, reject: (error: any) => void, tokenParams?) => NetworkRequest = (resolve, reject, tokenParams) => {
-
-    let xhr: XMLHttpRequest;
-    //Add params to the XHR
-    this.xhr.open;
-    this.xhr.onreadystatechange = event => {
-
-    if(this.xhr.readyState === 4){
-        if (this.xhr.status === 200){
-            resolve(this.xhr.response as string);
-        }
-        else{
-            reject(new ErrorResponse(this.xhr.status, null, this.xhr.responseText));
-        }
-    }
-    };
-    this.xhr.send()
-    
-    let request = {
-        cancel(){
-            xhr.abort();
-        }
-    };
-
-    return request;
-}
-
-export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvider, nextSubscribeStrategy: SubscribeStrategy) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy) => {
+export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy, logger) => {
 
     class TokenProvidingSubscription implements Subscription {
 
@@ -61,8 +26,11 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
             class TokenProvidingState implements SubscriptionState {
 
                 private underlyingSubscription: Subscription;
+                private tokenPromise: TokenPromise;
 
                 constructor(private onTransition: (SubscriptionState) => void){
+
+                    logger.info(`TokenProvidingSubscription: transitioning to TokenProvidingState`);
 
                     let isTokenExpiredError: (error: any) => boolean = error => {
                         return (
@@ -73,10 +41,12 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
                     }
 
                     let fetchTokenAndExecuteSubscription = () => {
-                        tokenProvider.fetchToken(
-                            token => {
+
+                        this.tokenPromise = tokenProvider.fetchToken()
+                            .then( token => {
                                 if(token){
                                     headers['Authorization'] = `Bearer ${token}`;
+                                    logger.info(`TokenProvidingSubscription: token fetched: ${token}`);
                                 }
                                 this.underlyingSubscription = nextSubscribeStrategy(
                                     headers => {
@@ -84,7 +54,7 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
                                     },
                                     error => {
                                         if(isTokenExpiredError(error)){
-                                            tokenProvider.clearToken();
+                                            tokenProvider.clearToken(token);
                                             fetchTokenAndExecuteSubscription();
                                         }
                                         else{
@@ -95,18 +65,18 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
                                     headers,
                                     subscriptionConstructor
                                 )
-                                
-                            },
-                            error => {
-                                onTransition(new FailedSubscriptionState(error));
-                            }
-                        );
+                            })
+                            .catch( error => {
+                                error => {
+                                    onTransition(new FailedSubscriptionState(error));
+                                }
+                            });
                     }
                     fetchTokenAndExecuteSubscription();
                 }
                 
                 unsubscribe(){
-                    tokenProvider.cancelFetch();
+                    if(this.tokenPromise) this.tokenPromise.cancel();
                     this.underlyingSubscription.unsubscribe();
                     this.onTransition(new EndedSubscriptionState());
                 }
@@ -114,7 +84,7 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
 
             class OpenSubscriptionState implements SubscriptionState {
                 constructor(private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
-
+                    logger.info(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
                 }
 
                 unsubscribe(){
@@ -125,6 +95,9 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
 
             class FailedSubscriptionState implements SubscriptionState {
                 constructor(error: any){
+                    
+                    logger.info(`TokenProvidingSubscription: transitioning to FailedSubscriptionState`, error);
+
                     onError(error);
                 }
                 unsubscribe(){
@@ -133,6 +106,9 @@ export let createTokenProvidingStrategy: (tokenProvider: AsynchronousTokenProvid
             }
 
             class EndedSubscriptionState implements SubscriptionState {
+                constructor(){
+                    logger.info(`TokenProvidingSubscription: transitioning to EndedSubscriptionState`);
+                }
                 unsubscribe(){
                     throw new Error("Subscription has already ended");
                 }
