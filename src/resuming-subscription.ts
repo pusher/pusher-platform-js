@@ -6,7 +6,7 @@ import {
     RetryStrategyResult,
 } from './retry-strategy';
 import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
-import { Logger } from '../logger';
+import { Logger } from './logger';
 
 export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
 

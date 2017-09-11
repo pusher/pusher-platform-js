@@ -1,7 +1,7 @@
-import { TokenProvider } from '../token-provider';
-import { Logger } from '../logger';
-import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "../base-client";
-import { SubscriptionEvent } from '../rejig/subscription';
+import { TokenProvider } from './token-provider';
+import { Logger } from './logger';
+import { XhrReadyState, NetworkError, ErrorResponse, Headers, responseHeadersObj } from "./base-client";
+import { SubscriptionEvent } from './subscription';
 
 export enum BaseSubscriptionState {
     UNOPENED = 0, // haven't called xhr.send()

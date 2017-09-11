@@ -1,6 +1,7 @@
 import { RequestOptions } from './request';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
+import { TokenProvider } from './token-provider';
 
 const HOST_BASE = "pusherplatform.io";
 

@@ -1,6 +1,6 @@
 import { ErrorResponse, NetworkError, Headers } from './base-client';
 import { Logger } from './logger';
-import { CancellablePromise } from './rejig/cancelable-promise';
+import { CancellablePromise } from './cancelable-promise';
 
 export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 

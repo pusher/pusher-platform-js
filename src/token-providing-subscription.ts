@@ -1,14 +1,7 @@
 import { ErrorResponse } from './base-client';
 import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
-import { CancellablePromise } from './cancelable-promise';
 import { Logger } from './logger';
-
-export interface TokenPromise extends CancellablePromise<string> {}
-
-export interface TokenProvider {
-    fetchToken(tokenParams?: any): TokenPromise;
-    clearToken(token?: string);
-}
+import { TokenProvider, TokenPromise } from './token-provider';
 
 export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy, logger) => {
 
