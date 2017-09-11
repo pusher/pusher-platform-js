@@ -1,9 +1,10 @@
 import { ErrorResponse } from './base-client';
-import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
+import { SubscribeStrategy, Subscription, SubscriptionState, SubscriptionConstructor } from './subscription';
 import { Logger } from './logger';
 import { TokenProvider, TokenPromise } from './token-provider';
 
-export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = (tokenProvider, nextSubscribeStrategy, logger) => {
+export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
+(tokenProvider, nextSubscribeStrategy, logger) => {
 
     class TokenProvidingSubscription implements Subscription {
 
@@ -14,7 +15,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             onError,
             onEvent,
             headers,
-            subscriptionConstructor
+            subscriptionConstructor: SubscriptionConstructor
         ){
             class TokenProvidingState implements SubscriptionState {
 

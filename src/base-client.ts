@@ -1,3 +1,12 @@
+import { createRetryingStrategy } from './retrying-subscription';
+import { createResumingStrategy } from './resuming-subscription';
+import { TokenProvider } from './token-provider';
+import { RetryStrategyOptions } from './retry-strategy';
+import { RequestOptions, NetworkResponse, executeNetworkRequest } from './request';
+import { Logger } from './logger';
+import { Subscription, SubscriptionListeners, replaceMissingListenersWithNoOps, SubscriptionConstructor, SubscribeStrategy } from './subscription';
+import { BaseSubscription } from './base-subscription';
+import { createTokenProvidingStrategy } from './token-providing-subscription';
 
 
 export interface BaseClientOptions {
@@ -80,108 +89,150 @@ export class ErrorResponse extends Error{
             let host = options.host.replace(/\/$/, '');
             this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
             this.XMLHttpRequest = options.XMLHttpRequest || (<any>window).XMLHttpRequest;
-
-            this.logger = options.logger || new ConsoleLogger();
+            this.logger = options.logger;
+            // this.logger = options.logger || new ConsoleLogger();
         }
 
-        request(options: RequestOptions): Promise<any> {
-            let createXhr = () => { return this.createXHR(this.baseURL, options); }
-            return executeRequest<any>(createXhr, options);
+        // request(options: RequestOptions): Promise<any> {
+        //     let createXhr = () => { return this.createXHR(this.baseURL, options); }
+        //     return executeRequest<any>(createXhr, options);
+        // }
+
+
+        //TODO: add retrying shit
+        request<T>(options: RequestOptions): NetworkResponse<T>{
+            return executeNetworkRequest<T>(
+                () => this.createXHR(this.baseURL, options),
+                options
+            );
         }
 
-        newNonResumableSubscription(subOptions: NonResumableSubscribeOptions): NonResumableSubscription {
+        private xhrConstructor: (path: string) => (headers: Headers) => XMLHttpRequest = (path) => {
             
-            let retryStrategy: RetryStrategy;            
-
-            if(subOptions.retryStrategy){
-                retryStrategy = subOptions.retryStrategy;
-            }
-            else{
-                let retryStrategyOptions: ExponentialBackoffRetryStrategyOptions = {
-                    logger: this.logger
-                };
-                if(subOptions.tokenProvider){
-                    retryStrategyOptions.tokenFetchingRetryStrategy = new TokenFetchingRetryStrategy(subOptions.tokenProvider, this.logger);
-                }
-                retryStrategy = new ExponentialBackoffRetryStrategy(retryStrategyOptions);
-            }
-
-            let headers: Headers = subOptions.headers;
-            let path = subOptions.path;
-            let listeners = subOptions.listeners;
-
-            let requestOptions: RequestOptions = {
-                method: "SUBSCRIBE",
-                path: path,
-                headers: headers
-            }
-
-            let resumableSubscription = new NonResumableSubscription(
-                createSubscriptionConstructor(
-                    retryStrategy, 
-                    headers, 
-                    () => this.createXHR(this.baseURL, requestOptions)),
-                subOptions,
-                listeners);
-
-            return resumableSubscription;
-        }
-
-        newResumableSubscription(subOptions: ResumableSubscribeOptions):          
-        ResumableSubscription {
-
-            let retryStrategy: RetryStrategy;   //TODO  
-            let path = subOptions.path;
-            let initialEventId: string = subOptions.initialEventId;
-            let headers: Headers = subOptions.headers;
-            let listeners = subOptions.listeners;
-            
-            let subCreator9000: (headers: Headers) => Promise<BaseSubscription> = (headers: Headers) => {
-                let requestOptions: RequestOptions = {
+            return (headers) => {
+                const requestOptions: RequestOptions = {
                     method: "SUBSCRIBE",
                     path: path,
+                    headers: headers
                 }
-                let xhrGenerator3000 = () => this.createXHR(this.baseURL, requestOptions); 
-                
-                return new Promise<BaseSubscription>( (resolve, reject) => {
-                    let xhr = xhrGenerator3000();
-                    for (let key in headers) {
-                        xhr.setRequestHeader(key, headers[key]);
-                    }
-                    let sub = new BaseSubscription(
-                        xhr, 
-                        this.logger, 
-                        headers => resolve(sub),
-                        error => reject(error)
-                    );
-                });
+        
+                return this.createXHR(this.baseURL, requestOptions);
             }
+        }
 
-            
+        private createH2TransportStrategy: () => SubscribeStrategy = () => {
+            let strategy: SubscribeStrategy = (onOpen, onError, onEvent, onEnd, headers, baseSubscriptionConstructor) => {
+                return baseSubscriptionConstructor(headers, onOpen, onError, onEvent, onEnd);
+            }
+            return strategy;
+        };
 
+        subscribeResuming(
+            path: string, 
+            headers: Headers, 
+            listeners: SubscriptionListeners, 
+            retryStrategyOptions: RetryStrategyOptions, 
+            initialEventId: string,            
+            tokenProvider: TokenProvider,
 
+        ): Subscription {
 
+            let xhrFactory = this.xhrConstructor(path);
 
+            let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
 
+            let subscriptionConstructor: SubscriptionConstructor = (
+                headers, 
+                onOpen,
+                onError,
+                onEvent,
+                onEnd,
+            ) => new BaseSubscription(
+                xhrFactory(headers), 
+                this.logger, 
+                onOpen, 
+                onError, 
+                onEvent,
+                onEnd
+            );
 
-            let resumableSubscription = new ResumableSubscription(
-                subConstructor(subCreator9000, retryStrategy),
+            let subscriptionStrategy = createResumingStrategy(
+                retryStrategyOptions,
                 initialEventId,
-                listeners);
-                
+                createTokenProvidingStrategy(
+                    tokenProvider, 
+                    this.createH2TransportStrategy(), 
+                    this.logger),
+                this.logger
+            );
 
-            // let resumableSubscription = new ResumableSubscription(
-            //     subCreator9000,
+            let opened = false;
+            
+            return subscriptionStrategy(
+                headers => {
+                    if(!opened){
+                        opened = true;
+                        listenersOrNoOps.onOpen(headers);
+                    }
+                },
+                listenersOrNoOps.onError,
+                listenersOrNoOps.onEvent,
+                listenersOrNoOps.onEnd,
+                headers,
+                subscriptionConstructor
+            );
+        }
 
-            //     createSubscriptionConstructor(
-            //         retryStrategy, 
-            //         headers, 
-            //         () => this.createXHR(this.baseURL, requestOptions)),
-            //     subOptions,
-            //     subOptions.initialEventId,
-            //     listeners);
+        subscribeNonResuming(
+            path: string, 
+            headers: Headers, 
+            listeners: SubscriptionListeners, 
+            retryStrategyOptions: RetryStrategyOptions, 
+            tokenProvider: TokenProvider
+        ){
+            let xhrFactory = this.xhrConstructor(path);
+            
+            let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
+        
+            let subscriptionConstructor: SubscriptionConstructor = (
+                headers, 
+                onOpen,
+                onError,
+                onEvent,
+                onEnd,
+            ) => new BaseSubscription(
+                xhrFactory(headers), 
+                this.logger, 
+                onOpen, 
+                onError, 
+                onEvent,
+                onEnd
+            );
 
-            return resumableSubscription;
+            let subscriptionStrategy = createRetryingStrategy(
+                retryStrategyOptions,
+                createTokenProvidingStrategy(
+                    tokenProvider, 
+                    this.createH2TransportStrategy(), 
+                    this.logger),
+                this.logger
+            );
+
+            let opened = false;
+
+            return subscriptionStrategy(
+                headers => {
+                    if(!opened){
+                        opened = true;
+                        listenersOrNoOps.onOpen(headers);
+                    }
+                },
+                listenersOrNoOps.onError,
+                listenersOrNoOps.onEvent,
+                listenersOrNoOps.onEnd,
+                headers,
+                subscriptionConstructor
+            );
         }
 
         private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {

@@ -5,7 +5,7 @@ import {
     RetryStrategyOptions,
     RetryStrategyResult,
 } from './retry-strategy';
-import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
+import { SubscribeStrategy, Subscription, SubscriptionConstructor, SubscriptionState } from './subscription';
 import { Logger } from './logger';
 
 export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initialEventId: string, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
@@ -32,7 +32,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
             onError, 
             onEvent, 
             headers, 
-            subscriptionConstructor
+            subscriptionConstructor: SubscriptionConstructor
         ){
             class OpeningSubscriptionState implements SubscriptionState {
                 private underlyingSubscription: Subscription;
