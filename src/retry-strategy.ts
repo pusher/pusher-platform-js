@@ -1,4 +1,5 @@
-import { ErrorResponse, NetworkError } from './base-client';
+import { Logger } from './logger';
+import { NetworkError, ErrorResponse } from './network';
 
 export interface RetryStrategyOptions {
     initialTimeoutMillis?:  number,
@@ -92,7 +93,7 @@ export class RetryResolution{
         return new DoNotRetry(error);
     }
     
-    private shouldSafeRetry(error: Error){
+    private shouldSafeRetry(error: any){
         if(error instanceof NetworkError){
             this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
             return new Retry(this.calulateMillisToRetry());

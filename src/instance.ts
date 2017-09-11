@@ -1,7 +1,11 @@
-import { RequestOptions } from './request';
+import { ElementsHeaders } from './network';
+import { Subscription } from './subscription';
+import { RequestOptions, NetworkResponse } from './request';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
+import { SubscriptionListeners } from '../declarations/subscription';
+import { RetryStrategyOptions } from './retry-strategy';
 
 const HOST_BASE = "pusherplatform.io";
 
@@ -16,7 +20,20 @@ export interface InstanceOptions {
     encrypted?: boolean;
 }
 
+export interface SubscribeOptions {
+    path: string,
+    headers?: ElementsHeaders,
+    listeners: SubscriptionListeners,
+    retryStrategyOptions?: RetryStrategyOptions,
+    tokenProvider?: TokenProvider
+}
+
+export interface ResumableSubscribeOptions extends SubscribeOptions {
+    initialEventId?: string
+}
+
 type Response = any;
+
 
 export default class Instance {
     private client: BaseClient;
@@ -52,28 +69,41 @@ export default class Instance {
         });
     }
     
-    request(options: RequestOptions): Promise<any> {
-        options.path = this.absPath(options.path);
-        if(!options.logger) options.logger = this.logger;
 
-        return this.client.request(options);
-    }
-    
-    subscribe(options: NonResumableSubscribeOptions): NonResumableSubscription {
-        this.logger.verbose("Starting to subscribe to a non-resumable subscription");
+    request<T>(options: RequestOptions): NetworkResponse<T>{
         options.path = this.absPath(options.path);
-        options.logger = this.logger;
+        return this.client.request<T>(options);
+    }
 
-        return this.client.newNonResumableSubscription(options);;
-    }
+    subscribe(options: SubscribeOptions): Subscription { 
+        
+        const headers: ElementsHeaders = options.headers || {};
+        const retryStrategyOptions = options.retryStrategyOptions || {};
+        const tokenProvider = options.tokenProvider || null; //TODO: no token provider?
     
-    resumableSubscribe(options: ResumableSubscribeOptions): ResumableSubscription {
-        this.logger.verbose("Starting to subscribe to a resumable subscription");
-        
-        options.path = this.absPath(options.path);
-        options.logger = this.logger;
-        
-        return this.client.newResumableSubscription(options);
+        return this.client.subscribeNonResuming(
+            this.absPath(options.path), 
+            headers,
+            options.listeners,
+            retryStrategyOptions,
+            tokenProvider
+        );
+    }
+
+    subscribeResuming(options: ResumableSubscribeOptions): Subscription{
+
+        const headers: ElementsHeaders = options.headers || {};
+        const retryStrategyOptions = options.retryStrategyOptions || {};
+        const tokenProvider = options.tokenProvider || null; //TODO: no token provider?
+    
+        return this.client.subscribeResuming(
+            this.absPath(options.path), 
+            headers,
+            options.listeners,
+            retryStrategyOptions,
+            options.initialEventId,
+            tokenProvider
+        ); 
     }
     
     private absPath(relativePath: string): string {

@@ -1,22 +1,20 @@
+import { TokenProvider } from './token-provider';
+import { Subscription } from './subscription';
+import Instance from './instance';
+import { BaseClient } from './base-client';
+import { Logger, ConsoleLogger, EmptyLogger } from './logger';
 
 export {
   Instance,
   BaseClient,
-  ResumableSubscription, ResumableSubscribeOptions,
-  NonResumableSubscription, NonResumableSubscribeOptions,
+  Subscription,
 
-  RetryStrategy, ExponentialBackoffRetryStrategy,
   Logger, ConsoleLogger, EmptyLogger, 
-  TokenProvider, NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
+  TokenProvider
 };
 
 export default {
   Instance,
   BaseClient,
-  ResumableSubscription,
-  NonResumableSubscription,
-
-  ExponentialBackoffRetryStrategy, TokenFetchingRetryStrategy,
   ConsoleLogger, EmptyLogger,
-  NoOpTokenProvider, RetryingTokenProvider, FixedTokenProvider
 };
