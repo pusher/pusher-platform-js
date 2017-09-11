@@ -39,11 +39,11 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
                 constructor(private onTransition: (newState) => void){
                     let lastEventId = initialEventId;
-                    logger.info(`ResumingSubscription: transitioning to OpeningSubscriptionState`)
+                    logger.info(`ResumingSubscription: transitioning to OpeningSubscriptionState`);
 
                     if(lastEventId){
                         headers["Last-Event-Id"] = lastEventId;
-                        logger.info(`ResumingSubscription: initialEventId is ${lastEventId}`)                        
+                        logger.info(`ResumingSubscription: initialEventId is ${lastEventId}`);                
                     }
                     
                     this.underlyingSubscription = nextSubscribeStrategy(

@@ -9,11 +9,11 @@ import { SubscriptionConstructor, Subscription } from './subscription';
 import { createRetryingStrategy } from './retrying-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 
-export class H2TransportSubscription implements Subscription {
-    unsubscribe(){
-        throw new Error("Not implemented");
-    }
-}
+// export class H2TransportSubscription implements Subscription {
+//     unsubscribe(){
+//         throw new Error("Not implemented");
+//     }
+// }
 
 class FakeClient {
 
