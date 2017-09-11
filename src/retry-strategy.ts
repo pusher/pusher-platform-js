@@ -1,4 +1,4 @@
-import { ErrorResponse, NetworkError } from '../base-client';
+import { ErrorResponse, NetworkError } from './base-client';
 
 export interface RetryStrategyOptions {
     initialTimeoutMillis?:  number,

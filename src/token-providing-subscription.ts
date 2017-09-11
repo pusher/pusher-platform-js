@@ -1,7 +1,7 @@
-import { ErrorResponse } from '../base-client';
+import { ErrorResponse } from './base-client';
 import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
 import { CancellablePromise } from './cancelable-promise';
-import { Logger } from '../logger';
+import { Logger } from './logger';
 
 export interface TokenPromise extends CancellablePromise<string> {}
 

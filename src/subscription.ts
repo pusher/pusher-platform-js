@@ -1,4 +1,4 @@
-import { BaseSubscription } from '../subscription/base-subscription';
+import { BaseSubscription } from './base-subscription';
 export interface Subscription {
     unsubscribe();
 }

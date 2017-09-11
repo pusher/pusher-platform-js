@@ -1,6 +1,6 @@
 import { RetryStrategyOptions, createRetryStrategyOptionsOrDefault, RetryResolution, RetryStrategyResult, Retry } from './retry-strategy';
 import { SubscribeStrategy, Subscription, SubscriptionState } from './subscription';
-import { Logger } from '../logger';
+import { Logger } from './logger';
 
 export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = (retryOptions, nextSubscribeStrategy, logger) => {
     
