@@ -65,6 +65,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                         },
                         event => {
                             let lastEventId = event.eventId;
+                            onEvent(event);
                         },
                         error => {
                             onTransition(new EndedSubscriptionState(error));

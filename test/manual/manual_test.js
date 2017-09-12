@@ -8,11 +8,16 @@ let instance = new PusherPlatform.Instance({
 });
 
 let listeners = {
-    onOpen: (headers) => console.log("onOpen"),
+    onOpen: (headers) => {
+        console.log(headers);
+    },
     onSubscribe: () => console.log("onSubscribed"),
     onEvent: (event) => console.log(event),
     onError: (error) => console.log(error),
-    onEnd: (error) => console.log("onEnd"),
+    onEnd: (error) => {
+        console.log("onEnd");
+        console.log(error);
+    },
     onRetrying: () => console.log("onRetrying")
 };
 

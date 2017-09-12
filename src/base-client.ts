@@ -82,8 +82,8 @@ export class BaseClient {
                 this.logger),
             this.logger
         );
-        let opened = false;
         
+        let opened = false;
         return subscriptionStrategy(
             headers => {
                 if(!opened){
