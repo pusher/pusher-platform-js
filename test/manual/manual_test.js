@@ -9,10 +9,11 @@ let instance = new PusherPlatform.Instance({
 
 let listeners = {
     onOpen: (headers) => console.log("onOpen"),
-    onSubscribed: () => console.log("onSubscribed"),
+    onSubscribe: () => console.log("onSubscribed"),
     onEvent: (event) => console.log(event),
     onError: (error) => console.log(error),
     onEnd: (error) => console.log("onEnd"),
+    onRetrying: () => console.log("onRetrying")
 };
 
 let resumableSubscribeOptions = {

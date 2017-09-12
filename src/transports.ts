@@ -1,8 +1,9 @@
 import { SubscribeStrategy } from './subscription';
 
 export let createH2TransportStrategy: () => SubscribeStrategy = () => {
-    let strategy: SubscribeStrategy = (onOpen, onError, onEvent, onEnd, headers, baseSubscriptionConstructor) => {
-        return baseSubscriptionConstructor(headers, onOpen, onError, onEvent, onEnd);
+
+    let strategy: SubscribeStrategy = (onOpen, onRetrying, onError, onEvent, onEnd, headers, baseSubscriptionConstructor) => {
+        return baseSubscriptionConstructor(onOpen, onError, onEvent, onEnd, headers);
     }
     return strategy;
 };

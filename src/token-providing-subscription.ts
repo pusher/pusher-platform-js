@@ -26,6 +26,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
         constructor(
             onOpen: (headers: ElementsHeaders) => void, 
+            onRetrying: () => void,
             onError: (error: any) => void, 
             onEvent: (event: SubscriptionEvent) => void, 
             onEnd: (error: any) => void,
@@ -61,6 +62,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                                     headers => {
                                         onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
                                     },
+                                    onRetrying,
                                     error => {
                                         if(isTokenExpiredError(error)){
                                             tokenProvider.clearToken(token);
@@ -133,11 +135,11 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
     //Token provider might not be there. If missing, go straight to the underlying subscribe strategy
     if(tokenProvider){
-        return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => new TokenProvidingSubscription(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
+        return (onOpen, onRetrying, onError, onEvent, onEnd, headers, subscriptionConstructor) => new TokenProvidingSubscription(onOpen, onRetrying, onError, onEvent, onEnd, headers, subscriptionConstructor);
     }
 
     else{
-        return (onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor) => 
-            nextSubscribeStrategy(onOpen, onError, onEvent, onEnd, headers, subscriptionConstructor);
+        return (onOpen, onRetrying, onError, onEvent, onEnd, headers, subscriptionConstructor) => 
+            nextSubscribeStrategy(onOpen, onRetrying, onError, onEvent, onEnd, headers, subscriptionConstructor);
     }
 }

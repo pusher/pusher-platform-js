@@ -115,17 +115,9 @@ export class RetryResolution{
     }
         
     private calulateMillisToRetry(): number {
-        
-        if(this.currentBackoffMillis >= this.maxTimeoutMillis || this.currentBackoffMillis * 2 >= this.maxTimeoutMillis) {
-            this.currentBackoffMillis = this.maxTimeoutMillis;
-        }
-        
-        else if(this.currentRetryCount > 0){
-            this.currentBackoffMillis = this.currentBackoffMillis * 2;
-        }
-        
+        this.currentBackoffMillis = this.increaseTimeoutFunction(this.currentBackoffMillis);
+
         this.logger.verbose(`${this.constructor.name}: Retrying in ${this.currentBackoffMillis}ms`);
         return this.currentBackoffMillis;
-        
     }
 }

@@ -22,6 +22,8 @@ export interface SubscriptionEvent {
 export interface SubscriptionListeners {
     onOpen?: (headers: ElementsHeaders) => void;
     onSubscribe?: () => void;
+    onRetrying?:() => void;
+    onResuming?:() => void;
     onEvent?: (event: SubscriptionEvent) => void;
     onError?: (error: any) => void;
     onEnd?: (error: any) => void;
@@ -36,10 +38,14 @@ export let replaceMissingListenersWithNoOps: (listeners: SubscriptionListeners) 
     let onEvent = listeners.onEvent || noop;
     let onError = listeners.onError || noop;
     let onEnd = listeners.onEnd || noop; 
+    let onRetrying = listeners.onRetrying || noop;
+    let onResuming = listeners.onResuming || noop;
 
     return {
         onOpen: onOpen,
         onSubscribe: onSubscribe,
+        onRetrying: onRetrying,
+        onResuming: onResuming,
         onEvent: onEvent,
         onError: onError,
         onEnd: onEnd
@@ -47,15 +53,16 @@ export let replaceMissingListenersWithNoOps: (listeners: SubscriptionListeners) 
 }
 
 export type SubscriptionConstructor = (
-    headers: ElementsHeaders, 
     onOpen: (headers:ElementsHeaders) => void , 
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
-    onEnd: (error: any) => void
+    onEnd: (error: any) => void,
+    headers: ElementsHeaders, 
 ) => BaseSubscription;
 
 export type SubscribeStrategy = (
     onOpen: (headers:ElementsHeaders) => void, 
+    onRetrying: () => void,    
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
     onEnd: (error: any) => void,

@@ -21,6 +21,7 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
         
         constructor(
             onOpen: (headers: ElementsHeaders) => void, 
+            onRetrying: () => void,
             onError: (error: any) => void, 
             onEvent: (event: SubscriptionEvent) => void, 
             onEnd: (error: any) => void,
@@ -36,9 +37,9 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                     
                     this.underlyingSubscription = nextSubscribeStrategy(
                         headers => {
-                            onOpen(headers);
-                            onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
+                            onTransition(new OpenSubscriptionState(headers, this.underlyingSubscription, onTransition));
                         },
+                        onRetrying,
                         error => {
                             onTransition(new RetryingSubscriptionState(error, onTransition));
                         },
@@ -66,6 +67,7 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
 
                     let executeSubscriptionOnce = (error: any) => {
                         
+                        onRetrying();
                         let resolveError: (error: any) => RetryStrategyResult = error => {
                             return retryResolution.attemptRetry(error);
                         };
@@ -84,8 +86,10 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                         logger.verbose(`RetryingSubscription: trying to re-establish the subscription`);
 
                         let underlyingSubscription = nextSubscribeStrategy(headers => {
-                            onTransition(new OpenSubscriptionState(underlyingSubscription, onTransition));
-                        }, error => {
+                            onTransition(new OpenSubscriptionState(headers, underlyingSubscription, onTransition));
+                        },
+                        onRetrying,
+                        error => {
                             executeSubscriptionOnce(error);
                         }, 
                         onEvent, 
@@ -95,7 +99,6 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                         headers, 
                         subscriptionConstructor);
                     };
-
                     executeSubscriptionOnce(error);
                 }
                 
@@ -106,7 +109,8 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
             }
             
             class OpenSubscriptionState implements SubscriptionState {
-                constructor(private underlyingSubscription: Subscription, private onTransition: (newState: SubscriptionState) => void){
+                constructor(headers: ElementsHeaders, private underlyingSubscription: Subscription, private onTransition: (newState: SubscriptionState) => void){
+                    onOpen(headers);
                     logger.verbose(`RetryingSubscription: transitioning to OpenSubscriptionState`);
                 }
                 unsubscribe() {
@@ -140,5 +144,5 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
     }
     
     
-    return (onOpen, onError, onEvent, onEnd, headers, constructor) => new RetryingSubscription(onOpen, onError, onEvent, onEnd, headers, constructor);
+    return (onOpen, onRetrying, onError, onEvent, onEnd, headers, constructor) => new RetryingSubscription(onOpen, onRetrying, onError, onEvent, onEnd, headers, constructor);
 }

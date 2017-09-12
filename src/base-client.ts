@@ -58,12 +58,12 @@ export class BaseClient {
     ): Subscription {
         let xhrFactory = this.xhrConstructor(path);
         let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
-        let subscriptionConstructor: SubscriptionConstructor = (
-            headers, 
+        let subscriptionConstructor: SubscriptionConstructor = ( 
             onOpen,
             onError,
             onEvent,
             onEnd,
+            headers
         ) => new BaseSubscription(
             xhrFactory(headers), 
             this.logger, 
@@ -90,7 +90,9 @@ export class BaseClient {
                     opened = true;
                     listenersOrNoOps.onOpen(headers);
                 }
+                listenersOrNoOps.onSubscribe();
             },
+            listenersOrNoOps.onRetrying,
             listenersOrNoOps.onError,
             listenersOrNoOps.onEvent,
             listenersOrNoOps.onEnd,
@@ -110,11 +112,11 @@ export class BaseClient {
         let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
     
         let subscriptionConstructor: SubscriptionConstructor = (
-            headers, 
             onOpen,
             onError,
             onEvent,
             onEnd,
+            headers,             
         ) => new BaseSubscription(
             xhrFactory(headers), 
             this.logger, 
@@ -139,6 +141,7 @@ export class BaseClient {
                     listenersOrNoOps.onOpen(headers);
                 }
             },
+            listenersOrNoOps.onRetrying,
             listenersOrNoOps.onError,
             listenersOrNoOps.onEvent,
             listenersOrNoOps.onEnd,
