@@ -40,15 +40,15 @@ export class BaseClient {
         }
     }
 
-    //TODO: add retrying shit
-    request<T>(options: RequestOptions): NetworkResponse<T>{
+    //TODO: add retrying
+    public request<T>(options: RequestOptions): NetworkResponse<T>{
         return executeNetworkRequest<T>(
             () => this.createXHR(this.baseURL, options),
             options
         );
     }
     
-    subscribeResuming(
+    public subscribeResuming(
         path: string, 
         headers: ElementsHeaders, 
         listeners: SubscriptionListeners, 
@@ -82,7 +82,7 @@ export class BaseClient {
                 this.logger),
             this.logger
         );
-        
+
         let opened = false;
         return subscriptionStrategy(
             headers => {
@@ -100,7 +100,7 @@ export class BaseClient {
             subscriptionConstructor
         );
     }
-    subscribeNonResuming(
+    public subscribeNonResuming(
         path: string, 
         headers: ElementsHeaders, 
         listeners: SubscriptionListeners, 
