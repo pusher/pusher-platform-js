@@ -105,7 +105,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                         onRetrying();                        
                         let resolveError: (error: any) => RetryStrategyResult = (error) => {
                             if(error instanceof ErrorResponse){
-                                error.headers    ["Request-Method"] = "SUBSCRIBE";
+                                error.headers["Request-Method"] = "SUBSCRIBE";
                             }
                             return retryResolution.attemptRetry(error);
                         }

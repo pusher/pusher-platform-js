@@ -5,11 +5,6 @@ const PATH_FORBIDDEN = "subscribe_forbidden";
 
 let logger = new PusherPlatform.ConsoleLogger(1);
 
-let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    limit: 0,
-    logger: logger
-})
-
 describe('Instance Subscribe errors nicely', () => {
 
     beforeAll(() => {
@@ -20,15 +15,18 @@ describe('Instance Subscribe errors nicely', () => {
             host: "localhost:10443",
             logger: logger
         });
+
+        neverRetryOptions = {
+            limit: 0,
+        }
     })
 
     it('handles 404', (done) => {
         instance.subscribe({
             path: PATH_NOT_EXISTING,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     fail("Expecting onError");
                 },
@@ -46,10 +44,9 @@ describe('Instance Subscribe errors nicely', () => {
     it('handles 403', (done) => {
         instance.subscribe({
             path: PATH_FORBIDDEN,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     fail("Expecting onError");
                 },
@@ -68,20 +65,12 @@ describe('Instance Subscribe errors nicely', () => {
     it('handles 500', (done) => {
         instance.subscribe({
             path: "subscribe_internal_server_error",
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {
-                    console.log("sub");
-                    
-                },
-                onOpen: () => {
-
-                    console.log("open");
-                    
-                },
+                onOpen: headers => {},
+                onRetrying: () => console.log('retrying'),
                 onEvent: (event) => {
                     console.log(event);
-                    
                     fail("Expecting onError");
                 },
                 onEnd: () => {

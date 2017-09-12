@@ -4,19 +4,21 @@ const PATH_10_AND_EOS = "subscribe10";
 const PATH_3_AND_OPEN = "subscribe_3_continuous";
 const PATH_0_EOS = "subscribe_0_eos";
 
-let noRetryStrategy = new PusherPlatform.ExponentialBackoffRetryStrategy({
-    limit: 1
-})
-
 describe('Instance Subscribe', () => {
     beforeEach(() => {
+        let logger = new PusherPlatform.ConsoleLogger(1);
 
         instance = new PusherPlatform.Instance({
             instanceId: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
-            host: "localhost:10443"
+            host: "localhost:10443",
+            logger: logger
         });
+
+        neverRetryOptions = {
+            limit: 0,
+        }
 
         eventCount = 0;
         endCount = 0;
@@ -29,10 +31,9 @@ describe('Instance Subscribe', () => {
     it('subscribes and terminates on EOS after receiving all events', (done) => {
         instance.subscribe({
             path: PATH_10_AND_EOS,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     eventCount += 1;
                 },
@@ -50,10 +51,9 @@ describe('Instance Subscribe', () => {
     it('subscribes, terminates on EOS, and triggers onEnd callback exactly once', (done) => {
         instance.subscribe({
             path: PATH_10_AND_EOS,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {},
                 onEnd: () => {
                     endCount += 1;
@@ -70,10 +70,9 @@ describe('Instance Subscribe', () => {
     it('subscribes to a subscription that is kept open', (done) => {        
         let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     eventCount += 1;                
                     if(eventCount > 3){
@@ -97,10 +96,9 @@ describe('Instance Subscribe', () => {
     it('subscribes and then unsubscribes - expecting onEnd', (done) => {
         let sub = instance.subscribe({
             path: PATH_3_AND_OPEN,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     eventCount += 1;                
                     if(eventCount > 3){
@@ -124,10 +122,9 @@ describe('Instance Subscribe', () => {
     it('subscribes and receives EOS immediately - expecting onEnd with no events', (done) => {
          let sub = instance.subscribe({
             path: PATH_0_EOS,
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     fail("No events should have been received");
                 },
@@ -146,10 +143,9 @@ describe('Instance Subscribe', () => {
     it('subsccribes and receives EOS with retry-after headers', (done) => {
         let sub = instance.subscribe({
             path: "subscribe_retry_after",
-            retryStrategy: noRetryStrategy,
+            retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onSubscribed: headers => {},
-                onOpen: () => {},
+                onOpen: headers => {},
                 onEvent: (event) => {
                     fail("No events should have been received");
                 },

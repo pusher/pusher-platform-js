@@ -1,7 +1,7 @@
 import { RetryStrategyOptions, createRetryStrategyOptionsOrDefault, RetryResolution, RetryStrategyResult, Retry } from './retry-strategy';
 import { SubscribeStrategy, Subscription, SubscriptionEvent, SubscriptionState } from './subscription';
 import { Logger } from './logger';
-import { ElementsHeaders } from './network';
+import { ElementsHeaders, ErrorResponse } from './network';
 
 export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = (retryOptions, nextSubscribeStrategy, logger) => {
     
@@ -69,6 +69,9 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                         
                         onRetrying();
                         let resolveError: (error: any) => RetryStrategyResult = error => {
+                            if(error instanceof ErrorResponse){
+                                error.headers["Request-Method"] = "SUBSCRIBE";
+                            }
                             return retryResolution.attemptRetry(error);
                         };
                         

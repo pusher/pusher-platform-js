@@ -12,8 +12,12 @@ export let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) 
 
     const initialTimeoutMillis = options.initialTimeoutMillis || 1000;
     const maxTimeoutMillis = options.maxTimeoutMillis || 5000;
-    const limit = options.limit || -1;
 
+    let limit = -1;
+    if(options.limit != undefined && options.limit != null){
+        limit = options.limit;
+    } 
+   
     let increaseTimeout: (currentTimeout: number) => number;
 
     if(options.increaseTimeout){
