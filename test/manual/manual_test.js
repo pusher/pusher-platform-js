@@ -20,22 +20,6 @@ let resumableSubscribeOptions = {
     listeners: listeners,
 }
 
-//TODO: pusher-platform.js:201 Uncaught TypeError: XMLHttpRequest is not a constructor
-    // at BaseClient.createXHR (pusher-platform.js:201)
-    // at pusher-platform.js:159
-
-// listeners: {
-//     onOpen: headers => {
-//         console.log("onSubscribed headers:");
-//         console.log(headers);
-//     },
-//     onConnected: () => console.log("onConnected"),
-//     onResuming: () => console.log("onResuming"),
-//     onEvent: event => console.log(event),
-//     onEnd: error => console.log("onEnd " + error),
-//     onError: error => console.log("onError " + error),
-// },
-
 let requestOptions = {  
     method: "GET",
     path: "feeds/my-feed/items",
@@ -76,11 +60,13 @@ let nonResumableSubscribeOptions = {
 // }
 
 let newResumableSubscription = instance.subscribeResuming(resumableSubscribeOptions);
+
+console.log(newResumableSubscription);
 // let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
 
 function tryUnsubscribe(){
     // newResumableSubscription.unsubscribe();
-    nonResumableSubscription.unsubscribe();    
+    newResumableSubscription.unsubscribe();    
 
 }
 

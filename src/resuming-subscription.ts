@@ -51,7 +51,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
                     if(lastEventId){
                         headers["Last-Event-Id"] = lastEventId;
-                        logger.verbose(`ResumingSubscription: initialEventId is ${lastEventId}`);                
+                        logger.verbose(`ResumingSubscription: initialEventId is ${lastEventId}`);      
                     }
                     
                     this.underlyingSubscription = nextSubscribeStrategy(
@@ -73,43 +73,42 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                     )
                 }
                 unsubscribe() {
+                    this.onTransition(new EndingSubscriptionState());                    
                     this.underlyingSubscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
                 }
             }
 
             class OpenSubscriptionState implements SubscriptionState {
-                constructor(private subscription: Subscription, private onTransition: (state: SubscriptionState) => void){
+                constructor(private underlyingSubscription: Subscription, private onTransition: (state: SubscriptionState) => void){
                     logger.verbose(`ResumingSubscription: transitioning to OpenSubscriptionState`)
                 }
 
                 unsubscribe() {
-                    this.subscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
+                    this.onTransition(new EndingSubscriptionState());                    
+                    this.underlyingSubscription.unsubscribe();
                 }
             }
 
             class ResumingSubscriptionState implements SubscriptionState {
 
                 private timeout: number;
-
+                private underlyingSubscription: Subscription;
+                
                 constructor(error: any, lastEventId: string, private onTransition: (newState: SubscriptionState) => 
                 void){
                     logger.verbose(`ResumingSubscription: transitioning to ResumingSubscriptionState`)
                     
                     let executeSubscriptionOnce = (error: any, lastEventId: string) => {
                         let resolveError: (error: any) => RetryStrategyResult = (error) => {
-                            
                             if(error instanceof ErrorResponse){
                                 error.headers    ["Request-Method"] = "SUBSCRIBE";
                             }
-
                             return retryResolution.attemptRetry(error);
                         }
     
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
-                            this.timeout = window.setTimeout(() => {executeNextSubscribeStrategy(lastEventId)}, errorResolution.waitTimeMillis);
+                            this.timeout = window.setTimeout(() => { executeNextSubscribeStrategy(lastEventId) }, errorResolution.waitTimeMillis);
                         }
                         else{
                             onTransition(new FailedSubscriptionState(error));
@@ -124,9 +123,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                             headers["Last-Event-Id"] = lastEventId;
                         }
 
-                        let underlyingSubscription = nextSubscribeStrategy(
+                        this.underlyingSubscription = nextSubscribeStrategy(
                             headers => {
-                                onTransition(new OpenSubscriptionState(underlyingSubscription, onTransition));
+                                onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
                             },
                             error => {
                                 executeSubscriptionOnce(error, lastEventId);
@@ -146,9 +145,19 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                 }
 
                 unsubscribe() {
+                    this.onTransition(new EndingSubscriptionState());
                     window.clearTimeout(this.timeout);
-                    this.onTransition(new EndedSubscriptionState());
+                    this.underlyingSubscription.unsubscribe(); 
                   }
+            }
+
+            class EndingSubscriptionState implements SubscriptionState {
+                constructor(error?: any){
+                    logger.verbose(`ResumingSubscription: transitioning to EndingSubscriptionState`);
+                }
+                unsubscribe() {
+                    throw new Error("Subscription is already ending");
+                }
             }
 
             class EndedSubscriptionState implements SubscriptionState{
