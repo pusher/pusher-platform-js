@@ -16,6 +16,14 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
         private state: SubscriptionState;
 
+        private onTransition = (newState: SubscriptionState) => {
+            this.state = newState;    
+        }
+        
+        public unsubscribe = () => {
+            this.state.unsubscribe();   
+        }
+
         constructor(
             onOpen: (headers: ElementsHeaders) => void, 
             onError: (error: any) => void, 
@@ -120,14 +128,6 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             }
 
             this.state = new TokenProvidingState(this.onTransition);
-        }
-
-        onTransition(newState: SubscriptionState){
-            this.state = newState;
-        }
-
-        public unsubscribe() {
-            this.state.unsubscribe();
         }
     }
 

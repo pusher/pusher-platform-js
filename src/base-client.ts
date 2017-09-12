@@ -148,7 +148,8 @@ export class BaseClient {
     }
 
     private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-        let XMLHttpRequest: any = this.XMLHttpRequest;
+        
+        let XMLHttpRequest: any = (<any>window).XMLHttpRequest;
         let xhr = new XMLHttpRequest();
         let path = options.path.replace(/^\/+/, "");
         let endpoint = `${baseURL}/${path}`;

@@ -26,12 +26,12 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
         private state: SubscriptionState;
 
-        onTransition(newState: SubscriptionState){
-            this.state = newState;
+        private onTransition = (newState: SubscriptionState) => {
+            this.state = newState;    
         }
         
-        unsubscribe(){
-            this.state.unsubscribe();
+        public unsubscribe = () => {
+            this.state.unsubscribe();   
         }
 
         constructor(

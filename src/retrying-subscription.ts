@@ -11,12 +11,12 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
     class RetryingSubscription implements Subscription {
         private state: SubscriptionState;
         
-        onTransition(newState: SubscriptionState){
-            this.state = newState;
+        private onTransition = (newState: SubscriptionState) => {
+            this.state = newState;    
         }
         
-        unsubscribe() {
-            this.state.unsubscribe();
+        public unsubscribe = () => {
+            this.state.unsubscribe();   
         }
         
         constructor(
