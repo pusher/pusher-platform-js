@@ -78,7 +78,7 @@ export class BaseClient {
             initialEventId,
             createTokenProvidingStrategy(
                 tokenProvider, 
-                createH2TransportStrategy(requestFactory), 
+                createH2TransportStrategy(requestFactory, this.logger), 
                 this.logger),
             this.logger
         );
@@ -129,7 +129,7 @@ export class BaseClient {
             retryStrategyOptions,
             createTokenProvidingStrategy(
                 tokenProvider, 
-                createH2TransportStrategy(), 
+                createH2TransportStrategy(xhrFactory, this.logger), 
                 this.logger),
             this.logger
         );
@@ -145,8 +145,7 @@ export class BaseClient {
             listenersOrNoOps.onError,
             listenersOrNoOps.onEvent,
             listenersOrNoOps.onEnd,
-            headers,
-            subscriptionConstructor
+            headers
         );
     }
 
