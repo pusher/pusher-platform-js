@@ -9,6 +9,7 @@ import { BaseSubscription } from './base-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createH2TransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
+import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
 
 
 export interface BaseClientOptions {
@@ -57,21 +58,9 @@ export class BaseClient {
         tokenProvider: TokenProvider,
     ): Subscription {
         let requestFactory = this.xhrConstructor(path);
-        let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
-        // let subscriptionConstructor: SubscriptionConstructor = ( // move this guy to the H2Transport Strategy
-        //     onOpen,
-        //     onError,
-        //     onEvent,
-        //     onEnd,
-        //     headers
-        // ) => new BaseSubscription(
-        //     xhrFactory(headers), 
-        //     this.logger, 
-        //     onOpen, 
-        //     onError, 
-        //     onEvent,
-        //     onEnd
-        // );
+        
+        listeners = replaceMissingListenersWithNoOps(listeners);
+        let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
         let subscriptionStrategy = createResumingStrategy(
             retryStrategyOptions,
@@ -85,19 +74,20 @@ export class BaseClient {
 
         let opened = false;
         return subscriptionStrategy(
-            headers => {
-                if(!opened){
-                    opened = true;
-                    listenersOrNoOps.onOpen(headers);
-                }
-                listenersOrNoOps.onSubscribe();
+            {
+                onOpen: headers => {
+                    if(!opened){
+                        opened = true;
+                        listeners.onOpen(headers);
+                    }
+                    listeners.onSubscribe();
+                },
+                onRetrying: subscribeStrategyListeners.onRetrying,
+                onError: subscribeStrategyListeners.onError,
+                onEvent: subscribeStrategyListeners.onEvent,
+                onEnd: subscribeStrategyListeners.onEnd
             },
-            listenersOrNoOps.onRetrying,
-            listenersOrNoOps.onError,
-            listenersOrNoOps.onEvent,
-            listenersOrNoOps.onEnd,
             headers
-            // subscriptionConstructor
         );
     }
     public subscribeNonResuming(
@@ -109,8 +99,9 @@ export class BaseClient {
     ){
         let xhrFactory = this.xhrConstructor(path);
         
-        let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
-    
+        listeners = replaceMissingListenersWithNoOps(listeners);
+        let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
+
         let subscriptionConstructor: SubscriptionConstructor = (
             onOpen,
             onError,
@@ -133,18 +124,22 @@ export class BaseClient {
                 this.logger),
             this.logger
         );
+        
         let opened = false;
         return subscriptionStrategy(
-            headers => {
-                if(!opened){
-                    opened = true;
-                    listenersOrNoOps.onOpen(headers);
-                }
+            {
+                onOpen: headers => {
+                    if(!opened){
+                        opened = true;
+                        listeners.onOpen(headers);
+                    }
+                    listeners.onSubscribe();
+                },
+                onRetrying: subscribeStrategyListeners.onRetrying,
+                onError: subscribeStrategyListeners.onError,
+                onEvent: subscribeStrategyListeners.onEvent,
+                onEnd: subscribeStrategyListeners.onEnd
             },
-            listenersOrNoOps.onRetrying,
-            listenersOrNoOps.onError,
-            listenersOrNoOps.onEvent,
-            listenersOrNoOps.onEnd,
             headers
         );
     }
