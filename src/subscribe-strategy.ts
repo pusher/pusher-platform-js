@@ -1,6 +1,5 @@
 import { ElementsHeaders } from './network';
-import { SubscriptionEvent, SubscriptionConstructor, Subscription } from './subscription';
-import { SubscriptionListeners } from '../declarations/subscription';
+import { Subscription, SubscriptionConstructor, SubscriptionEvent, SubscriptionListeners } from './subscription';
 
 //just like the top-level SubscriptionListeners, but all mandatory and without the onSubscribe callback.
 export interface SubscribeStrategyListeners {
