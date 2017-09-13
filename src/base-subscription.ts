@@ -71,7 +71,6 @@ export type BaseSubscriptionConstruction = (headers: ElementsHeaders) => Promise
                 this.assertStateIsIn(BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
                 
                 if (err) {
-                    this.logger.debug(">>>>>>>>>>>>>>>>>> AAAAAAAAAAAAA", err);
                     this.state = BaseSubscriptionState.ENDED;
                     if(err instanceof ErrorResponse && err.statusCode != 204){
                         this.onError(err);
@@ -95,7 +94,6 @@ export type BaseSubscriptionConstruction = (headers: ElementsHeaders) => Promise
                 this.assertStateIsIn( BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING );
                 let err = this.onChunk();
                 if (err) {
-                    this.logger.debug(">>>>>>>>>>>>>>>>>> BBBBBBBBBBBBB", err);
                     this.state = BaseSubscriptionState.ENDED;
                     if ( (err as any).statusCode === 204 ) { //TODO: That cast is horrific
                         this.onEnd();

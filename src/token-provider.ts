@@ -1,7 +1,6 @@
-import { CancellablePromise } from './cancelable-promise';
-export interface TokenPromise extends CancellablePromise<string> {}
+import { PCancelable } from 'p-cancelable';
 
 export interface TokenProvider {
-    fetchToken(tokenParams?: any): TokenPromise;
+    fetchToken(tokenParams?: any): PCancelable<string>;
     clearToken(token?: string);
 }

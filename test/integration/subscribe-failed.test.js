@@ -22,7 +22,7 @@ describe('Instance Subscribe errors nicely', () => {
     })
 
     it('handles 404', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_NOT_EXISTING,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -42,7 +42,7 @@ describe('Instance Subscribe errors nicely', () => {
     });
 
     it('handles 403', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_FORBIDDEN,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -63,7 +63,7 @@ describe('Instance Subscribe errors nicely', () => {
     });
 
     it('handles 500', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: "subscribe_internal_server_error",
             retryStrategyOptions: neverRetryOptions,
             listeners: {

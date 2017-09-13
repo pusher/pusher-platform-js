@@ -6,8 +6,9 @@ import {
     SubscriptionState,
 } from './subscription';
 import { Logger } from './logger';
-import { TokenProvider, TokenPromise } from './token-provider';
+import { TokenProvider } from './token-provider';
 import { SubscribeStrategy, SubscribeStrategyListeners } from './subscribe-strategy';
+import { PCancelable } from 'p-cancelable';
 
 export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
 (tokenProvider, nextSubscribeStrategy, logger) => {
@@ -31,7 +32,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             class TokenProvidingState implements SubscriptionState {
 
                 private underlyingSubscription: Subscription;
-                private tokenPromise: TokenPromise;
+                private tokenPromise: PCancelable<string>;
 
                 constructor(private onTransition: (SubscriptionState) => void){
 
@@ -46,6 +47,10 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                     }
 
                     let fetchTokenAndExecuteSubscription = () => {
+
+                        this.tokenPromise = tokenProvider.fetchToken().then( token => {
+                            
+                        });
 
                         this.tokenPromise = tokenProvider.fetchToken()
                             .then( token => {

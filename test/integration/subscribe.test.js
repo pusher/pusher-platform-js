@@ -27,8 +27,8 @@ describe('Instance Subscribe', () => {
     });
 
     //TODO: this doesn't work o_O
-    fit('subscribes and terminates on EOS after receiving all events', (done) => {
-        instance.subscribe({
+    it('subscribes and terminates on EOS after receiving all events', (done) => {
+        instance.subscribeNonResuming({
             path: PATH_10_AND_EOS,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -52,7 +52,7 @@ describe('Instance Subscribe', () => {
     });
 
     it('subscribes, terminates on EOS, and triggers onEnd callback exactly once', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_10_AND_EOS,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -71,7 +71,7 @@ describe('Instance Subscribe', () => {
     });
 
     it('subscribes to a subscription that is kept open', (done) => {        
-        let sub = instance.subscribe({
+        let sub = instance.subscribeNonResuming({
             path: PATH_3_AND_OPEN,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -97,7 +97,7 @@ describe('Instance Subscribe', () => {
     });
 
     it('subscribes and then unsubscribes - expecting onEnd', (done) => {
-        let sub = instance.subscribe({
+        let sub = instance.subscribeNonResuming({
             path: PATH_3_AND_OPEN,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -123,7 +123,7 @@ describe('Instance Subscribe', () => {
     });
 
     it('subscribes and receives EOS immediately - expecting onEnd with no events', (done) => {
-         let sub = instance.subscribe({
+         let sub = instance.subscribeNonResuming({
             path: PATH_0_EOS,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
@@ -144,7 +144,7 @@ describe('Instance Subscribe', () => {
 //TODO: this should probably involve the retry strategy
 //TODO: this will be... fun to test.
     it('subsccribes and receives EOS with retry-after headers', (done) => {
-        let sub = instance.subscribe({
+        let sub = instance.subscribeNonResuming({
             path: "subscribe_retry_after",
             retryStrategyOptions: neverRetryOptions,
             listeners: {

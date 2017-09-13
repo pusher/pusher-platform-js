@@ -1,5 +1,5 @@
 import { createH2TransportStrategy } from './transports';
-import { executeNetworkRequest, NetworkRequest, NetworkResponse, RequestOptions } from './request';
+import { executeNetworkRequest, NetworkRequest, RequestOptions } from './request';
 import { CancellablePromise } from './cancelable-promise';
 import { createResumingStrategy } from './resuming-subscription';
 import {
@@ -10,7 +10,7 @@ import {
     RetryStrategyOptions,
     RetryStrategyResult,
 } from './retry-strategy';
-import { TokenPromise, TokenProvider } from './token-provider';
+import { TokenProvider } from './token-provider';
 import { Subscription, SubscriptionConstructor, SubscriptionListeners } from './subscription';
 import { default as Instance, ResumableSubscribeOptions, SubscribeOptions } from './instance';
 import { BaseClient, BaseClientOptions } from './base-client';
@@ -29,12 +29,12 @@ export {
   
   CancellablePromise,
   ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
-  RequestOptions, NetworkRequest, NetworkResponse, executeNetworkRequest, 
+  RequestOptions, NetworkRequest, executeNetworkRequest, 
 
   
 
   RetryStrategyResult, Retry, DoNotRetry, RetryStrategyOptions, RetryResolution, createRetryStrategyOptionsOrDefault,
-  TokenProvider, TokenPromise,
+  TokenProvider,
   Logger, ConsoleLogger, EmptyLogger, 
   
 };

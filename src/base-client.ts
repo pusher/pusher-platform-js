@@ -2,7 +2,7 @@ import { createRetryingStrategy } from './retrying-subscription';
 import { createResumingStrategy } from './resuming-subscription';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
-import { RequestOptions, NetworkResponse, executeNetworkRequest } from './request';
+import { RequestOptions, executeNetworkRequest } from './request';
 import { Logger } from './logger';
 import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
 import { BaseSubscription } from './base-subscription';
@@ -10,6 +10,7 @@ import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createH2TransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
+import * as CancelablePromise from 'p-cancelable';
 
 
 export interface BaseClientOptions {
@@ -42,8 +43,8 @@ export class BaseClient {
     }
 
     //TODO: add retrying
-    public request<T>(options: RequestOptions): NetworkResponse<T>{
-        return executeNetworkRequest<T>(
+    public request(options: RequestOptions): CancelablePromise<any>{
+        return executeNetworkRequest<any>(
             () => this.createXHR(this.baseURL, options),
             options
         );
@@ -124,7 +125,7 @@ export class BaseClient {
                 this.logger),
             this.logger
         );
-        
+
         let opened = false;
         return subscriptionStrategy(
             {

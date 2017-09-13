@@ -1,10 +1,11 @@
 import { ElementsHeaders } from './network';
 import { Subscription, SubscriptionListeners } from './subscription';
-import { RequestOptions, NetworkResponse } from './request';
+import { RequestOptions } from './request';
 import { BaseClient } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
+import * as CancelablePromise from 'p-cancelable';
 
 const HOST_BASE = "pusherplatform.io";
 
@@ -69,12 +70,12 @@ export default class Instance {
     }
     
 
-    request<T>(options: RequestOptions): NetworkResponse<T>{
+    request(options: RequestOptions): CancelablePromise<any>{
         options.path = this.absPath(options.path);
-        return this.client.request<T>(options);
+        return this.client.request(options);
     }
 
-    subscribe(options: SubscribeOptions): Subscription { 
+    subscribeNonResuming(options: SubscribeOptions): Subscription { 
         
         const headers: ElementsHeaders = options.headers || {};
         const retryStrategyOptions = options.retryStrategyOptions || {};

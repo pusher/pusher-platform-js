@@ -16,13 +16,13 @@
   },
   "scripts": {
     "build": "rm -rf target declarations && webpack",
-
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
     "test": "yarn build && yarn test-jest && yarn test-integration"
   },
   "dependencies": {
-    "jwt-simple": "^0.5.1"
+    "jwt-simple": "^0.5.1",
+    "p-cancelable": "^0.3.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
