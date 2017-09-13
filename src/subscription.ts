@@ -5,20 +5,6 @@ export interface Subscription {
     unsubscribe();
 }
 
-export interface SubscriptionStateTransition {
-    onTransition(newState: SubscriptionState): void;
-}
-
-export interface SubscriptionState {
-    unsubscribe();
-}
-
-export interface SubscriptionEvent {
-    eventId: string;
-    headers: ElementsHeaders;
-    body: any;
-}
-
 export interface SubscriptionListeners {
     onOpen?: (headers: ElementsHeaders) => void;
     onSubscribe?: () => void;
@@ -29,8 +15,30 @@ export interface SubscriptionListeners {
     onEnd?: (error: any) => void;
 }
 
-let noop = (arg?) => {};
+export interface SubscriptionState {
+    unsubscribe();
+}
 
+export interface SubscriptionStateTransition {
+    onTransition(newState: SubscriptionState): void;
+}
+
+export interface SubscriptionEvent {
+    eventId: string;
+    headers: ElementsHeaders;
+    body: any;
+}
+
+export type SubscriptionConstructor = (
+    onOpen: (headers:ElementsHeaders) => void , 
+    onError: (error: any) => void, 
+    onEvent: (event: SubscriptionEvent) => void,
+    onEnd: (error: any) => void,
+    headers: ElementsHeaders, 
+) => BaseSubscription;
+
+//Move this util somewhere else?
+let noop = (arg?) => {};
 export let replaceMissingListenersWithNoOps: (listeners: SubscriptionListeners) => SubscriptionListeners = (listeners) => {
     
     let onOpen = listeners.onOpen || noop ;
@@ -52,20 +60,3 @@ export let replaceMissingListenersWithNoOps: (listeners: SubscriptionListeners) 
     }
 }
 
-export type SubscriptionConstructor = (
-    onOpen: (headers:ElementsHeaders) => void , 
-    onError: (error: any) => void, 
-    onEvent: (event: SubscriptionEvent) => void,
-    onEnd: (error: any) => void,
-    headers: ElementsHeaders, 
-) => BaseSubscription;
-
-export type SubscribeStrategy = (
-    onOpen: (headers:ElementsHeaders) => void, 
-    onRetrying: () => void,    
-    onError: (error: any) => void, 
-    onEvent: (event: SubscriptionEvent) => void,
-    onEnd: (error: any) => void,
-    headers: ElementsHeaders,
-    subscriptionConstructor: SubscriptionConstructor
-) => Subscription;

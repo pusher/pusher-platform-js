@@ -37,21 +37,6 @@ let postRequestOptions = {
     body: { items: [ {name: "kekec"}]},
 }
 
-let nonResumableSubscribeOptions = {
-    path: 'feeds/my-feed/items',
-    listeners: {
-        onOpen: headers => {
-            console.log("0 onOpen headers:");
-            console.log(headers);
-        },
-        onConnected: () => console.log("2 onConnected"),
-        onRetrying: () => console.log("1 onRetrying"),
-        onEvent: event => console.log(event),
-        onEnd: error => console.log("3 onEnd " + error),
-        onError: error => console.log("4 onError " + error),
-     },
-}
-
 // instance.request(postRequestOptions)
 //     .then( response => {
 //         console.log(response);

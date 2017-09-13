@@ -1,9 +1,28 @@
-import { SubscribeStrategy } from './subscription';
+import { SubscribeStrategy } from './subscribe-strategy';
+import { ElementsHeaders } from './network';
+import { BaseSubscription } from './base-subscription';
+import { Logger } from './logger';
 
-export let createH2TransportStrategy: () => SubscribeStrategy = () => {
+export let createH2TransportStrategy: (
+    requestFactory: (headers: ElementsHeaders) => XMLHttpRequest, 
+    logger: Logger 
+) => SubscribeStrategy = (
+    requestFactory,
+    logger
+) => {
 
-    let strategy: SubscribeStrategy = (onOpen, onRetrying, onError, onEvent, onEnd, headers, baseSubscriptionConstructor) => {
-        return baseSubscriptionConstructor(onOpen, onError, onEvent, onEnd, headers);
+    let strategy: SubscribeStrategy = (
+        listeners,
+        headers
+        ) => {
+            return new BaseSubscription(
+                requestFactory(headers), 
+                logger, 
+                listeners.onOpen, 
+                listeners.onError,
+                listeners.onEvent, 
+                listeners.onEnd
+            );
     }
     return strategy;
 };

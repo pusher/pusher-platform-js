@@ -26,17 +26,20 @@ describe('Instance Subscribe', () => {
         errorThrown = false;
     });
 
-    //TODO: use spies and expect methods to be called
-
-    it('subscribes and terminates on EOS after receiving all events', (done) => {
+    //TODO: this doesn't work o_O
+    fit('subscribes and terminates on EOS after receiving all events', (done) => {
         instance.subscribe({
             path: PATH_10_AND_EOS,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
-                onOpen: headers => {},
+                onOpen: headers => {
+                    console.log("onOpen");
+                },
                 onEvent: (event) => {
+                    console.log(event);
                     eventCount += 1;
                 },
+                onRetrying: () => console.log("onRetrying"),
                 onEnd: () => {
                     expect(eventCount).toBe(10);
                     done();

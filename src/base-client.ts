@@ -4,7 +4,7 @@ import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
 import { RequestOptions, NetworkResponse, executeNetworkRequest } from './request';
 import { Logger } from './logger';
-import { Subscription, SubscriptionListeners, replaceMissingListenersWithNoOps, SubscriptionConstructor, SubscribeStrategy } from './subscription';
+import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
 import { BaseSubscription } from './base-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createH2TransportStrategy } from './transports';
@@ -56,29 +56,29 @@ export class BaseClient {
         initialEventId: string,            
         tokenProvider: TokenProvider,
     ): Subscription {
-        let xhrFactory = this.xhrConstructor(path);
+        let requestFactory = this.xhrConstructor(path);
         let listenersOrNoOps = replaceMissingListenersWithNoOps(listeners);
-        let subscriptionConstructor: SubscriptionConstructor = ( 
-            onOpen,
-            onError,
-            onEvent,
-            onEnd,
-            headers
-        ) => new BaseSubscription(
-            xhrFactory(headers), 
-            this.logger, 
-            onOpen, 
-            onError, 
-            onEvent,
-            onEnd
-        );
+        // let subscriptionConstructor: SubscriptionConstructor = ( // move this guy to the H2Transport Strategy
+        //     onOpen,
+        //     onError,
+        //     onEvent,
+        //     onEnd,
+        //     headers
+        // ) => new BaseSubscription(
+        //     xhrFactory(headers), 
+        //     this.logger, 
+        //     onOpen, 
+        //     onError, 
+        //     onEvent,
+        //     onEnd
+        // );
 
         let subscriptionStrategy = createResumingStrategy(
             retryStrategyOptions,
             initialEventId,
             createTokenProvidingStrategy(
                 tokenProvider, 
-                createH2TransportStrategy(), 
+                createH2TransportStrategy(requestFactory), 
                 this.logger),
             this.logger
         );
@@ -96,8 +96,8 @@ export class BaseClient {
             listenersOrNoOps.onError,
             listenersOrNoOps.onEvent,
             listenersOrNoOps.onEnd,
-            headers,
-            subscriptionConstructor
+            headers
+            // subscriptionConstructor
         );
     }
     public subscribeNonResuming(
