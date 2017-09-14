@@ -15,7 +15,6 @@ export interface InstanceOptions {
     serviceVersion: string;
     host?: string; //Allows to inject the hostname by default.
     logger?: Logger;
-    tokenProvider?: TokenProvider;
     client?: BaseClient;
     encrypted?: boolean;
 }
@@ -31,9 +30,6 @@ export interface SubscribeOptions {
 export interface ResumableSubscribeOptions extends SubscribeOptions {
     initialEventId?: string
 }
-
-type Response = any;
-
 
 export default class Instance {
     private client: BaseClient;

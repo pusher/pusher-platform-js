@@ -11,6 +11,7 @@ import { createH2TransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
 import * as CancelablePromise from 'p-cancelable';
+import { TokenProvider } from '../declarations/token-provider';
 
 
 export interface BaseClientOptions {
@@ -43,11 +44,25 @@ export class BaseClient {
     }
 
     //TODO: add retrying
-    public request(options: RequestOptions): CancelablePromise<any>{
-        return executeNetworkRequest<any>(
-            () => this.createXHR(this.baseURL, options),
-            options
-        );
+    public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): CancelablePromise<any> {
+        if(tokenProvider){
+            return tokenProvider.fetchToken(tokenParams).then( token =>                  
+                { 
+                    options.headers['Authorization'] = `Bearer: ${token}`
+                    return executeNetworkRequest<any>(
+                        () => this.createXHR(this.baseURL, options),
+                        options
+                    )
+                }
+            );
+        }
+        else {
+            return executeNetworkRequest<any>(
+                () => this.createXHR(this.baseURL, options),
+                options
+            );
+        }
+        
     }
     
     public subscribeResuming(

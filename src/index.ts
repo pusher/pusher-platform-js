@@ -1,6 +1,5 @@
 import { createH2TransportStrategy } from './transports';
 import { executeNetworkRequest, NetworkRequest, RequestOptions } from './request';
-import { CancellablePromise } from './cancelable-promise';
 import { createResumingStrategy } from './resuming-subscription';
 import {
     createRetryStrategyOptionsOrDefault,
