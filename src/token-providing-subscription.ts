@@ -48,16 +48,9 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
                     let fetchTokenAndExecuteSubscription = () => {
 
-                        this.tokenPromise = tokenProvider.fetchToken().then( token => {
-                            
-                        });
-
                         this.tokenPromise = tokenProvider.fetchToken()
                             .then( token => {
-                                if(token){
-                                    headers['Authorization'] = `Bearer ${token}`;
-                                    logger.verbose(`TokenProvidingSubscription: token fetched: ${token}`);
-                                }
+                                this.putTokenIntoHeader(token);
                                 this.underlyingSubscription = nextSubscribeStrategy(
                                 {
                                     onOpen: headers => {
@@ -95,6 +88,13 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                     this.underlyingSubscription.unsubscribe();
                     this.onTransition(new EndedSubscriptionState());
                 }
+
+                private putTokenIntoHeader(token: any) {
+                    if(token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                        logger.verbose(`TokenProvidingSubscription: token fetched: ${token}`);
+                    }
+                }               
             }
 
             class OpenSubscriptionState implements SubscriptionState {
