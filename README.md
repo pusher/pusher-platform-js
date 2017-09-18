@@ -42,7 +42,7 @@ Currently you can access:
 - ResumableSubscription
 
 ```javascript
-import { Instance, ResumableSubscription } from `pusher-platform`;
+import { Instance, ... } from `pusher-platform`;
 
 let instance = new Instance(...);
 ```
@@ -62,43 +62,40 @@ InstanceOptions:
     encrypted?: boolean; // Defaults to true
 
     client?: BaseClient; // You can provide custom implementation - this will probably be deprecated in the future
-    tokenProvider?: TokenProvider; // You can provide custom implementation
-    logger?: Logger; // You can provide custom implementation. Defaults to DefaultLogger
+    logger?: Logger; // You can provide custom implementation. Defaults to ConsoleLogger(2) - logging anything non-verbose (level debug and above)
 ```
 
 It has 3 methods of interest:
 
-- `request(options: RequestOptions)`
+- `request(options: RequestOptions): CancelablePromise<any>`
 
-For regular HTTP requests. Relays to BaseClient. Returns `Promise<any`.
+For regular HTTP requests. Relays to BaseClient.
 
 RequestOptions:
 ```typescript
 export interface RequestOptions {
   method: string;
   path: string;
-  tokenProvider?: TokenProvider;
+  tokenProvider?: TokenProvider; 
   jwt?: string;
-  headers?: Headers;
+  headers?: ElementsHeaders;
   body?: any;
   retryStrategy?: RetryStrategy;
 }
 ```
 
-- `subscribe(options: SubscribeOptions)`
+- `subscribeNonResuming(options: SubscribeOptions)`
 
 A subscription to events. Creates a SUBSCRIBE call using baseclient. Returns `Subscription`
 
-- `resumableSubscribe(options: ResumableSubscribeOptions)`
+- `subscribeResuming(options: ResumableSubscribeOptions)`
 
-Like a subscription, but allows you to specify a `lastEventId` that will return you all items from this ID. Example - Feeds. Returns `ResumableSubscription`
-
-This is almost identical to Subscribe with the `lastEventId` and `retryStrategy`. By default it will use `ExponentialBackoffRetryStrategy`.
+Like a subscription, but allows you to specify a `initialEventId` that will return you all items from this ID. Example - Feeds. Returns `Subscription`
 
 ### BaseClient
 
 This makes all the requests and executes them. They are [standard XHR objects](https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest). 
-It also creates XHRs that are used to create instances of `Subscription` and `ResumableSubscription`
+It also creates XHRs that are used to create instances of `Subscription`.
 
 ### Subscription
 
@@ -121,43 +118,59 @@ There are standard callbacks for different subscription events `onOpen`, `onEven
 
 Use `unsubscribe(err?: Error)` to close this subscription. It will either callback `onEnd` or `onError` depending on whether or not the `Error` object is passed to it as argument.
 
-### ResumableSubscription
 
-ResumableSubscribeOptions:
+### Subscription adn Resumable Subscription
+
+Options:
+
 ```typescript
-export interface ResumableSubscribeOptions {
-    path: string;
-    lastEventId?: string;
-    tokenProvider?: TokenProvider;
-    onOpening?: () => void;
-    onOpen?: () => void;
-    onEvent?: (event: Event) => void;
-    onEnd?: () => void;
-    onError?: (error: Error) => void;
-    retryStrategy?: RetryStrategy;
-    logger?: Logger;
+export interface SubscribeOptions {
+    path: string,
+    headers?: ElementsHeaders,
+    listeners: SubscriptionListeners,
+    retryStrategyOptions?: RetryStrategyOptions,
+    tokenProvider?: TokenProvider
+}
+
+export interface ResumableSubscribeOptions extends SubscribeOptions {
+    initialEventId?: string
 }
 ```
 
-Works the same as Subscription with the optional `retryStrategy` and `lastEventId`.
-
-### RetryStrategy
-
-__Note: currently this is not exported in the top-level.__
-
-This is a simple add-on to your error handling that hooks onto the `onError` callbacks of a `Subscription`. If the `Error` object is deemed retryable it will retry. Returns a Promise of Error
-
-`attemptRetry(error: Error): Promise<Error>;`
-
-We currently provide one implementation: `ExponentialBackoffRetryStrategy` that naively retries a given number of times.
-
-Configuration:
+Listeners:
 
 ```typescript
-    limit: number = 6;
-    initialBackoffMillis: number = 1000;
-    maxBackoffMillis: number = 30000;
-    logger: Logger = DefaultLogger;
+export interface SubscriptionListeners {
+    onOpen?: (headers: ElementsHeaders) => void; //Triggered once per subscription
+    onSubscribe?: () => void; //Triggered each time a subscription is established
+    onRetrying?:() => void; //Triggered each time we are retrying to connect
+    onEvent?: (event: SubscriptionEvent) => void; //Triggered for each event
+    onError?: (error: any) => void; //Triggered once. Ends session
+    onEnd?: (error: any) => void; //Triggered once.
+}
+```
+
+Token Provider:
+
+```typescript
+export interface TokenProvider {
+    fetchToken(tokenParams?: any): PCancelable<string>;
+    clearToken(token?: string);
+}
+```
+
+- `tokenParams` can be anything, and is optional. Some services might require it.
+- `clearToken` allows you to "forget" an expired token in the current token provider
+
+Retry Strategy:
+
+```typescript 
+export interface RetryStrategyOptions {
+    initialTimeoutMillis?:  number, //Defaults to 1000
+    maxTimeoutMillis?: number, //Defaults to 5000
+    limit?: number, //Defaults to -1 (unlimited). Set to 0 to disable retrying.
+    increaseTimeout?: (currentTimeout: number) => number; //Defaults to currentTimeout*2 or maxTimeoutMillis
+}
 ```
 
 ### Logger

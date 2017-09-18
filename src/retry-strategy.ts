@@ -1,9 +1,46 @@
-import { ErrorResponse, NetworkError } from './base-client';
-import { ConsoleLogger, EmptyLogger, Logger } from './logger';
-export interface RetryStrategy {
-    attemptRetry(error: Error): Promise<Error>;
-    reset(): void;
+import { Logger } from './logger';
+import { NetworkError, ErrorResponse } from './network';
+
+export interface RetryStrategyOptions {
+    initialTimeoutMillis?:  number,
+    maxTimeoutMillis?: number,
+    limit?: number,
+    increaseTimeout?: (currentTimeout: number) => number;
 }
+
+export let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) => RetryStrategyOptions = (options: RetryStrategyOptions) => {
+
+    const initialTimeoutMillis = options.initialTimeoutMillis || 1000;
+    const maxTimeoutMillis = options.maxTimeoutMillis || 5000;
+
+    let limit = -1;
+    if(options.limit != undefined && options.limit != null){
+        limit = options.limit;
+    } 
+   
+    let increaseTimeout: (currentTimeout: number) => number;
+
+    if(options.increaseTimeout){
+        increaseTimeout = options.increaseTimeout;
+    }
+    else {
+        increaseTimeout = (currentTimeout) => {
+            if ((currentTimeout * 2) > maxTimeoutMillis){
+                return maxTimeoutMillis;
+            }
+            else {
+                return currentTimeout * 2;
+            }
+        }
+    }
+
+    return {
+        initialTimeoutMillis: initialTimeoutMillis,
+        maxTimeoutMillis: maxTimeoutMillis,
+        limit: limit,
+        increaseTimeout: increaseTimeout
+    }
+} 
 
 export interface RetryStrategyResult {}
 
@@ -21,117 +58,70 @@ export class DoNotRetry implements RetryStrategyResult {
     }
 }
 
-export class ExponentialBackoffRetryStrategy implements RetryStrategy {
+let requestMethodIsSafe: (method: string) => boolean = (method) => {
+    method = method.toUpperCase();
+    return method === 'GET' || method === 'HEAD' || method === 'OPTIONS' || method === 'SUBSCRIBE';
+}
 
-    private logger: Logger;
+export class RetryResolution{
+    private initialTimeoutMillis
+    private maxTimeoutMillis
+    private limit
+    private increaseTimeoutFunction
+    
+    private currentRetryCount = 0;
+    private currentBackoffMillis: number;
 
-    private limit: number = 6;
-    private retryCount = 0;
-
-    private maxBackoffMillis: number = 30000;
-    private defaultBackoffMillis: number = 1000;
-    private currentBackoffMillis: number = this.defaultBackoffMillis;
-
-
-    constructor(options: any){
-        if(options.limit) this.limit = options.limit;
-        if(options.initialBackoffMillis){
-             this.currentBackoffMillis = options.initialBackoffMillis;
-             this.defaultBackoffMillis = options.defaultBackoffMillis;
-        }
-
-        if(options.maxBackoffMillis) this.maxBackoffMillis = options.maxBackoffMillis;
-
-        if(options.logger !== undefined) {
-            this.logger = options.logger;
-        } else{ 
-            this.logger = new EmptyLogger();
-        }
+    constructor(private options: RetryStrategyOptions, private logger: Logger, private retryUnsafeRequests?: boolean){
+        this.initialTimeoutMillis = options.initialTimeoutMillis;
+        this.maxTimeoutMillis = options.maxTimeoutMillis;
+        this.limit = options.limit;
+        this.increaseTimeoutFunction = options.increaseTimeout;
+        this.currentBackoffMillis = this.initialTimeoutMillis;
     }
 
-    private shouldRetry(error: Error): RetryStrategyResult {
-
+    public attemptRetry(error: any): RetryStrategyResult {
         this.logger.verbose(`${this.constructor.name}:  Error received`, error);
         
-        if(this.retryCount >= this.limit && this.limit > 0 ){
+        if(this.currentRetryCount >= this.limit && this.limit >= 0 ){
             this.logger.verbose(`${this.constructor.name}:  Retry count is over the maximum limit: ${this.limit}`);
             return new DoNotRetry(error);
         }
-
-        let retryable = this.isRetryable(error);
-        if(retryable.isRetryable){
-
-            if(retryable.backoffMillis){
-                this.retryCount += 1;
-                return new Retry(retryable.backoffMillis);
-            }
-            else{
-                this.currentBackoffMillis = this.calulateMillisToRetry();
-                this.retryCount += 1;
-            
-                this.logger.verbose(`${this.constructor.name}: Will attempt to retry in: ${this.currentBackoffMillis}`);
-                return new Retry(this.currentBackoffMillis)
-            }
-        }
-
-        else{
-            this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
-            return new DoNotRetry(error);
-        }
-    }
-
-    attemptRetry(error: Error): Promise<any> {
-        return new Promise((resolve, reject) => {
-
-            let shouldRetry = this.shouldRetry(error);
-
-            if(shouldRetry instanceof DoNotRetry){
-                reject(error);
-            }
-            else if(shouldRetry instanceof Retry) {
-                window.setTimeout(resolve, shouldRetry.waitTimeMillis);
-            }
-        });
-    }
-
-    isRetryable(error: Error): RetryableResult {
-        let retryable: RetryableResult = {
-            isRetryable: false
-        }
-         //We allow network errors
-         if(error instanceof NetworkError) retryable.isRetryable = true;
-
-         else if(error instanceof ErrorResponse) {
-             //Only retry after is allowed
-             if(error.headers["Retry-After"]) {
-                 retryable.isRetryable = true;
-                 retryable.backoffMillis = parseInt(error.headers["retry-after"]) * 1000;
-             }
-         }
-        return retryable;
-    }
-
-
-    reset(): void {
-        this.retryCount = 0;
-        this.currentBackoffMillis = this.defaultBackoffMillis;
-    }
-
-    private calulateMillisToRetry(): number{
         
-        if(this.currentBackoffMillis >= this.maxBackoffMillis || this.currentBackoffMillis * 2 >= this.maxBackoffMillis) {
-            return this.maxBackoffMillis;
+        if (error instanceof ErrorResponse && error.headers['Retry-After']){
+            this.logger.verbose(`${this.constructor.name}:  Retry-After header is present, retrying in ${error.headers['Retry-After']}`);
+            return new Retry(parseInt(error.headers['Retry-After']) * 1000);
+        } 
+        
+        if (error instanceof NetworkError ||(error instanceof ErrorResponse && requestMethodIsSafe(error.headers["Request-Method"]))  || this.retryUnsafeRequests) { 
+            return this.shouldSafeRetry(error);
         }
-            
-        if(this.retryCount > 0){
-            return this.currentBackoffMillis * 2;
+        if(error instanceof NetworkError) return this.shouldSafeRetry(error);
+        
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
+        return new DoNotRetry(error);
+    }
+    
+    private shouldSafeRetry(error: any){
+        if(error instanceof NetworkError){
+            this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
+            return new Retry(this.calulateMillisToRetry());
         }
+        
+        else if(error instanceof ErrorResponse) {
+            if(error.statusCode >= 500 && error.statusCode < 600){
+                this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
+                return new Retry(this.calulateMillisToRetry());
+            }
+        }
+        this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);
+        return new DoNotRetry(error);
+    }
+        
+    private calulateMillisToRetry(): number {
+        this.currentBackoffMillis = this.increaseTimeoutFunction(this.currentBackoffMillis);
 
+        this.logger.verbose(`${this.constructor.name}: Retrying in ${this.currentBackoffMillis}ms`);
         return this.currentBackoffMillis;
     }
-}
-
-export type RetryableResult = {
-    isRetryable: boolean;
-    backoffMillis?: number;
 }

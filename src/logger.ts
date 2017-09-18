@@ -1,4 +1,3 @@
-import { ErrorResponse } from './base-client';
 export enum LogLevel {
      VERBOSE = 1,
      DEBUG = 2,
@@ -8,11 +7,11 @@ export enum LogLevel {
 }
 
 export interface Logger {
-    verbose(message: string, error?: Error);
-    debug(message: string, error?: Error);
-    info(message: string, error?: Error);
-    warn(message: string, error?: Error);
-    error(message: string, error?: Error);
+    verbose(message: string, error?: any);
+    debug(message: string, error?: any);
+    info(message: string, error?: any);
+    warn(message: string, error?: any);
+    error(message: string, error?: any);
 }
 
 /**
@@ -31,7 +30,7 @@ export class ConsoleLogger implements Logger {
         logFunction: (msg) => void, 
         level: LogLevel, 
         message: string, 
-        error?: Error): void {
+        error?: any): void {
 
             if(level >= this.threshold){
                 let loggerSignature = `Logger.${LogLevel[level]}`;
@@ -48,31 +47,31 @@ export class ConsoleLogger implements Logger {
             }
     }
 
-    verbose(message: string, error?: Error){
+    verbose(message: string, error?: any){
         this.log(console.log, LogLevel.VERBOSE, message, error);
     }
 
-    debug(message: string, error?: Error){
+    debug(message: string, error?: any){
         this.log(console.log, LogLevel.DEBUG, message, error);
     }
 
-    info(message: string, error?: Error){
+    info(message: string, error?: any){
         this.log(console.info, LogLevel.INFO, message, error);
     }
 
-    warn(message: string, error?: Error){
+    warn(message: string, error?: any){
         this.log(console.warn, LogLevel.WARNING, message, error);
     }
 
-    error(message: string, error?: Error){
+    error(message: string, error?: any){
         this.log(console.error, LogLevel.ERROR, message, error);
     }
 }
 
 export class EmptyLogger implements Logger {
-    verbose(message: string, error?: Error){};
-    debug(message: string, error?: Error){};
-    info(message: string, error?: Error){};
-    warn(message: string, error?: Error){};
-    error(message: string, error?: Error){};
+    verbose(message: string, error?: any){};
+    debug(message: string, error?: any){};
+    info(message: string, error?: any){};
+    warn(message: string, error?: any){};
+    error(message: string, error?: any){};
 }
