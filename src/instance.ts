@@ -64,7 +64,6 @@ export default class Instance {
             logger: this.logger
         });
     }
-    
 
     request(options: RequestOptions): CancelablePromise<any>{
         options.path = this.absPath(options.path);

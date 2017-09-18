@@ -11,8 +11,6 @@ import { createH2TransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
 import * as CancelablePromise from 'p-cancelable';
-import { TokenProvider } from '../declarations/token-provider';
-
 
 export interface BaseClientOptions {
     host: string;

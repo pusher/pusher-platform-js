@@ -21,9 +21,66 @@ let listeners = {
     onRetrying: () => console.log("onRetrying")
 };
 
-let resumableSubscribeOptions = {
+function urlEncode(data) {
+    return Object.keys(data)
+      .filter(key => data[key] !== undefined)
+      .map(key => `${ key }=${ encodeURIComponent(data[key]) }`)
+      .join("&");
+}
+
+class TokenProvider {
+    
+        constructor(){
+            this.authData = { 
+                "action": "READ",
+                "path": "feeds/my-feed/items"
+            };
+            this.authEndpoint = "http://localhost:3000/feeds/tokens"; 
+        }
+        
+
+        fetchToken(tokenParams){
+            return new PCancelable( (onCancel, resolve, reject) => {
+    
+                const xhr = new XMLHttpRequest();
+    
+                onCancel( () => {
+                    xhr.abort();
+                })
+                xhr.open("POST", authEndpoint);
+                xhr.timeout = 3000;
+                xhr.onload = () => {
+                  if (xhr.status === 200) {
+                      let token = JSON.parse(xhr.responseText);
+                      resolve(token.access_token);
+                  } else {
+                    reject(new Error(`Couldn't fetch token from ${
+                    this.authEndpoint
+                    }; got ${ xhr.status } ${ xhr.responseText }.`));
+                  }
+                };
+                xhr.ontimeout = () => {
+                  reject(new Error(`Request timed out while fetching token from ${
+                    this.authEndpoint
+                  }`));
+                };
+                xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+                xhr.send(urlEncode({
+                  ...this.authData,
+                  grant_type: "client_credentials",
+                }));
+            });
+        }
+    
+        clearToken(token){
+            console.log("lol");
+        }
+    }
+
+let subscribeOptions = {
     path: 'feeds/my-feed/items',
     listeners: listeners,
+    tokenProvider: new TokenProvider()
 }
 
 let requestOptions = {  
@@ -37,6 +94,8 @@ let postRequestOptions = {
     body: { items: [ {name: "kekec"}]},
 }
 
+
+
 // instance.request(postRequestOptions)
 //     .then( response => {
 //         console.log(response);
@@ -47,16 +106,10 @@ let postRequestOptions = {
 //     //TODO:
 // }
 
-// let newResumableSubscription = instance.subscribeResuming(resumableSubscribeOptions);
-let newRetryableSubscription = instance.subscribe(resumableSubscribeOptions);
-
-// console.log(newResumableSubscription);
-// let nonResumableSubscription = instance.subscribe(nonResumableSubscribeOptions);
+let subscription = instance.subscribeResuming(subscribeOptions);
+// let subscription = instance.subscribeNonResuming(subscribeOptions);
 
 function tryUnsubscribe(){
-    // newResumableSubscription.unsubscribe();
-    // newResumableSubscription.unsubscribe();   
-    newRetryableSubscription.unsubscribe(); 
-
+    subscription.unsubscribe(); 
 }
 

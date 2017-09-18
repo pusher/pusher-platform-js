@@ -1,5 +1,12 @@
 {
+  "private": true,
   "dependencies": {
+    "body-parser": "^1.18.1",
+    "express": "^4.15.4",
     "pusher-feeds-server": "^0.5.0"
+  },
+  "scripts": {
+    "start_server": "node server.js",
+    "push": "node push.js"
   }
 }

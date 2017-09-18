@@ -26,7 +26,6 @@ export {
   Subscription, BaseSubscriptionConstruction, BaseSubscription, BaseSubscriptionState,
   createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createH2TransportStrategy, 
   
-  CancellablePromise,
   ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
   RequestOptions, NetworkRequest, executeNetworkRequest, 
 
