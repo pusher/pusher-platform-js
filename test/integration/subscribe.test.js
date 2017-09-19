@@ -6,13 +6,19 @@ const PATH_0_EOS = "subscribe_0_eos";
 
 describe('Instance Subscribe', () => {
     beforeEach(() => {
+        let logger = new PusherPlatform.ConsoleLogger(1);
 
         instance = new PusherPlatform.Instance({
             instanceId: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
-            host: "localhost:10443"
+            host: "localhost:10443",
+            logger: logger
         });
+
+        neverRetryOptions = {
+            limit: 0,
+        }
 
         eventCount = 0;
         endCount = 0;
@@ -20,137 +26,140 @@ describe('Instance Subscribe', () => {
         errorThrown = false;
     });
 
-    //TODO: use spies and expect methods to be called
-
-    it('subscribes and then unsubscribes with error - expecting onError', (done) => {
-        let errorThrown = new Error("expected");
-
-        let eventCount = 0;
-        let sub = instance.subscribe({
-            path: PATH_3_AND_OPEN,
-            onEvent: (event) => {
-                eventCount += 1;                
-                if(eventCount > 3){
-                    fail(`Too many events received: ${eventCount}`);
-                }
-                if(eventCount == 3){
-                    sub.unsubscribe(errorThrown);
-                }
-            },
-            onEnd: () => {
-                fail("We should have seen an error!");
-            },
-            onError: (err) => {
-                expect(err).toEqual(errorThrown);
-                done();
-            }
-        });
-    });
-
+    //TODO: this doesn't work o_O
     it('subscribes and terminates on EOS after receiving all events', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_10_AND_EOS,
-            onEvent: (event) => {
-                eventCount += 1;
-            },
-            onEnd: () => {
-                expect(eventCount).toBe(10);
-                done();
-            },
-            onError: (err) => {
-                fail();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {
+                    console.log("onOpen");
+                },
+                onEvent: (event) => {
+                    console.log(event);
+                    eventCount += 1;
+                },
+                onRetrying: () => console.log("onRetrying"),
+                onEnd: () => {
+                    expect(eventCount).toBe(10);
+                    done();
+                },
+                onError: (err) => {
+                    fail();
+                } 
             }
         });
     });
 
     it('subscribes, terminates on EOS, and triggers onEnd callback exactly once', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_10_AND_EOS,
-            onEvent: (event) => {},
-            onEnd: () => {
-                endCount += 1;
-                expect(endCount).toBe(1);
-                done();
-            },
-            onError: (err) => {
-                fail();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {},
+                onEnd: () => {
+                    endCount += 1;
+                    expect(endCount).toBe(1);
+                    done();
+                },
+                onError: (err) => {
+                    fail();
+                }
             }
         });
     });
 
     it('subscribes to a subscription that is kept open', (done) => {        
-        let sub = instance.subscribe({
+        let sub = instance.subscribeNonResuming({
             path: PATH_3_AND_OPEN,
-            onEvent: (event) => {
-                eventCount += 1;                
-                if(eventCount > 3){
-                    fail(`Too many events received: ${eventCount}`);
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    eventCount += 1;                
+                    if(eventCount > 3){
+                        fail(`Too many events received: ${eventCount}`);
+                    }
+                    if(eventCount == 3){
+                        done();
+                    }
+                },
+                onEnd: () => {
+                    fail("onEnd triggered. This shouldn't be!");
+                },
+                onError: (err) => {
+                    fail("onError triggered - this shouldn't be!");
                 }
-                if(eventCount == 3){
-                    done();
-                }
-            },
-            onEnd: () => {
-                fail("onEnd triggered. This shouldn't be!");
-            },
-            onError: (err) => {
-                fail("onError triggered - this shouldn't be!");
             }
         });
 
     });
 
-    it('subscribes and then unsubscribes - expecrting onEnd', (done) => {
-        let sub = instance.subscribe({
+    it('subscribes and then unsubscribes - expecting onEnd', (done) => {
+        let sub = instance.subscribeNonResuming({
             path: PATH_3_AND_OPEN,
-            onEvent: (event) => {
-                eventCount += 1;                
-                if(eventCount > 3){
-                    fail(`Too many events received: ${eventCount}`);
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    eventCount += 1;                
+                    if(eventCount > 3){
+                        fail(`Too many events received: ${eventCount}`);
+                    }
+                    if(eventCount == 3){
+                        sub.unsubscribe();
+                    }
+                },
+                onEnd: () => {
+                    done();
+                },
+                onError: (err) => {
+                    fail("onError triggered - this shouldn't be!");
                 }
-                if(eventCount == 3){
-                    sub.unsubscribe();
-                }
-            },
-            onEnd: () => {
-                done();
-            },
-            onError: (err) => {
-                fail("onError triggered - this shouldn't be!");
             }
         });
 
     });
 
     it('subscribes and receives EOS immediately - expecting onEnd with no events', (done) => {
-         let sub = instance.subscribe({
+         let sub = instance.subscribeNonResuming({
             path: PATH_0_EOS,
-            onEvent: (event) => {
-                fail("No events should have been received");
-            },
-            onEnd: () => {
-                done();
-            },
-            onError: (err) => {
-                fail("We should not error");
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    fail("No events should have been received");
+                },
+                onEnd: () => {
+                    done();
+                },
+                onError: (err) => {
+                    fail("We should not error");
+                }
             }
         });
     });
 
 //TODO: this should probably involve the retry strategy
+//TODO: this will be... fun to test.
     it('subsccribes and receives EOS with retry-after headers', (done) => {
-        let sub = instance.subscribe({
+        let sub = instance.subscribeNonResuming({
             path: "subscribe_retry_after",
-            onEvent: (event) => {
-                fail("No events should have been received");
-            },
-            onEnd: () => {
-                fail("We should get an error");
-                done();
-            },
-            onError: (err) => {
-                expect(err.headers["retry-after"]).toBe('10');
-                done();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    fail("No events should have been received");
+                },
+                onEnd: () => {
+                    fail("We should get an error");
+                    done();
+                },
+                onError: (err) => {
+                    expect(err.headers["retry-after"]).toBe('10');
+                    done();
+                }
             }
         });
     })

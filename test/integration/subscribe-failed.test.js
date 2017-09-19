@@ -3,6 +3,8 @@ const { default: PusherPlatform } = require('../../target/pusher-platform.js');
 const PATH_NOT_EXISTING = "subscribe_missing";
 const PATH_FORBIDDEN = "subscribe_forbidden";
 
+let logger = new PusherPlatform.ConsoleLogger(1);
+
 describe('Instance Subscribe errors nicely', () => {
 
     beforeAll(() => {
@@ -10,55 +12,76 @@ describe('Instance Subscribe errors nicely', () => {
             instanceId: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
-            host: "localhost:10443"
+            host: "localhost:10443",
+            logger: logger
         });
+
+        neverRetryOptions = {
+            limit: 0,
+        }
     })
 
     it('handles 404', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_NOT_EXISTING,
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-                expect(err.statusCode).toBe(404);
-                done();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+                    expect(err.statusCode).toBe(404);
+                    done();
+                },
             }
         });
     });
 
     it('handles 403', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: PATH_FORBIDDEN,
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-
-                expect(err.statusCode).toBe(403);
-                done();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onEvent: (event) => {
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+    
+                    expect(err.statusCode).toBe(403);
+                    done();
+                },
             }
         });
     });
 
     it('handles 500', (done) => {
-        instance.subscribe({
+        instance.subscribeNonResuming({
             path: "subscribe_internal_server_error",
-            onEvent: (event) => {
-                fail("Expecting onError");
-            },
-            onEnd: () => {
-                fail("Expecting onError");
-            },
-            onError: (err) => {
-                expect(err.statusCode).toBe(500);
-                done();
+            retryStrategyOptions: neverRetryOptions,
+            listeners: {
+                onOpen: headers => {},
+                onRetrying: () => console.log('retrying'),
+                onEvent: (event) => {
+                    console.log(event);
+                    fail("Expecting onError");
+                },
+                onEnd: () => {
+                    console.log("end");                    
+                    fail("Expecting onError");
+                },
+                onError: (err) => {
+                    console.log(err);
+                    expect(err.statusCode).toBe(500);
+                    done();
+                },
             }
         });
     });
