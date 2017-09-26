@@ -3,11 +3,13 @@ import { ElementsHeaders } from './network';
 import { BaseSubscription } from './base-subscription';
 import { Logger } from './logger';
 
+import HttpTransport from './transport/http';
+
 export let createH2TransportStrategy: (
-    requestFactory: (headers: ElementsHeaders) => XMLHttpRequest, 
+    transport: (headers: ElementsHeaders) => HttpTransport, 
     logger: Logger 
 ) => SubscribeStrategy = (
-    requestFactory,
+    transport,
     logger
 ) => {
 
@@ -16,7 +18,7 @@ export let createH2TransportStrategy: (
         headers
         ) => {
             return new BaseSubscription(
-                requestFactory(headers), 
+                transport(headers),
                 logger, 
                 listeners.onOpen, 
                 listeners.onError,

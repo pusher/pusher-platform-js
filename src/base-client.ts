@@ -10,7 +10,10 @@ import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createH2TransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
+import WebSocketClient from './websocket-client';
 import * as PCancelable from 'p-cancelable';
+
+import HttpTransport from './transport/http';
 
 export interface BaseClientOptions {
     host: string;
@@ -22,10 +25,14 @@ export class BaseClient {
     private baseURL: string;
     private XMLHttpRequest: any;
     private logger: Logger;
+    private websocket: WebSocketClient;
+
     constructor(private options: BaseClientOptions) {
         let host = options.host.replace(/\/$/, '');
         this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
         this.logger = options.logger;
+
+        // this.websocket = new WebSocketClient({host: host});
     }
 
     private xhrConstructor: (path: string) => (headers: ElementsHeaders) => XMLHttpRequest = (path) => {
@@ -71,8 +78,6 @@ export class BaseClient {
         initialEventId: string,            
         tokenProvider: TokenProvider,
     ): Subscription {
-        let requestFactory = this.xhrConstructor(path);
-        
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
@@ -80,9 +85,10 @@ export class BaseClient {
             retryStrategyOptions,
             initialEventId,
             createTokenProvidingStrategy(
-                tokenProvider, 
-                createH2TransportStrategy(requestFactory, this.logger), 
-                this.logger),
+                tokenProvider,
+                createH2TransportStrategy(HttpTransport.createSubscribeInstanceCurried(this.baseURL, path), this.logger), 
+                this.logger
+            ),
             this.logger
         );
 
@@ -116,25 +122,11 @@ export class BaseClient {
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
-        let subscriptionConstructor: SubscriptionConstructor = (
-            onOpen,
-            onError,
-            onEvent,
-            onEnd,
-            headers,             
-        ) => new BaseSubscription(
-            xhrFactory(headers), 
-            this.logger, 
-            onOpen, 
-            onError, 
-            onEvent,
-            onEnd
-        );
         let subscriptionStrategy = createRetryingStrategy(
             retryStrategyOptions,
             createTokenProvidingStrategy(
                 tokenProvider, 
-                createH2TransportStrategy(xhrFactory, this.logger), 
+                createH2TransportStrategy(HttpTransport.createSubscribeInstanceCurried(this.baseURL, path), this.logger), 
                 this.logger),
             this.logger
         );
@@ -158,8 +150,7 @@ export class BaseClient {
         );
     }
 
-    private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-        
+    private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {    
         let XMLHttpRequest: any = (<any>window).XMLHttpRequest;
         let xhr = new XMLHttpRequest();
         let path = options.path.replace(/^\/+/, "");
