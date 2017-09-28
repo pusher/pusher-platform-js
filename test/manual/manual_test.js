@@ -107,19 +107,19 @@ let requestOptions = {
 
 let postRequestOptions = {
     method: "POST",
-    path: "feeds/my-feed/items",
-    body: { items: [ {name: "kekec"}]},
+    path: "text",
+    body: { text: "Ahoj Karl" },
 };
 
-// instance.request(postRequestOptions)
-//     .then( response => {
-//         console.log(response);
-//     }).catch( error => {
-//         console.log(error);
-//     });
-// function tryCancelRequest(){
-//     //TODO:
-// }
+instance.request(postRequestOptions)
+    .then( response => {
+        console.log('Request (response):', response);
+    }).catch( error => {
+        console.log('Request (response):', error);
+    });
+function tryCancelRequest(){
+    //TODO:
+}
 
 const createListeners = (feedId) => {
     const log = console.log.bind(null, `Log from "${feedId}":`);
@@ -141,7 +141,7 @@ const createSubscribeOptions = (feedId) => ({
 });
 
 let subscription1 = instance.subscribeResuming(createSubscribeOptions('my-feed'));
-// let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('playground'));
+let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('playground'));
 
 function tryUnsubscribe(){
     subscription.unsubscribe(); 

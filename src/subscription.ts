@@ -29,7 +29,12 @@ export interface SubscriptionEvent {
 }
 
 export interface SubscriptionTransport {
-    
+    subscribe(
+        path: string,
+        listeners: SubscriptionListeners,
+        headers: ElementsHeaders
+    ): number
+    unsubscribe(subId: number): void
 };
 
 export type SubscriptionConstructor = (

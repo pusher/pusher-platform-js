@@ -7,12 +7,13 @@ import { Logger } from './logger';
 import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
 import { BaseSubscription } from './base-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
-import { createH2TransportStrategy } from './transports';
+import { createTransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
 import WebSocketClient from './websocket-client';
 import * as PCancelable from 'p-cancelable';
 
+import WebSocketTransport from './transport/websocket';
 import HttpTransport from './transport/http';
 
 export interface BaseClientOptions {
@@ -22,40 +23,26 @@ export interface BaseClientOptions {
 }
 
 export class BaseClient {
-    private baseURL: string;
+    private host: string;
     private XMLHttpRequest: any;
     private logger: Logger;
-    private websocket: WebSocketClient;
+    private websocketTransport: WebSocketTransport;
 
     constructor(private options: BaseClientOptions) {
-        let host = options.host.replace(/\/$/, '');
-        this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
+        this.host = options.host.replace(/\/$/, '');
         this.logger = options.logger;
 
-        // this.websocket = new WebSocketClient({host: host});
-    }
-
-    private xhrConstructor: (path: string) => (headers: ElementsHeaders) => XMLHttpRequest = (path) => {
-        
-        return (headers) => {
-            const requestOptions: RequestOptions = {
-                method: "SUBSCRIBE",
-                path: path,
-                headers: headers
-            }
-    
-            return this.createXHR(this.baseURL, requestOptions);
-        }
+        this.websocketTransport = new WebSocketTransport(this.host);
     }
 
     //TODO: add retrying
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
             return tokenProvider.fetchToken(tokenParams).then( token =>                  
-                { 
+                {
                     options.headers['Authorization'] = `Bearer: ${token}`
                     return executeNetworkRequest(
-                        () => this.createXHR(this.baseURL, options),
+                        () => new HttpTransport(this.host).request(options),
                         options
                     )
                 }
@@ -63,7 +50,7 @@ export class BaseClient {
         }
         else {
             return executeNetworkRequest(
-                () => this.createXHR(this.baseURL, options),
+                () => new HttpTransport(this.host).request(options),
                 options
             );
         }
@@ -81,12 +68,18 @@ export class BaseClient {
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
+        const transport = (true) ? this.websocketTransport : new HttpTransport(this.host);
+
         let subscriptionStrategy = createResumingStrategy(
             retryStrategyOptions,
             initialEventId,
             createTokenProvidingStrategy(
                 tokenProvider,
-                createH2TransportStrategy(HttpTransport.createSubscribeInstanceCurried(this.baseURL, path), this.logger), 
+                createTransportStrategy(
+                    path,
+                    transport,
+                    this.logger
+                ), 
                 this.logger
             ),
             this.logger
@@ -117,17 +110,22 @@ export class BaseClient {
         retryStrategyOptions: RetryStrategyOptions, 
         tokenProvider: TokenProvider
     ){
-        let xhrFactory = this.xhrConstructor(path);
-        
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
+
+        const transport = (true) ? this.websocketTransport : new HttpTransport(this.host);
 
         let subscriptionStrategy = createRetryingStrategy(
             retryStrategyOptions,
             createTokenProvidingStrategy(
                 tokenProvider, 
-                createH2TransportStrategy(HttpTransport.createSubscribeInstanceCurried(this.baseURL, path), this.logger), 
-                this.logger),
+                createTransportStrategy(
+                    path,
+                    transport,
+                    this.logger
+                ),
+                this.logger
+            ),
             this.logger
         );
 
@@ -150,21 +148,4 @@ export class BaseClient {
         );
     }
 
-    private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {    
-        let XMLHttpRequest: any = (<any>window).XMLHttpRequest;
-        let xhr = new XMLHttpRequest();
-        let path = options.path.replace(/^\/+/, "");
-        let endpoint = `${baseURL}/${path}`;
-        xhr.open(options.method.toUpperCase(), endpoint, true);
-        if (options.body) {
-            xhr.setRequestHeader("content-type", "application/json");
-        }
-        if (options.jwt) {
-            xhr.setRequestHeader("authorization", `Bearer ${options.jwt}`);
-        }
-        for (let key in options.headers) {
-            xhr.setRequestHeader(key, options.headers[key]);
-        }
-        return xhr;
-    }
 }
