@@ -5,39 +5,8 @@ let instance = new PusherPlatform.Instance({
     serviceName: 'example',
     serviceVersion: 'v1',
     host: 'localhost:10443',
-    // logger: verboseLogger
+    logger: verboseLogger
 });
-
-const wsSubscribeType  = 100,
-    wsOpenType        = 101,
-    wsEventType       = 102,
-    wsUnsubscribeType = 198,
-    wsEosType         = 199,
-    wsPingType        = 16,
-    wsPongType        = 17,
-    wsCloseType       = 99;
-
-const runWebsocket = () => {
-    // Create WebSocket connection.
-    const socket = new WebSocket('wss://localhost:10443/ws');
-    
-    // Connection opened
-    socket.addEventListener('open', function (event) {
-        socket.send(`
-        [${wsSubscribeType},10,"/services/example/v1/1/ticker",{"Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHAiOiIxIiwiZXhwIjoxNTA2NDQ2MjY3LCJpYXQiOjE1MDYzNTk4NjcsImlzcyI6ImZvbyJ9.Q7cjgjZb79aHqc0FPbQtNlpraRBIfPhjeFjBuZKkgJg"}]
-        `);
-        socket.send(`
-        [${wsSubscribeType},20,"/services/example/v1/1/texter",{"Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHAiOiIxIiwiZXhwIjoxNTA2NDQ2MjY3LCJpYXQiOjE1MDYzNTk4NjcsImlzcyI6ImZvbyJ9.Q7cjgjZb79aHqc0FPbQtNlpraRBIfPhjeFjBuZKkgJg"}]
-        `);
-    });
-    
-    // Listen for messages
-    socket.addEventListener('message', function (event) {
-        console.log('Message from server ', event.data);
-    });
-};
-
-// runWebsocket();
 
 function urlEncode(data) {
     return Object.keys(data)
@@ -141,9 +110,10 @@ const createSubscribeOptions = (feedId) => ({
 });
 
 let subscription1 = instance.subscribeResuming(createSubscribeOptions('my-feed'));
-let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('playground'));
+// let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('playground'));
 
-function tryUnsubscribe(){
-    subscription.unsubscribe(); 
+function tryUnsubscribe() {
+    subscription1.unsubscribe();
+    // subscription2.unsubscribe();
 }
 
