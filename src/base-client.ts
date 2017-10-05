@@ -86,6 +86,7 @@ export class BaseClient {
             this.logger
         );
 
+
         let opened = false;
         return subscriptionStrategy(
             {
