@@ -49,9 +49,6 @@ class TokenProvider {
                 })
                 xhr.open("POST", this.authEndpoint);
                 xhr.timeout = 3000;
-                xhr.onreadystatechange = () => {
-                    console.log(xhr.readyState);
-                }
                 xhr.onload = () => {
                   if (xhr.status === 200) {
                       let token = JSON.parse(xhr.responseText);
@@ -93,7 +90,7 @@ let subscribeOptions = {
 
 let requestOptions = {  
     method: "GET",
-    path: "feeds/my-feed/items",
+    path: "feeds/private-my-feed/items"
 }
 
 let postRequestOptions = {
@@ -104,18 +101,18 @@ let postRequestOptions = {
 
 
 
-// instance.request(postRequestOptions)
-//     .then( response => {
-//         console.log(response);
-//     }).catch( error => {
-//         console.log(error);
-//     });
-// function tryCancelRequest(){
-//     //TODO:
-// }
+instance.request(requestOptions, new TokenProvider())
+    .then( response => {
+        console.log(response);
+    }).catch( error => {
+        console.log(error);
+    });
+function tryCancelRequest(){
+    //TODO:
+}
 
 // let subscription = instance.subscribeResuming(subscribeOptions);
-let subscription = instance.subscribeNonResuming(subscribeOptions);
+// let subscription = instance.subscribeNonResuming(subscribeOptions);
 // let subscription = instance.subscribeNonResuming(subscribeOptions);
 
 function tryUnsubscribe(){

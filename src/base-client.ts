@@ -41,18 +41,19 @@ export class BaseClient {
         }
     }
 
-    //TODO: add retrying
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
-            return tokenProvider.fetchToken(tokenParams).then( token =>                  
+            return tokenProvider.fetchToken(tokenParams).then( token =>                
                 { 
-                    options.headers['Authorization'] = `Bearer: ${token}`
+                    options.headers['Authorization'] = `Bearer ${token}`
                     return executeNetworkRequest(
                         () => this.createXHR(this.baseURL, options),
                         options
                     )
                 }
-            );
+            ).catch( error => {
+                console.log(error);
+            })
         }
         else {
             return executeNetworkRequest(
