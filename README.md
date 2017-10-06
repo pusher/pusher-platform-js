@@ -74,14 +74,16 @@ For regular HTTP requests. Relays to BaseClient.
 RequestOptions:
 ```typescript
 export interface RequestOptions {
-  method: string;
-  path: string;
-  tokenProvider?: TokenProvider; 
-  jwt?: string;
-  headers?: ElementsHeaders;
-  body?: any;
-  retryStrategy?: RetryStrategy;
+    method: string;
+    path: string;
+    jwt?: string;
+    headers?: ElementsHeaders;
+    body?: any;
+    logger?: Logger;
 }
+
+  request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable
+  
 ```
 
 - `subscribeNonResuming(options: SubscribeOptions)`
@@ -108,7 +110,6 @@ export interface SubscribeOptions {
     retryStrategyOptions?: RetryStrategyOptions,
     tokenProvider?: TokenProvider
 }
-
 
 export interface SubscriptionListeners {
     onOpen?: (headers: ElementsHeaders) => void;
@@ -211,7 +212,14 @@ export enum LogLevel {
 
 ### TokenProvider
 
-__DEPRECATED__ This will probably change.
+This is up to the service implementer to implement.
+
+```typescript
+export interface TokenProvider {
+    fetchToken(tokenParams?: any): PCancelable<string>;
+    clearToken(token?: string);
+}
+```
 
 ## Building
 
