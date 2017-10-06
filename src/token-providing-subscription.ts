@@ -54,7 +54,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                                 this.underlyingSubscription = nextSubscribeStrategy(
                                 {
                                     onOpen: headers => {
-                                        onTransition(new OpenSubscriptionState(this.underlyingSubscription, onTransition));
+                                        onTransition(new OpenSubscriptionState(headers, this.underlyingSubscription, onTransition));
                                     },
                                     onRetrying: listeners.onRetrying,
                                     onError: error => {
@@ -98,8 +98,9 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             }
 
             class OpenSubscriptionState implements SubscriptionState {
-                constructor(private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
+                constructor(headers: ElementsHeaders, private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
                     logger.verbose(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
+                    listeners.onOpen(headers)
                 }
 
                 unsubscribe(){

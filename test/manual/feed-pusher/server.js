@@ -12,6 +12,21 @@ app.use(function(req, res, next) {
     next();
   });
 
+app.post('/path/tokens', (req, res) => {
+
+    console.log("TOKENS");
+    feeds.authorizePath(req.body, ( action, feedId) => {
+        return Promise.resolve(true);
+    }).then(
+        data => {
+            res.send(data)
+        }
+    )
+    .catch(err => {
+        console.log(err)
+      res.status(400).send(`${err.name}: ${err.message}`)
+    });
+});
 
 app.post('/feeds/tokens', (req, res) => {
     feeds.authorizeFeed(req.body, ( action, feedId) => {
@@ -22,6 +37,7 @@ app.post('/feeds/tokens', (req, res) => {
         }
     )
     .catch(err => {
+        console.log(err)
       res.status(400).send(`${err.name}: ${err.message}`)
     });
 });

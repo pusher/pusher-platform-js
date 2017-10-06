@@ -33,9 +33,9 @@ class TokenProvider {
         constructor(){
             this.authData = { 
                 "action": "READ",
-                "path": "feeds/my-feed/items"
+                "path": "feeds/private-my-feed/items"
             };
-            this.authEndpoint = "http://localhost:3000/feeds/tokens"; 
+            this.authEndpoint = "http://localhost:3000/path/tokens"; 
         }
         
 
@@ -47,8 +47,11 @@ class TokenProvider {
                 onCancel( () => {
                     xhr.abort();
                 })
-                xhr.open("POST", authEndpoint);
+                xhr.open("POST", this.authEndpoint);
                 xhr.timeout = 3000;
+                xhr.onreadystatechange = () => {
+                    console.log(xhr.readyState);
+                }
                 xhr.onload = () => {
                   if (xhr.status === 200) {
                       let token = JSON.parse(xhr.responseText);
@@ -58,6 +61,11 @@ class TokenProvider {
                     this.authEndpoint
                     }; got ${ xhr.status } ${ xhr.responseText }.`));
                   }
+                };
+                
+                xhr.onerror = error => {
+                    console.log(error);
+                    reject(error);
                 };
                 xhr.ontimeout = () => {
                   reject(new Error(`Request timed out while fetching token from ${
@@ -106,7 +114,8 @@ let postRequestOptions = {
 //     //TODO:
 // }
 
-let subscription = instance.subscribeResuming(subscribeOptions);
+// let subscription = instance.subscribeResuming(subscribeOptions);
+let subscription = instance.subscribeNonResuming(subscribeOptions);
 // let subscription = instance.subscribeNonResuming(subscribeOptions);
 
 function tryUnsubscribe(){
