@@ -2,6 +2,15 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.9.2] 2017-10-06
+
+### Fixes
+
+- Making authorized requests
+- Making authorized subscriptions
+
+
+
 ## [v0.9.0] 2017-09-14
 
 Refactored a lot of stuff internally, some API changes. This is a big release.
