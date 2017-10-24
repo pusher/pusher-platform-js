@@ -25,27 +25,26 @@ export class BaseClient {
     constructor(private options: BaseClientOptions) {
         let host = options.host.replace(/\/$/, '');
         this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
-        this.logger = options.logger;
         this.logger = options.logger || new ConsoleLogger();
     }
 
     private xhrConstructor: (path: string) => (headers: ElementsHeaders) => XMLHttpRequest = (path) => {
-        
+
         return (headers) => {
             const requestOptions: RequestOptions = {
                 method: "SUBSCRIBE",
                 path: path,
                 headers: headers
             }
-    
+
             return this.createXHR(this.baseURL, requestOptions);
         }
     }
 
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
-            return tokenProvider.fetchToken(tokenParams).then( token =>                
-                { 
+            return tokenProvider.fetchToken(tokenParams).then( token =>
+                {
                     options.headers['Authorization'] = `Bearer ${token}`
                     return executeNetworkRequest(
                         () => this.createXHR(this.baseURL, options),
@@ -62,19 +61,19 @@ export class BaseClient {
                 options
             );
         }
-        
+
     }
-    
+
     public subscribeResuming(
-        path: string, 
-        headers: ElementsHeaders, 
-        listeners: SubscriptionListeners, 
-        retryStrategyOptions: RetryStrategyOptions, 
-        initialEventId: string,            
+        path: string,
+        headers: ElementsHeaders,
+        listeners: SubscriptionListeners,
+        retryStrategyOptions: RetryStrategyOptions,
+        initialEventId: string,
         tokenProvider: TokenProvider,
     ): Subscription {
         let requestFactory = this.xhrConstructor(path);
-        
+
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
@@ -82,8 +81,8 @@ export class BaseClient {
             retryStrategyOptions,
             initialEventId,
             createTokenProvidingStrategy(
-                tokenProvider, 
-                createH2TransportStrategy(requestFactory, this.logger), 
+                tokenProvider,
+                createH2TransportStrategy(requestFactory, this.logger),
                 this.logger),
             this.logger
         );
@@ -108,14 +107,14 @@ export class BaseClient {
         );
     }
     public subscribeNonResuming(
-        path: string, 
-        headers: ElementsHeaders, 
-        listeners: SubscriptionListeners, 
-        retryStrategyOptions: RetryStrategyOptions, 
+        path: string,
+        headers: ElementsHeaders,
+        listeners: SubscriptionListeners,
+        retryStrategyOptions: RetryStrategyOptions,
         tokenProvider: TokenProvider
     ){
         let xhrFactory = this.xhrConstructor(path);
-        
+
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
@@ -124,21 +123,22 @@ export class BaseClient {
             onError,
             onEvent,
             onEnd,
-            headers,             
+            headers,
         ) => new BaseSubscription(
-            xhrFactory(headers), 
-            this.logger, 
-            onOpen, 
-            onError, 
+            xhrFactory(headers),
+            this.logger,
+            onOpen,
+            onError,
             onEvent,
             onEnd
         );
         let subscriptionStrategy = createRetryingStrategy(
             retryStrategyOptions,
             createTokenProvidingStrategy(
-                tokenProvider, 
-                createH2TransportStrategy(xhrFactory, this.logger), 
-                this.logger),
+                tokenProvider,
+                createH2TransportStrategy(xhrFactory, this.logger),
+                this.logger
+            ),
             this.logger
         );
 
@@ -162,7 +162,7 @@ export class BaseClient {
     }
 
     private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-        
+
         let XMLHttpRequest: any = (<any>window).XMLHttpRequest;
         let xhr = new XMLHttpRequest();
         let path = options.path.replace(/^\/+/, "");

@@ -22,19 +22,19 @@ import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, 
 export {
   Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners, SubscriptionEvent,
   BaseClient,  BaseClientOptions,
-  
-  Subscription, BaseSubscriptionConstruction, BaseSubscription, BaseSubscriptionState,
-  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createH2TransportStrategy, 
-  
-  ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
-  RequestOptions, NetworkRequest, executeNetworkRequest, 
 
-  
+  Subscription, BaseSubscriptionConstruction, BaseSubscription, BaseSubscriptionState,
+  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createH2TransportStrategy,
+
+  ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
+  RequestOptions, NetworkRequest, executeNetworkRequest,
+
+
 
   RetryStrategyResult, Retry, DoNotRetry, RetryStrategyOptions, RetryResolution, createRetryStrategyOptionsOrDefault,
   TokenProvider,
-  Logger, ConsoleLogger, EmptyLogger, 
-  
+  Logger, ConsoleLogger, EmptyLogger,
+
 };
 
 export default {

@@ -17,7 +17,7 @@ export function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: 
 
     let cancelablePromise: PCancelable<any> = new PCancelable( (onCancel, resolve, reject) => {
         const xhr = createXhr();
-        
+
         onCancel( () => {
             xhr.abort();
         });
