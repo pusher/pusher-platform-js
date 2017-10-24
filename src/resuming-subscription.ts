@@ -31,7 +31,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
         }
         
         public unsubscribe = () => {
-            this.state.unsubscribe();   
+            this.state.unsubscribe();
         }
 
         constructor(
@@ -108,21 +108,25 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
     
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
-                            this.timeout = window.setTimeout(() => { executeNextSubscribeStrategy(lastEventId) }, errorResolution.waitTimeMillis);
+                            let subID = errorResolution.subID;
+
+                            this.timeout = window.setTimeout(() => {
+                                executeNextSubscribeStrategy(lastEventId, subID)
+                            }, errorResolution.waitTimeMillis);
                         }
-                        else{
+                        else {
                             onTransition(new FailedSubscriptionState(error));
                         }
                     }
                 
-                    let executeNextSubscribeStrategy = (lastEventId: string) => {
+                    let executeNextSubscribeStrategy = (lastEventId: string, subID?: number) => {
 
                         logger.verbose(`ResumingSubscription: trying to re-establish the subscription`);                      
                         if(lastEventId){
                             logger.verbose(`ResumingSubscription: lastEventId: ${lastEventId}`);
                             headers["Last-Event-Id"] = lastEventId;
                         }
-
+                        
                         this.underlyingSubscription = nextSubscribeStrategy(
                             {
                                 onOpen: headers => {
@@ -140,8 +144,9 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                     onTransition(new EndedSubscriptionState(error));
                                 },
                             },
-                            headers
-                        )
+                            headers,
+                            subID
+                        );
                     }
                     executeSubscriptionOnce(error, lastEventId);
                 }

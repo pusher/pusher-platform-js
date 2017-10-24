@@ -25,11 +25,13 @@ export class ErrorResponse{
     public statusCode: number;
     public headers: ElementsHeaders;
     public info: any;
+    public subID?: number;
 
-    constructor(statusCode: number, headers: ElementsHeaders, info: any) {
+    constructor(statusCode: number, headers: ElementsHeaders, info: any, subID?: number) {
         this.statusCode = statusCode;
         this.headers = headers;
         this.info = info;
+        this.subID = subID;
     }
 
     static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
@@ -39,7 +41,11 @@ export class ErrorResponse{
     }
 
 export class NetworkError{
-        constructor(public error: string){}
+    public subID?: number;
+
+    constructor(public error: string, subID?: number) {
+        this.subID = subID;
+    }
 }
 
 // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState

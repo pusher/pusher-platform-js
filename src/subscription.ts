@@ -32,7 +32,8 @@ export interface SubscriptionTransport {
     subscribe(
         path: string,
         listeners: SubscriptionListeners,
-        headers: ElementsHeaders
+        headers: ElementsHeaders,
+        subID?: number
     ): number
     unsubscribe(subId: number): void
 };

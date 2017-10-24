@@ -4,7 +4,7 @@ import { XhrReadyState, ElementsHeaders, responseToHeadersObject, ErrorResponse,
 import { SubscriptionEvent, Subscription, SubscriptionTransport } from './subscription';
 
 export class BaseSubscription implements Subscription {
-    private subscribtionId: number;
+    private subID: number;
     
     constructor(
         private path: string,
@@ -14,9 +14,10 @@ export class BaseSubscription implements Subscription {
         private onOpen: (headers: ElementsHeaders) => void = headers => {},
         private onError: (error: any) => void = error => {}, 
         private onEvent: (event: SubscriptionEvent) => void = event => {},
-        private onEnd: (error?: any) => void = error => {}
+        private onEnd: (error?: any) => void = error => {},
+        subID?: number
     ) {
-        this.subscribtionId = this.transport.subscribe(
+        this.subID = this.transport.subscribe(
             path,
             {
                 onOpen,
@@ -24,12 +25,13 @@ export class BaseSubscription implements Subscription {
                 onEvent,
                 onEnd
             },
-            headers
+            headers,
+            subID
         );
     }
 
     public unsubscribe () {
-        this.transport.unsubscribe(this.subscribtionId);
+        this.transport.unsubscribe(this.subID);
     }
 
 }

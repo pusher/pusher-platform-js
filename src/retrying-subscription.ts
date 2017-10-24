@@ -68,21 +68,22 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                         
                         let errorResolution = resolveError(error);
                         if (errorResolution instanceof Retry) {
+                            let subID = errorResolution.subID;
+
                             this.timeout = window.setTimeout(() => {
-                                executeNextSubscribeStrategy();
+                                executeNextSubscribeStrategy(subID);
                             }, errorResolution.waitTimeMillis);
                         } else {
                             onTransition(new FailedSubscriptionState(error));
                         }
                     };
                     
-                    let executeNextSubscribeStrategy = () => {
+                    let executeNextSubscribeStrategy = (subID?: number) => {
                         logger.verbose(`RetryingSubscription: trying to re-establish the subscription`);
-
+                        
                         let underlyingSubscription = nextSubscribeStrategy(
                             {
                                 onOpen: headers => {
-                                    console.log('retry onOpen');
                                     onTransition(new OpenSubscriptionState(headers, underlyingSubscription, onTransition));
                                 },
                                 onRetrying: listeners.onRetrying,
@@ -90,7 +91,8 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                                 onEvent: listeners.onEvent,
                                 onEnd: error => onTransition(new EndedSubscriptionState(error))
                             },
-                            headers
+                            headers,
+                            subID
                         )
                     };
                     

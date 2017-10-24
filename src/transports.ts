@@ -15,7 +15,8 @@ export let createTransportStrategy: (
 ) => {
     let strategy: SubscribeStrategy = (
         listeners,
-        headers
+        headers,
+        subID
         ) => {
             return new BaseSubscription(
                 path,
@@ -25,7 +26,8 @@ export let createTransportStrategy: (
                 listeners.onOpen, 
                 listeners.onError,
                 listeners.onEvent, 
-                listeners.onEnd
+                listeners.onEnd,
+                subID
             );
     };
 

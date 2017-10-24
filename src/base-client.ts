@@ -68,8 +68,6 @@ export class BaseClient {
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
-        const transport = (true) ? this.websocketTransport : new HttpTransport(this.host);
-
         let subscriptionStrategy = createResumingStrategy(
             retryStrategyOptions,
             initialEventId,
@@ -77,7 +75,7 @@ export class BaseClient {
                 tokenProvider,
                 createTransportStrategy(
                     path,
-                    transport,
+                    this.websocketTransport,
                     this.logger
                 ), 
                 this.logger
@@ -113,15 +111,13 @@ export class BaseClient {
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
 
-        const transport = (true) ? this.websocketTransport : new HttpTransport(this.host);
-
         let subscriptionStrategy = createRetryingStrategy(
             retryStrategyOptions,
             createTokenProvidingStrategy(
                 tokenProvider, 
                 createTransportStrategy(
                     path,
-                    transport,
+                    this.websocketTransport,
                     this.logger
                 ),
                 this.logger

@@ -5,7 +5,7 @@ let instance = new PusherPlatform.Instance({
     serviceName: 'example',
     serviceVersion: 'v1',
     host: 'localhost:10443',
-    logger: verboseLogger
+    // logger: verboseLogger
 });
 
 function urlEncode(data) {
@@ -86,6 +86,7 @@ instance.request(postRequestOptions)
     }).catch( error => {
         console.log('Request (response):', error);
     });
+
 function tryCancelRequest(){
     //TODO:
 }
@@ -106,11 +107,11 @@ const createListeners = (feedId) => {
 const createSubscribeOptions = (feedId) => ({
     path: `ticker/`,
     listeners: createListeners(feedId),
-    tokenProvider: new TokenProvider()
+    // tokenProvider: new TokenProvider()
 });
 
 let subscription1 = instance.subscribeResuming(createSubscribeOptions('my-feed'));
-// let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('playground'));
+// let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('hey-2'));
 
 function tryUnsubscribe() {
     subscription1.unsubscribe();
