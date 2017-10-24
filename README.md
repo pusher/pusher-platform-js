@@ -74,14 +74,16 @@ For regular HTTP requests. Relays to BaseClient.
 RequestOptions:
 ```typescript
 export interface RequestOptions {
-  method: string;
-  path: string;
-  tokenProvider?: TokenProvider; 
-  jwt?: string;
-  headers?: ElementsHeaders;
-  body?: any;
-  retryStrategy?: RetryStrategy;
+    method: string;
+    path: string;
+    jwt?: string;
+    headers?: ElementsHeaders;
+    body?: any;
+    logger?: Logger;
 }
+
+  request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable
+  
 ```
 
 - `subscribeNonResuming(options: SubscribeOptions)`
@@ -102,21 +104,27 @@ It also creates XHRs that are used to create instances of `Subscription`.
 SubscribeOptions:
 ```typescript
 export interface SubscribeOptions {
-    path: string;
-    tokenProvider?: TokenProvider;
-    jwt?: string;
-    lastEventId?: string;
-    onOpen?: () => void;
-    onEvent?: (event: Event) => void;
-    onEnd?: () => void;
-    onError?: (error: Error) => void;
-    logger: Logger;
+    path: string,
+    headers?: ElementsHeaders,
+    listeners: SubscriptionListeners,
+    retryStrategyOptions?: RetryStrategyOptions,
+    tokenProvider?: TokenProvider
 }
+
+export interface SubscriptionListeners {
+    onOpen?: (headers: ElementsHeaders) => void;
+    onSubscribe?: () => void;
+    onRetrying?:() => void;
+    onEvent?: (event: SubscriptionEvent) => void;
+    onError?: (error: any) => void;
+    onEnd?: (error: any) => void;
+}
+
 ```
 
-There are standard callbacks for different subscription events `onOpen`, `onEvent`, `onEnd`, and `onError`. 
+There are standard callbacks for different subscription events `onOpen`, `onEvent`, `onEnd`, and `onError`. There are also helper callbacks `onRetrying` and `onSubscribe` that can be used to inform developers when a subscription has been lost or re-established.
 
-Use `unsubscribe(err?: Error)` to close this subscription. It will either callback `onEnd` or `onError` depending on whether or not the `Error` object is passed to it as argument.
+Use `unsubscribe()` to close this subscription.
 
 
 ### Subscription adn Resumable Subscription
@@ -204,7 +212,14 @@ export enum LogLevel {
 
 ### TokenProvider
 
-__DEPRECATED__ This will probably change.
+This is up to the service implementer to implement.
+
+```typescript
+export interface TokenProvider {
+    fetchToken(tokenParams?: any): PCancelable<string>;
+    clearToken(token?: string);
+}
+```
 
 ## Building
 

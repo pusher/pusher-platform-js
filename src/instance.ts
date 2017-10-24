@@ -65,9 +65,12 @@ export default class Instance {
         });
     }
 
-    request(options: RequestOptions): PCancelable{
+    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable{
         options.path = this.absPath(options.path);
-        return this.client.request(options);
+        if(options.headers == null || options.headers == undefined){
+            options.headers = {}
+        }
+        return this.client.request(options, tokenProvider, tokenParams);
     }
 
     subscribeNonResuming(options: SubscribeOptions): Subscription { 

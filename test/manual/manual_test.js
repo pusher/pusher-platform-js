@@ -20,9 +20,9 @@ class TokenProvider {
         constructor() {
             this.authData = {
                 "action": "READ",
-                "path": "feeds/my-feed/items"
+                "path": "feeds/private-my-feed/items"
             };
-            this.authEndpoint = "http://localhost:3000/feeds/tokens"; 
+            this.authEndpoint = "http://localhost:3000/path/tokens"; 
         }
         
         fetchToken(tokenParams){
@@ -48,6 +48,11 @@ class TokenProvider {
                     }; got ${ xhr.status } ${ xhr.responseText }.`));
                   }
                 };
+                
+                xhr.onerror = error => {
+                    console.log(error);
+                    reject(error);
+                };
                 xhr.ontimeout = () => {
                   reject(new Error(`Request timed out while fetching token from ${
                     this.authEndpoint
@@ -71,7 +76,7 @@ class TokenProvider {
 
 let requestOptions = {
     method: "GET",
-    path: "feeds/my-feed/items",
+    path: "feeds/private-my-feed/items"
 }
 
 let postRequestOptions = {

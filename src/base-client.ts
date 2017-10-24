@@ -35,7 +35,6 @@ export class BaseClient {
         this.websocketTransport = new WebSocketTransport(this.host);
     }
 
-    //TODO: add retrying
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
             return tokenProvider.fetchToken(tokenParams).then( token =>                  
@@ -46,7 +45,9 @@ export class BaseClient {
                         options
                     )
                 }
-            );
+            ).catch( error => {
+                console.log(error);
+            })
         }
         else {
             return executeNetworkRequest(
@@ -82,6 +83,7 @@ export class BaseClient {
             ),
             this.logger
         );
+
 
         let opened = false;
         return subscriptionStrategy(
