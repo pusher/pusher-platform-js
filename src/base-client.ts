@@ -3,7 +3,7 @@ import { createResumingStrategy } from './resuming-subscription';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
 import { RequestOptions, executeNetworkRequest } from './request';
-import { Logger } from './logger';
+import { ConsoleLogger, Logger } from './logger';
 import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
 import { BaseSubscription } from './base-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
@@ -26,6 +26,7 @@ export class BaseClient {
         let host = options.host.replace(/\/$/, '');
         this.baseURL = `${options.encrypted !== false ? "https" : "http"}://${host}`;
         this.logger = options.logger;
+        this.logger = options.logger || new ConsoleLogger();
     }
 
     private xhrConstructor: (path: string) => (headers: ElementsHeaders) => XMLHttpRequest = (path) => {
