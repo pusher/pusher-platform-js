@@ -10,7 +10,6 @@ import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createTransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
-import WebSocketClient from './websocket-client';
 import * as PCancelable from 'p-cancelable';
 
 import WebSocketTransport from './transport/websocket';
@@ -27,21 +26,23 @@ export class BaseClient {
     private XMLHttpRequest: any;
     private logger: Logger;
     private websocketTransport: WebSocketTransport;
+    private httpTransport: HttpTransport;
 
     constructor(private options: BaseClientOptions) {
         this.host = options.host.replace(/\/$/, '');
         this.logger = options.logger;
 
         this.websocketTransport = new WebSocketTransport(this.host);
+        this.httpTransport = new HttpTransport(this.host);
     }
 
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
             return tokenProvider.fetchToken(tokenParams).then( token =>                  
                 {
-                    options.headers['Authorization'] = `Bearer: ${token}`
+                    options.headers['Authorization'] = `Bearer ${token}`
                     return executeNetworkRequest(
-                        () => new HttpTransport(this.host).request(options),
+                        () => this.httpTransport.request(options),
                         options
                     )
                 }
@@ -51,7 +52,7 @@ export class BaseClient {
         }
         else {
             return executeNetworkRequest(
-                () => new HttpTransport(this.host).request(options),
+                () => this.httpTransport.request(options),
                 options
             );
         }

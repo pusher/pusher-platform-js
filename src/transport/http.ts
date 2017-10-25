@@ -64,7 +64,7 @@ export default class HttpTransport implements SubscriptionTransport {
     return 1;
   }
 
-  public unsubscribe(subscribtionId: number): void {
+  public unsubscribe(): void {
     this.state = HttpTransportState.ENDED;
     this.xhr.abort();
     this.listeners.onEnd(null);

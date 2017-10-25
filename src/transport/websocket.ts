@@ -215,7 +215,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   public unsubscribe(subID: number) {
-    console.log('unsubscribe subID:', subID);
     this.sendMessage(
       this.getMessage(
         UnsubscribeMessageType,
@@ -262,6 +261,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
       message = JSON.parse(event.data);
     } catch (err) {
       console.warn(new Error('Message is not valid JSON format'));
+      return;
     }
 
     // Validate structure of message
