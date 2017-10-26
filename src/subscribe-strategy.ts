@@ -12,8 +12,7 @@ export interface SubscribeStrategyListeners {
 
 export type SubscribeStrategy = (
     listeners: SubscribeStrategyListeners,
-    headers: ElementsHeaders,
-    subID?: number
+    headers: ElementsHeaders
 ) => Subscription;
 
 export let subscribeStrategyListenersFromSubscriptionListeners = (subListeners: SubscriptionListeners): SubscribeStrategyListeners => {

@@ -1,4 +1,4 @@
-import { SubscriptionEvent, SubscriptionTransport, SubscriptionListeners } from '../subscription';
+import { Subscription, SubscriptionEvent, SubscriptionTransport, SubscriptionListeners } from '../subscription';
 import { ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError } from '../network';
 
 type WsMessageType = number;
@@ -34,6 +34,8 @@ type WsSubscriptionsType = {
 class WsSubscriptions {
   private lastID: number;
   private subscriptions: WsSubscriptionsType;
+  private pendingLastID: number;
+  private pendingSubscriptions: WsSubscriptionsType;
 
   constructor () {
     this.lastID = 0;
@@ -46,13 +48,28 @@ class WsSubscriptions {
     headers: ElementsHeaders
   ): number {
     this.lastID = this.lastID + 1;
-    this.subscriptions[this.lastID] = {
+
+    return this.add(
+      this.lastID,
+      path,
+      listeners,
+      headers
+    );
+  }
+  
+  public add (
+    subID: number,
+    path: string,
+    listeners: SubscriptionListeners,
+    headers: ElementsHeaders
+  ): number {
+    this.subscriptions[subID] = {
       path,
       listeners,
       headers
     };
 
-    return this.lastID;
+    return subID;
   }
 
   public has (subID: number): boolean {
@@ -77,6 +94,24 @@ class WsSubscriptions {
     ));
   }
 
+  public removeAll () {
+    this.subscriptions = {};
+  }
+
+}
+
+class WsSubscription implements Subscription {
+  constructor(
+    private wsTransport: WebSocketTransport,
+    private subID: number
+  ) {
+
+  }
+
+  unsubscribe () {
+    this.wsTransport.unsubscribe(this.subID);
+  }
+
 }
 
 const pingIntervalMs: number = 2000;
@@ -87,6 +122,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private webSocketPath: string = '/ws';
   private socket: WebSocket;
   private subscriptions: WsSubscriptions;
+  private pendingSubscriptions: WsSubscriptions;
   private lastMessageReceivedTimestamp: number;
   private pingInterval: any;
   private pongTimeout: any;
@@ -95,6 +131,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
   constructor(host: string) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
     this.subscriptions = new WsSubscriptions();
+    this.pendingSubscriptions = new WsSubscriptions();
   
     this.pingInterval = setInterval(() => {
       if (this.pongTimeout) {
@@ -140,18 +177,19 @@ export default class WebSocketTransport implements SubscriptionTransport {
     this.socket = new WebSocket(this.baseURL);
     
     this.socket.addEventListener('open', (event) => {
-      const allSubscriptions = this.subscriptions.getAllAsArray();
+      const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
     
-      if (!allSubscriptions.length) {
+      if (!allPendingSubscriptions.length) {
         return;
       }
 
       // Re-subscribe old subscriptions for new connection
-      allSubscriptions.forEach(subscription => {
+      allPendingSubscriptions.forEach(subscription => {
         const { subID, path, listeners, headers } = subscription;
         this.subscribe(path, listeners, headers, subID);
       });
 
+      this.pendingSubscriptions.removeAll();
     });
     
     this.socket.addEventListener('message', (event) => this.recieveMessage(event));
@@ -160,47 +198,53 @@ export default class WebSocketTransport implements SubscriptionTransport {
       this.subscriptions
         .getAllAsArray()
         .forEach(subscription => {
-          subscription.listeners.onError(new Error('Connection was lost.'));
+          subscription.listeners.onError(new NetworkError('Connection was lost.'));
         });
+      
+      this.subscriptions.removeAll();
     });
     this.socket.addEventListener('close', (event) => {
-      if (event.wasClean) {
+      if (!event.wasClean) {
+        this.tryReconnectIfNeeded();
         return;
       }
 
-      this.tryReconnect();
+      this.subscriptions
+        .getAllAsArray()
+        .forEach(subscription => {
+          subscription.listeners.onEnd(null);
+        });
+
+      this.subscriptions.removeAll();
     });
   }
 
-  private tryReconnect () {
-    if (this.socket.readyState === WSReadyState.Closed) {
-      return this.connect();
+  private tryReconnectIfNeeded () {
+    if (this.socket.readyState !== WSReadyState.Closed) {
+      return;
     }
 
-    this.subscriptions
-      .getAllAsArray()
-      .forEach(subscription => {
-        subscription.listeners.onError(new NetworkError('Connection was lost.', subscription.subID));
-      });
+    this.connect();
   }
 
   public subscribe(
     path: string,
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
-    existingSubID?: number
-  ) {
-    if (existingSubID && typeof existingSubID === 'string') {
-      debugger;
+    pendingSubID?: number
+  ): Subscription {
+    // If connection was closed, try to reconnect
+    this.tryReconnectIfNeeded();
+
+    // Add subscription to pending if socket is not open
+    if (this.socket.readyState !== WSReadyState.Open) {
+      return new WsSubscription(this, this.pendingSubscriptions.addNew(path, listeners, headers));
     }
 
-    // If connection was closed, try to reconnect
-    if (this.socket.readyState === WSReadyState.Closed) {
-      this.tryReconnect();
-    }
-    
     // Add or select subscription
-    const subID = (this.subscriptions.has(existingSubID)) ? existingSubID : this.subscriptions.addNew(path, listeners, headers);
+    const subID = (!pendingSubID) ?
+      this.subscriptions.addNew(path, listeners, headers) :
+      this.subscriptions.add(pendingSubID, path, listeners, headers);
 
     this.sendMessage(
       this.getMessage(
@@ -211,10 +255,10 @@ export default class WebSocketTransport implements SubscriptionTransport {
       )
     );
 
-    return subID;
+    return new WsSubscription(this, subID);
   }
 
-  public unsubscribe(subID: number) {
+  public unsubscribe(subID: number): void {
     this.sendMessage(
       this.getMessage(
         UnsubscribeMessageType,
@@ -224,6 +268,10 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.subscriptions.get(subID).listeners.onEnd(null);
     this.subscriptions.remove(subID);
+  }
+
+  private removeAllSubscribtions () {
+    this.subscriptions.removeAll();
   }
 
   private getMessage (
@@ -347,6 +395,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private onEOSMessage(eosMessage: Message, subID: number, subscriptionListeners: SubscriptionListeners): void {
+    this.subscriptions.remove(subID);
+
     if (eosMessage.length !== 3) {
       return subscriptionListeners.onError(new Error(`EOS message has ${eosMessage.length} elements (expected 4)`));
     }
@@ -364,7 +414,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return subscriptionListeners.onEnd(null);
     }
 
-    return subscriptionListeners.onError(new ErrorResponse(statusCode, headers, body, subID));
+    return subscriptionListeners.onError(new ErrorResponse(statusCode, headers, body));
   }
 
   private onPongMessage (message: Message) {

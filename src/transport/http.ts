@@ -1,5 +1,5 @@
 import { RequestOptions } from '../request';
-import { SubscriptionListeners } from '../subscription';
+import { Subscription, SubscriptionListeners } from '../subscription';
 import { XhrReadyState, ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError } from '../network';
 import { SubscriptionEvent, SubscriptionTransport } from '../subscription';
 import { Logger } from '../logger';
@@ -30,7 +30,7 @@ export default class HttpTransport implements SubscriptionTransport {
     path: string,
     listeners: SubscriptionListeners,
     headers: ElementsHeaders
-  ): number {
+  ): Subscription {
     this.listeners = listeners;
     
     const requestOptions: RequestOptions = {
@@ -61,7 +61,7 @@ export default class HttpTransport implements SubscriptionTransport {
     this.state = HttpTransportState.OPENING;
     this.xhr.send();
 
-    return 1;
+    return this;
   }
 
   public unsubscribe(): void {

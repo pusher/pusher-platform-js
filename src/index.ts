@@ -16,14 +16,13 @@ import { BaseClient, BaseClientOptions } from './base-client';
 import { Logger, ConsoleLogger, EmptyLogger } from './logger';
 import { createRetryingStrategy } from './retrying-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
-import { BaseSubscription } from './base-subscription';
 import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, XhrReadyState } from './network';
 
 export {
   Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners,
   BaseClient,  BaseClientOptions,
   
-  Subscription, BaseSubscription,
+  Subscription,
   createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createTransportStrategy, 
   
   ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,

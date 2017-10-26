@@ -46,11 +46,9 @@ export interface RetryStrategyResult {}
 
 export class Retry implements RetryStrategyResult {
     public waitTimeMillis: number;
-    public subID: number;
 
-    constructor(waitTimeMillis, subID?) {
+    constructor(waitTimeMillis) {
         this.waitTimeMillis = waitTimeMillis;
-        this.subID = subID;
     }
 }
 
@@ -93,7 +91,7 @@ export class RetryResolution{
         
         if (error instanceof ErrorResponse && error.headers['Retry-After']){
             this.logger.verbose(`${this.constructor.name}:  Retry-After header is present, retrying in ${error.headers['Retry-After']}`);
-            return new Retry(parseInt(error.headers['Retry-After']) * 1000, error.subID);
+            return new Retry(parseInt(error.headers['Retry-After']) * 1000);
         } 
         
         if (error instanceof NetworkError ||(error instanceof ErrorResponse && requestMethodIsSafe(error.headers["Request-Method"]))  || this.retryUnsafeRequests) { 
@@ -108,13 +106,13 @@ export class RetryResolution{
     private shouldSafeRetry(error: any){
         if(error instanceof NetworkError){
             this.logger.verbose(`${this.constructor.name}: It's a Network Error, will retry`, error);
-            return new Retry(this.calulateMillisToRetry(), error.subID);
+            return new Retry(this.calulateMillisToRetry());
         }
         
         else if(error instanceof ErrorResponse) {
             if(error.statusCode >= 500 && error.statusCode < 600){
                 this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
-                return new Retry(this.calulateMillisToRetry(), error.subID);
+                return new Retry(this.calulateMillisToRetry());
             }
         }
         this.logger.verbose(`${this.constructor.name}: Error is not retryable`, error);

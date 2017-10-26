@@ -108,10 +108,8 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
     
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
-                            let subID = errorResolution.subID;
-
                             this.timeout = window.setTimeout(() => {
-                                executeNextSubscribeStrategy(lastEventId, subID)
+                                executeNextSubscribeStrategy(lastEventId)
                             }, errorResolution.waitTimeMillis);
                         }
                         else {
@@ -119,7 +117,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                         }
                     }
                 
-                    let executeNextSubscribeStrategy = (lastEventId: string, subID?: number) => {
+                    let executeNextSubscribeStrategy = (lastEventId: string) => {
 
                         logger.verbose(`ResumingSubscription: trying to re-establish the subscription`);                      
                         if(lastEventId){
@@ -144,8 +142,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                     onTransition(new EndedSubscriptionState(error));
                                 },
                             },
-                            headers,
-                            subID
+                            headers
                         );
                     }
                     executeSubscriptionOnce(error, lastEventId);

@@ -25,13 +25,11 @@ export class ErrorResponse{
     public statusCode: number;
     public headers: ElementsHeaders;
     public info: any;
-    public subID?: number;
 
-    constructor(statusCode: number, headers: ElementsHeaders, info: any, subID?: number) {
+    constructor(statusCode: number, headers: ElementsHeaders, info: any) {
         this.statusCode = statusCode;
         this.headers = headers;
         this.info = info;
-        this.subID = subID;
     }
 
     static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
@@ -41,10 +39,7 @@ export class ErrorResponse{
     }
 
 export class NetworkError{
-    public subID?: number;
-
-    constructor(public error: string, subID?: number) {
-        this.subID = subID;
+    constructor(public error: string) {
     }
 }
 

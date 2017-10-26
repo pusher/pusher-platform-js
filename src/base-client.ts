@@ -5,7 +5,6 @@ import { RetryStrategyOptions } from './retry-strategy';
 import { RequestOptions, executeNetworkRequest } from './request';
 import { Logger } from './logger';
 import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
-import { BaseSubscription } from './base-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createTransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
@@ -104,6 +103,7 @@ export class BaseClient {
             headers
         );
     }
+
     public subscribeNonResuming(
         path: string, 
         headers: ElementsHeaders, 

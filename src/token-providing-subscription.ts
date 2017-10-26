@@ -27,8 +27,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
         constructor(
             listeners: SubscribeStrategyListeners,
-            headers,
-            subID?: number
+            headers
         ){
             class TokenProvidingState implements SubscriptionState {
 
@@ -72,8 +71,7 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                                             onTransition(new EndedSubscriptionState(error));
                                         }
                                     },
-                                    headers,
-                                    subID
+                                    headers
                                 )
                             })
                             .catch( error => {
@@ -139,11 +137,11 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
 
     //Token provider might not be there. If missing, go straight to the underlying subscribe strategy
     if(tokenProvider){
-        return (listeners, headers, subID) => new TokenProvidingSubscription(listeners, headers, subID);
+        return (listeners, headers) => new TokenProvidingSubscription(listeners, headers);
     }
 
     else{
-        return (listeners, headers, subID) => 
-            nextSubscribeStrategy(listeners, headers, subID);
+        return (listeners, headers) => 
+            nextSubscribeStrategy(listeners, headers);
     }
 }
