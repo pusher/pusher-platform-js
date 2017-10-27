@@ -17,6 +17,7 @@ export interface InstanceOptions {
     logger?: Logger;
     client?: BaseClient;
     encrypted?: boolean;
+    tokenProvider?: TokenProvider;
 }
 
 export interface SubscribeOptions {
@@ -39,30 +40,33 @@ export default class Instance {
     private platformVersion: string;
     private serviceVersion: string;
     private serviceName: string;
-    private logger: Logger;
-    
+    private tokenProvider?: TokenProvider;
+    logger: Logger;
+
     constructor(options: InstanceOptions) {
         if (!options.instanceId) throw new Error('Expected `instanceId` property in Instance options!');
         if (options.instanceId.split(":").length !== 3) throw new Error('The instance property is in the wrong format!');
         if(!options.serviceName) throw new Error('Expected `serviceName` property in Instance options!');
         if(!options.serviceVersion) throw new Error('Expected `serviceVersion` property in Instance otpions!');
-        
+
         let splitInstance = options.instanceId.split(":");
         this.platformVersion = splitInstance[0];
         this.cluster = splitInstance[1];
         this.id = splitInstance[2];
-        
+
         this.serviceName = options.serviceName;
         this.serviceVersion = options.serviceVersion;
-        
+
         this.host = options.host || `${this.cluster}.${HOST_BASE}`;
         this.logger = options.logger || new ConsoleLogger();
-        
+
         this.client = options.client || new BaseClient({
             encrypted: options.encrypted,
             host: this.host,
             logger: this.logger
         });
+
+        this.tokenProvider = options.tokenProvider;
     }
 
     request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable{
@@ -70,17 +74,18 @@ export default class Instance {
         if(options.headers == null || options.headers == undefined){
             options.headers = {}
         }
-        return this.client.request(options, tokenProvider, tokenParams);
+        const tokenProviderToUse = tokenProvider || this.tokenProvider;
+        return this.client.request(options, tokenProviderToUse, tokenParams);
     }
 
-    subscribeNonResuming(options: SubscribeOptions): Subscription { 
-        
+    subscribeNonResuming(options: SubscribeOptions): Subscription {
+
         const headers: ElementsHeaders = options.headers || {};
         const retryStrategyOptions = options.retryStrategyOptions || {};
-        const tokenProvider = options.tokenProvider;
-    
+        const tokenProvider = options.tokenProvider || this.tokenProvider;
+
         return this.client.subscribeNonResuming(
-            this.absPath(options.path), 
+            this.absPath(options.path),
             headers,
             options.listeners,
             retryStrategyOptions,
@@ -92,18 +97,18 @@ export default class Instance {
 
         const headers: ElementsHeaders = options.headers || {};
         const retryStrategyOptions = options.retryStrategyOptions || {};
-        const tokenProvider = options.tokenProvider;
-    
+        const tokenProvider = options.tokenProvider || this.tokenProvider;
+
         return this.client.subscribeResuming(
-            this.absPath(options.path), 
+            this.absPath(options.path),
             headers,
             options.listeners,
             retryStrategyOptions,
             options.initialEventId,
             tokenProvider
-        ); 
+        );
     }
-    
+
     private absPath(relativePath: string): string {
         return `/services/${this.serviceName}/${this.serviceVersion}/${this.id}/${relativePath}`.replace(/\/+/g, "/").replace(/\/+$/, "");
     }
