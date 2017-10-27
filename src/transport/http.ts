@@ -12,34 +12,17 @@ export enum HttpTransportState {
   ENDED         // called onEnd() or onError(err)
 };
 
-export default class HttpTransport implements SubscriptionTransport {
+class HttpSubscription implements Subscription {
   private xhr: XMLHttpRequest;
   private state: HttpTransportState = HttpTransportState.UNOPENED;
   private listeners: SubscriptionListeners;
-  private baseURL: string;
 
-  constructor(host: string, encrypted?: boolean) {
-    this.baseURL = `${encrypted !== false ? "https" : "http"}://${host}`;
-  }
-
-  public request (requestOptions: RequestOptions): XMLHttpRequest {
-    return this.createXHR(this.baseURL, requestOptions);
-  }
-
-  public subscribe(
-    path: string,
-    listeners: SubscriptionListeners,
-    headers: ElementsHeaders
-  ): Subscription {
+  constructor (
+    xhr: XMLHttpRequest,
+    listeners: SubscriptionListeners
+  ) {
+    this.xhr = xhr;
     this.listeners = listeners;
-    
-    const requestOptions: RequestOptions = {
-      method: "SUBSCRIBE",
-      path: path,
-      headers: headers
-    };
-
-    this.xhr = this.createXHR(this.baseURL, requestOptions);
 
     this.xhr.onreadystatechange = () => {
       switch (this.xhr.readyState) {
@@ -256,6 +239,36 @@ export default class HttpTransport implements SubscriptionTransport {
     if (message.length < 1) {
       return new Error("Message is empty array");
     }
+  }
+
+}
+
+export default class HttpTransport implements SubscriptionTransport {
+  private baseURL: string;
+
+  constructor(host: string, encrypted?: boolean) {
+    this.baseURL = `${encrypted !== false ? "https" : "http"}://${host}`;
+  }
+
+  public request (requestOptions: RequestOptions): XMLHttpRequest {
+    return this.createXHR(this.baseURL, requestOptions);
+  }
+
+  public subscribe(
+    path: string,
+    listeners: SubscriptionListeners,
+    headers: ElementsHeaders
+  ): Subscription {
+    const requestOptions: RequestOptions = {
+      method: "SUBSCRIBE",
+      path: path,
+      headers: headers
+    };
+
+    return new HttpSubscription(
+      this.createXHR(this.baseURL, requestOptions),
+      listeners
+    );
   }
 
   private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
