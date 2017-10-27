@@ -2,14 +2,23 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.10.0] 2017-10-27
+
+### Changes
+
+- `instanceId` renamed to `locator` in Instance class
+- Added export of `SubscriptionEvent`
+
+### Fixes
+
+- Default `logger` now set in `BaseClient` if `baseClient` without a `logger` is provided to the `Instance` constructor
+
 ## [v0.9.2] 2017-10-06
 
 ### Fixes
 
 - Making authorized requests
 - Making authorized subscriptions
-
-
 
 ## [v0.9.0] 2017-09-14
 
@@ -19,19 +28,19 @@ There will be an additional document describing how subscriptions are constructe
 ### Changes
 
 - We stopped using the term 'resumable' in favour of 'resuming'. Resumable as a passive form is used to describe a resource, on a remote server, whereas Resuming is an active form and better describes the client's behaviour.
-- renamed `Instance.subscribe` to `Instance.subscribeNonResuming` 
+- renamed `Instance.subscribe` to `Instance.subscribeNonResuming`
 - renamed `Instance.subscribeResumable` to `Instance.subscribeResuming`
 - all subscriptions now return an object of type `Subscription`, that can be unsubscribed via `subscription.unsubscribe()`.
 -  Removed the `RetryStrategy` in favour of `RetryStrategyOptions`. Any custom config can be passed in there, including limit for maximum number of retries, and the function to increment the wait time.
 - Listeners are now passed to subscriptions as a single interface, containing optional callbacks:
-    - `onOpen(headers)`, 
-    - `onSubscribe()`, 
-    - `onError(error)`, 
+    - `onOpen(headers)`,
+    - `onSubscribe()`,
+    - `onError(error)`,
     - `onEvent(event)`,
     - `onEnd(error)`
-- `onError` now returns `any` type, making for easier casting. 
-- `TokenProvider` is now an interface. Implementers are expected to create their own. 
-- `TokenProvider` returns a cancelable promise - from the `p-cancelable` library. 
+- `onError` now returns `any` type, making for easier casting.
+- `TokenProvider` is now an interface. Implementers are expected to create their own.
+- `TokenProvider` returns a cancelable promise - from the `p-cancelable` library.
 - `Logger` now can't be passed to each request anymore. It is now only created as part of `Instance` creation.
 - `Instance.request` now returns a `CancelablePromise` from `p-cancelable` library. It does not retry as of now.
 
@@ -39,7 +48,7 @@ There will be an additional document describing how subscriptions are constructe
 
 ### Changes
 
-- Renamed the `instance` to `instanceId` when instantiating an `Instance`. `Instance` class now has a parameter `id` that used to be `instance`. 
+- Renamed the `instance` to `instanceId` when instantiating an `Instance`. `Instance` class now has a parameter `id` that used to be `instance`.
 - Won the Internet for the most confusing changelog entries.
 
 ## [v0.6.1] 2017-07-10
