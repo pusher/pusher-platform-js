@@ -36,7 +36,7 @@ export interface SubscriptionTransport {
 };
 
 export type SubscriptionConstructor = (
-    onOpen: (headers:ElementsHeaders) => void , 
+    onOpen: (headers:ElementsHeaders) => void,
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
     onEnd: (error: any) => void,

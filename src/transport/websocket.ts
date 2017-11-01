@@ -32,29 +32,11 @@ type WsSubscriptionsType = {
 };
 
 class WsSubscriptions {
-  private lastID: number;
   private subscriptions: WsSubscriptionsType;
-  private pendingLastID: number;
   private pendingSubscriptions: WsSubscriptionsType;
 
   constructor () {
-    this.lastID = 0;
     this.subscriptions = {};
-  }
-
-  public addNew (
-    path: string,
-    listeners: SubscriptionListeners,
-    headers: ElementsHeaders
-  ): number {
-    this.lastID = this.lastID + 1;
-
-    return this.add(
-      this.lastID,
-      path,
-      listeners,
-      headers
-    );
   }
   
   public add (
@@ -76,6 +58,10 @@ class WsSubscriptions {
     return this.subscriptions[subID] != undefined;
   }
 
+  public isEmpty (): boolean {
+    return Object.keys(this.subscriptions).length === 0;
+  }
+
   public remove (subID: number): boolean {
     return delete this.subscriptions[subID];
   }
@@ -87,6 +73,7 @@ class WsSubscriptions {
   public getAll (): WsSubscriptionsType {
     return this.subscriptions;
   }
+
 
   public getAllAsArray (): SubscriptionData[] {
     return Object.keys(this.subscriptions).map(subID => (
@@ -121,6 +108,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private baseURL: string;
   private webSocketPath: string = '/ws';
   private socket: WebSocket;
+  private forcedClose: boolean = false;
+  private closedError: any = null;
+  private lastSubscriptionID: number;
   private subscriptions: WsSubscriptions;
   private pendingSubscriptions: WsSubscriptions;
   private lastMessageReceivedTimestamp: number;
@@ -128,51 +118,21 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private pongTimeout: any;
   private lastSentPingID: number;
 
+
   constructor(host: string) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
+    this.lastSubscriptionID = 0;
     this.subscriptions = new WsSubscriptions();
     this.pendingSubscriptions = new WsSubscriptions();
-  
-    this.pingInterval = setInterval(() => {
-      if (this.pongTimeout) {
-        return;
-      }
-
-      const now = new Date().getTime();
-
-      if (pingTimeoutMs > (now - this.lastMessageReceivedTimestamp)) {
-        return;
-      }
-
-      this.sendMessage(
-        this.getMessage(
-          PingMessageType,
-          now
-        )
-      );
-
-      this.lastSentPingID = now;
-
-      this.pongTimeout = setTimeout(() => {
-        const now = new Date().getTime();
-
-        if (pingTimeoutMs > (now - this.lastMessageReceivedTimestamp)) {
-          this.pongTimeout = null;
-          return;
-        }
-
-        this.socket.close(4000, `Pong response wasn't recivied in timeout.`);
-      }, pingTimeoutMs);
-
-    }, pingIntervalMs);
 
     this.connect();
   }
   
   private connect () {
-    if (this.socket instanceof WebSocket) {
-      this.socket.close();
-    }
+    this.close();
+
+    this.forcedClose = false;
+    this.closedError = null;
 
     this.socket = new WebSocket(this.baseURL);
     
@@ -186,37 +146,88 @@ export default class WebSocketTransport implements SubscriptionTransport {
       // Re-subscribe old subscriptions for new connection
       allPendingSubscriptions.forEach(subscription => {
         const { subID, path, listeners, headers } = subscription;
-        this.subscribe(path, listeners, headers, subID);
+        this.subscribePending(path, listeners, headers, subID);
       });
 
       this.pendingSubscriptions.removeAll();
+
+      this.pingInterval = setInterval(() => {
+        if (this.pongTimeout) {
+          return;
+        }
+  
+        const now = new Date().getTime();
+  
+        if (pingTimeoutMs > (now - this.lastMessageReceivedTimestamp)) {
+          return;
+        }
+  
+        this.sendMessage(
+          this.getMessage(
+            PingMessageType,
+            now
+          )
+        );
+  
+        this.lastSentPingID = now;
+  
+        this.pongTimeout = setTimeout(() => {
+          const now = new Date().getTime();
+  
+          if (pingTimeoutMs > (now - this.lastMessageReceivedTimestamp)) {
+            this.pongTimeout = null;
+            return;
+          }
+  
+          this.close(new NetworkError(`Pong response wasn't recivied until timeout.`));
+        }, pingTimeoutMs);
+  
+      }, pingIntervalMs);
     });
     
-    this.socket.addEventListener('message', (event) => this.recieveMessage(event));
+    this.socket.addEventListener('message', (event) => this.receiveMessage(event));
     this.socket.addEventListener('error', (event) => {
-      // Propagate an error to all subscriptions
-      this.subscriptions
-        .getAllAsArray()
-        .forEach(subscription => {
-          subscription.listeners.onError(new NetworkError('Connection was lost.'));
-        });
-      
-      this.subscriptions.removeAll();
+        this.close(new NetworkError('Connection was lost.'));
     });
     this.socket.addEventListener('close', (event) => {
-      if (!event.wasClean) {
+      if (!this.forcedClose) {
         this.tryReconnectIfNeeded();
         return;
       }
 
-      this.subscriptions
-        .getAllAsArray()
-        .forEach(subscription => {
-          subscription.listeners.onEnd(null);
-        });
+      const callback = (this.closedError) ?
+        subscription => subscription.listeners.onError(this.closedError) :
+        subscription => subscription.listeners.onEnd(null);
 
-      this.subscriptions.removeAll();
+      const allSubscriptions = (this.pendingSubscriptions.isEmpty() === false) ?
+        this.pendingSubscriptions :
+        this.subscriptions;
+
+      allSubscriptions
+        .getAllAsArray()
+        .forEach(callback);
+
+      allSubscriptions.removeAll();
+
+      if (this.closedError) {
+        this.tryReconnectIfNeeded();
+      }
     });
+  }
+
+  private close (error?) {
+    if (!(this.socket instanceof WebSocket)) {
+      return;
+    }
+    
+    this.forcedClose = true;
+    this.closedError = error;
+    this.socket.close();
+    
+    clearTimeout(this.pingInterval);
+    clearTimeout(this.pongTimeout);
+    delete this.pongTimeout;
+    this.lastSentPingID = null;
   }
 
   private tryReconnectIfNeeded () {
@@ -230,21 +241,21 @@ export default class WebSocketTransport implements SubscriptionTransport {
   public subscribe(
     path: string,
     listeners: SubscriptionListeners,
-    headers: ElementsHeaders,
-    pendingSubID?: number
+    headers: ElementsHeaders
   ): Subscription {
     // If connection was closed, try to reconnect
     this.tryReconnectIfNeeded();
 
+    const subID = this.lastSubscriptionID++;
+
     // Add subscription to pending if socket is not open
     if (this.socket.readyState !== WSReadyState.Open) {
-      return new WsSubscription(this, this.pendingSubscriptions.addNew(path, listeners, headers));
+      this.pendingSubscriptions.add(subID, path, listeners, headers);
+      return new WsSubscription(this, subID);
     }
 
     // Add or select subscription
-    const subID = (!pendingSubID) ?
-      this.subscriptions.addNew(path, listeners, headers) :
-      this.subscriptions.add(pendingSubID, path, listeners, headers);
+    this.subscriptions.add(subID, path, listeners, headers);
 
     this.sendMessage(
       this.getMessage(
@@ -257,6 +268,25 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     return new WsSubscription(this, subID);
   }
+  
+  private subscribePending (
+    path: string,
+    listeners: SubscriptionListeners,
+    headers: ElementsHeaders,
+    subID: number
+  ) {
+      // Add or select subscription
+      this.subscriptions.add(subID, path, listeners, headers);
+    
+      this.sendMessage(
+        this.getMessage(
+          SubscribeMessageType,
+          subID,
+          path,
+          headers
+        )
+      );
+  }
 
   public unsubscribe(subID: number): void {
     this.sendMessage(
@@ -268,10 +298,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.subscriptions.get(subID).listeners.onEnd(null);
     this.subscriptions.remove(subID);
-  }
-
-  private removeAllSubscribtions () {
-    this.subscriptions.removeAll();
   }
 
   private getMessage (
@@ -300,7 +326,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     return this.subscriptions.get(subID);
   }
 
-  private recieveMessage (event: any) {
+  private receiveMessage (event: any) {
     this.lastMessageReceivedTimestamp = new Date().getTime();
 
     // First try to parse event to JSON message.
@@ -308,18 +334,21 @@ export default class WebSocketTransport implements SubscriptionTransport {
     try {
       message = JSON.parse(event.data);
     } catch (err) {
-      console.warn(new Error('Message is not valid JSON format'));
+      this.close(new NetworkError('Message is not valid JSON format'));
       return;
     }
 
-    // Validate structure of message
+    // Validate structure of message.
+    // Close connection if not valid.
     const nonValidMessageError = this.validateMessage(message);
     if (nonValidMessageError) {
-      return console.warn(nonValidMessageError);
+      this.close(new NetworkError(nonValidMessageError.message));
+      return;
     }
     
     const messageType = message.shift();
 
+    // Try to handle connection level messages first
     switch (messageType) {
       case PongMessageType:
         this.onPongMessage(message);
@@ -327,17 +356,22 @@ export default class WebSocketTransport implements SubscriptionTransport {
       case PingMessageType:
         this.onPingMessage(message);
       return;
+      case CloseMessageType:
+        this.onCloseMessage(message);
+      return;
     }
 
     const subID = message.shift();
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      return console.warn(`Recieved message for non existing subscription id: "${subID}"`);
+      this.close(new NetworkError(`Recieved message for non existing subscription id: "${subID}"`));
+      return;
     }
 
     const { listeners } = subscription;
 
+    // Handle subscription level messages. 
     switch (messageType) {
       case OpenMessageType:
         this.onOpenMessage(message, subID, listeners);
@@ -348,11 +382,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
       case EosMessageType:
         this.onEOSMessage(message, subID, listeners);
       break;
-      case PongMessageType:
-        this.onPongMessage(message);
-      break;
       default:
-        listeners.onError(new Error('Recived non existing type of message.'));
+        this.close(new NetworkError('Recived non existing type of message.'));
     }
   }
 
@@ -367,7 +398,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     if (message.length < 1) {
-      return new Error(`Message is empty array ${JSON.stringify(message)}`);
+      return new Error(`Message is empty array: ${JSON.stringify(message)}`);
     }
 
     return null;
@@ -394,7 +425,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subscriptionListeners.onEvent({eventId, headers, body});
   }
 
-  private onEOSMessage(eosMessage: Message, subID: number, subscriptionListeners: SubscriptionListeners): void {
+  private onEOSMessage (eosMessage: Message, subID: number, subscriptionListeners: SubscriptionListeners): void {
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
@@ -417,12 +448,25 @@ export default class WebSocketTransport implements SubscriptionTransport {
     return subscriptionListeners.onError(new ErrorResponse(statusCode, headers, body));
   }
 
+  private onCloseMessage (closeMessage: Message) {
+    const [statusCode, headers, body] = closeMessage;
+    if (typeof statusCode !== 'number') {
+      return this.close(new Error('Close message: Invalid EOS Status Code'));
+    }
+    
+    if (typeof headers !== 'object' || Array.isArray(headers)) {
+      return this.close(new Error('Close message: Invalid EOS ElementsHeaders'));
+    }
+
+    this.close();
+  }
+
   private onPongMessage (message: Message) {
     const [ receviedPongID ] = message;
 
     if (this.lastSentPingID !== receviedPongID) {
       // Close with protocol error status code
-      this.socket.close(4000, `Didn't recived pong in with proper ID`);
+      this.close(new NetworkError(`Didn't recived pong with proper ID`));
     }
 
     clearTimeout(this.pongTimeout);

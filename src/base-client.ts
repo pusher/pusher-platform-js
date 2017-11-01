@@ -28,7 +28,7 @@ export class BaseClient {
     private httpTransport: HttpTransport;
 
     constructor(private options: BaseClientOptions) {
-        this.host = options.host.replace(/\/$/, '');
+        this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger;
 
         this.websocketTransport = new WebSocketTransport(this.host);
@@ -37,7 +37,7 @@ export class BaseClient {
 
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
-            return tokenProvider.fetchToken(tokenParams).then( token =>                  
+            return tokenProvider.fetchToken(tokenParams).then(token =>
                 {
                     options.headers['Authorization'] = `Bearer ${token}`
                     return executeNetworkRequest(
