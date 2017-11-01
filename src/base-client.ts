@@ -3,7 +3,7 @@ import { createResumingStrategy } from './resuming-subscription';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
 import { RequestOptions, executeNetworkRequest } from './request';
-import { Logger } from './logger';
+import { ConsoleLogger, Logger } from './logger';
 import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createTransportStrategy } from './transports';
@@ -29,12 +29,12 @@ export class BaseClient {
 
     constructor(private options: BaseClientOptions) {
         this.host = options.host.replace(/(\/)+$/, '');
-        this.logger = options.logger;
+        this.logger = options.logger || new ConsoleLogger();
 
         this.websocketTransport = new WebSocketTransport(this.host);
         this.httpTransport = new HttpTransport(this.host);
     }
-
+    
     public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
         if(tokenProvider){
             return tokenProvider.fetchToken(tokenParams).then(token =>
@@ -55,15 +55,15 @@ export class BaseClient {
                 options
             );
         }
-        
+
     }
-    
+
     public subscribeResuming(
-        path: string, 
-        headers: ElementsHeaders, 
-        listeners: SubscriptionListeners, 
-        retryStrategyOptions: RetryStrategyOptions, 
-        initialEventId: string,            
+        path: string,
+        headers: ElementsHeaders,
+        listeners: SubscriptionListeners,
+        retryStrategyOptions: RetryStrategyOptions,
+        initialEventId: string,
         tokenProvider: TokenProvider,
     ): Subscription {
         listeners = replaceMissingListenersWithNoOps(listeners);
@@ -81,6 +81,7 @@ export class BaseClient {
                 ), 
                 this.logger
             ),
+
             this.logger
         );
 
@@ -105,10 +106,10 @@ export class BaseClient {
     }
 
     public subscribeNonResuming(
-        path: string, 
-        headers: ElementsHeaders, 
-        listeners: SubscriptionListeners, 
-        retryStrategyOptions: RetryStrategyOptions, 
+        path: string,
+        headers: ElementsHeaders,
+        listeners: SubscriptionListeners,
+        retryStrategyOptions: RetryStrategyOptions,
         tokenProvider: TokenProvider
     ){
         listeners = replaceMissingListenersWithNoOps(listeners);

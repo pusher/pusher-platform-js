@@ -10,7 +10,7 @@ import {
     RetryStrategyResult,
 } from './retry-strategy';
 import { TokenProvider } from './token-provider';
-import { Subscription, SubscriptionConstructor, SubscriptionListeners } from './subscription';
+import { Subscription, SubscriptionConstructor, SubscriptionListeners, SubscriptionEvent } from './subscription';
 import { default as Instance, ResumableSubscribeOptions, SubscribeOptions } from './instance';
 import { BaseClient, BaseClientOptions } from './base-client';
 import { Logger, ConsoleLogger, EmptyLogger } from './logger';
@@ -19,21 +19,21 @@ import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, XhrReadyState } from './network';
 
 export {
-  Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners,
+  Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners, SubscriptionEvent,
   BaseClient,  BaseClientOptions,
-  
+
   Subscription,
   createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createTransportStrategy, 
   
   ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
-  RequestOptions, NetworkRequest, executeNetworkRequest, 
+  RequestOptions, NetworkRequest, executeNetworkRequest,
 
-  
+
 
   RetryStrategyResult, Retry, DoNotRetry, RetryStrategyOptions, RetryResolution, createRetryStrategyOptionsOrDefault,
   TokenProvider,
-  Logger, ConsoleLogger, EmptyLogger, 
-  
+  Logger, ConsoleLogger, EmptyLogger,
+
 };
 
 export default {

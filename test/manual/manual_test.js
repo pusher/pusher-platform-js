@@ -1,7 +1,7 @@
 let verboseLogger = new PusherPlatform.ConsoleLogger(1) //Verbose logger 
 
 let instance = new PusherPlatform.Instance({
-    instanceId: CONSTANTS.instanceId,
+    locator: CONSTANTS.instanceId,
     serviceName: 'example',
     serviceVersion: 'v1',
     host: 'localhost:10443',
