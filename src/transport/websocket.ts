@@ -138,10 +138,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     
     this.socket.addEventListener('open', (event) => {
       const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
-    
-      if (!allPendingSubscriptions.length) {
-        return;
-      }
 
       // Re-subscribe old subscriptions for new connection
       allPendingSubscriptions.forEach(subscription => {
@@ -334,7 +330,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     try {
       message = JSON.parse(event.data);
     } catch (err) {
-      this.close(new NetworkError('Message is not valid JSON format'));
+      this.close(new Error(`Message is not valid JSON format. Getting ${event.data}`));
       return;
     }
 
@@ -342,7 +338,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // Close connection if not valid.
     const nonValidMessageError = this.validateMessage(message);
     if (nonValidMessageError) {
-      this.close(new NetworkError(nonValidMessageError.message));
+      this.close(new Error(nonValidMessageError.message));
       return;
     }
     
@@ -365,7 +361,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      this.close(new NetworkError(`Recieved message for non existing subscription id: "${subID}"`));
+      this.close(new Error(`Recieved message for non existing subscription id: "${subID}"`));
       return;
     }
 
@@ -383,7 +379,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onEOSMessage(message, subID, listeners);
       break;
       default:
-        this.close(new NetworkError('Recived non existing type of message.'));
+        this.close(new Error('Recived non existing type of message.'));
     }
   }
 
