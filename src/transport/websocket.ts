@@ -101,8 +101,8 @@ class WsSubscription implements Subscription {
 
 }
 
-const pingIntervalMs: number = 2000;
-const pingTimeoutMs: number = 2000;
+const pingIntervalMs: number = 30000;
+const pingTimeoutMs: number = 10000;
 
 export default class WebSocketTransport implements SubscriptionTransport {
   private baseURL: string;
@@ -175,7 +175,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
             return;
           }
   
-          this.close(new NetworkError(`Pong response wasn't recivied until timeout.`));
+          this.close(new NetworkError(`Pong response wasn't received until timeout.`));
         }, pingTimeoutMs);
   
       }, pingIntervalMs);
@@ -361,7 +361,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      this.close(new Error(`Recieved message for non existing subscription id: "${subID}"`));
+      this.close(new Error(`Received message for non existing subscription id: "${subID}"`));
       return;
     }
 
@@ -379,7 +379,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onEOSMessage(message, subID, listeners);
       break;
       default:
-        this.close(new Error('Recived non existing type of message.'));
+        this.close(new Error('Received non existing type of message.'));
     }
   }
 
@@ -462,7 +462,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     if (this.lastSentPingID !== receviedPongID) {
       // Close with protocol error status code
-      this.close(new NetworkError(`Didn't recived pong with proper ID`));
+      this.close(new NetworkError(`Didn't received pong with proper ID`));
     }
 
     clearTimeout(this.pongTimeout);
