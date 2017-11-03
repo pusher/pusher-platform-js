@@ -2,6 +2,17 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.11.0] 2017-11-03
+
+### Changes
+
+This is quite big change since we added `websockets`
+as basic transport for all subscriptions. On the other
+hand there are no changes on public interfaces (library is using different transport internally).
+
+- Added `websockets` as basic transport for all subscriptions
+- Separate `HTPP` related code into HTPP transport object
+
 ## [v0.10.0] 2017-10-27
 
 ### Changes
