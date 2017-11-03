@@ -45,8 +45,9 @@ export let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) 
 export interface RetryStrategyResult {}
 
 export class Retry implements RetryStrategyResult {
-    waitTimeMillis: number;
-    constructor(waitTimeMillis: number){
+    public waitTimeMillis: number;
+
+    constructor(waitTimeMillis) {
         this.waitTimeMillis = waitTimeMillis;
     }
 }

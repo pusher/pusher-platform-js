@@ -39,7 +39,8 @@ export class ErrorResponse{
     }
 
 export class NetworkError{
-        constructor(public error: string){}
+    constructor(public error: string) {
+    }
 }
 
 // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState

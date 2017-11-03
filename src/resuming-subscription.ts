@@ -31,7 +31,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
         }
         
         public unsubscribe = () => {
-            this.state.unsubscribe();   
+            this.state.unsubscribe();
         }
 
         constructor(
@@ -108,9 +108,11 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
     
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
-                            this.timeout = window.setTimeout(() => { executeNextSubscribeStrategy(lastEventId) }, errorResolution.waitTimeMillis);
+                            this.timeout = window.setTimeout(() => {
+                                executeNextSubscribeStrategy(lastEventId)
+                            }, errorResolution.waitTimeMillis);
                         }
-                        else{
+                        else {
                             onTransition(new FailedSubscriptionState(error));
                         }
                     }
@@ -122,7 +124,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                             logger.verbose(`ResumingSubscription: lastEventId: ${lastEventId}`);
                             headers["Last-Event-Id"] = lastEventId;
                         }
-
+                        
                         this.underlyingSubscription = nextSubscribeStrategy(
                             {
                                 onOpen: headers => {
@@ -141,7 +143,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
                                 },
                             },
                             headers
-                        )
+                        );
                     }
                     executeSubscriptionOnce(error, lastEventId);
                 }

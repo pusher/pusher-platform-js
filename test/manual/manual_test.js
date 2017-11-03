@@ -1,25 +1,12 @@
 let verboseLogger = new PusherPlatform.ConsoleLogger(1) //Verbose logger 
 
 let instance = new PusherPlatform.Instance({
-    instanceId: CONSTANTS.instanceId,
-    serviceName: 'feeds',
+    locator: CONSTANTS.instanceId,
+    serviceName: 'example',
     serviceVersion: 'v1',
-    logger: verboseLogger
+    host: 'localhost:10443',
+    // logger: verboseLogger
 });
-
-let listeners = {
-    onOpen: (headers) => {
-        console.log(headers);
-    },
-    onSubscribe: () => console.log("onSubscribed"),
-    onEvent: (event) => console.log(event),
-    onError: (error) => console.log(error),
-    onEnd: (error) => {
-        console.log("onEnd");
-        console.log(error);
-    },
-    onRetrying: () => console.log("onRetrying")
-};
 
 function urlEncode(data) {
     return Object.keys(data)
@@ -30,15 +17,14 @@ function urlEncode(data) {
 
 class TokenProvider {
     
-        constructor(){
-            this.authData = { 
+        constructor() {
+            this.authData = {
                 "action": "READ",
                 "path": "feeds/private-my-feed/items"
             };
             this.authEndpoint = "http://localhost:3000/path/tokens"; 
         }
         
-
         fetchToken(tokenParams){
             return new PCancelable( (onCancel, resolve, reject) => {
     
@@ -49,6 +35,9 @@ class TokenProvider {
                 })
                 xhr.open("POST", this.authEndpoint);
                 xhr.timeout = 3000;
+                xhr.onerror = (err) => {
+                    console.log(err);
+                }
                 xhr.onload = () => {
                   if (xhr.status === 200) {
                       let token = JSON.parse(xhr.responseText);
@@ -74,7 +63,10 @@ class TokenProvider {
                   ...this.authData,
                   grant_type: "client_credentials",
                 }));
-            });
+            })
+            .catch(err => {
+                console.error(err);
+            })
         }
     
         clearToken(token){
@@ -82,40 +74,52 @@ class TokenProvider {
         }
     }
 
-let subscribeOptions = {
-    path: 'feeds/my-feed/items',
-    listeners: listeners,
-    tokenProvider: new TokenProvider()
-}
-
-let requestOptions = {  
+let requestOptions = {
     method: "GET",
     path: "feeds/private-my-feed/items"
 }
 
 let postRequestOptions = {
     method: "POST",
-    path: "feeds/my-feed/items",
-    body: { items: [ {name: "kekec"}]},
-}
+    path: "text",
+    body: { text: "Ahoj Karl" },
+};
 
-
-
-instance.request(requestOptions, new TokenProvider())
+instance.request(postRequestOptions)
     .then( response => {
-        console.log(response);
+        console.log('Request (response):', response);
     }).catch( error => {
-        console.log(error);
+        console.log('Request (response):', error);
     });
+
 function tryCancelRequest(){
     //TODO:
 }
 
-// let subscription = instance.subscribeResuming(subscribeOptions);
-// let subscription = instance.subscribeNonResuming(subscribeOptions);
-// let subscription = instance.subscribeNonResuming(subscribeOptions);
+const createListeners = (feedId) => {
+    const log = console.log.bind(null, `Log from "${feedId}":`);
 
-function tryUnsubscribe(){
-    subscription.unsubscribe(); 
+    return {
+        onOpen: (headers) => log('onOpen', headers),
+        onSubscribe: () => log('onSubscribed'),
+        onEvent: (event) => log('onEvent', event),
+        onError: (error) => log('onError', error),
+        onEnd: (error) => log('onEnd', error),
+        onRetrying: () => log('onRetrying')
+    };
+};
+
+const createSubscribeOptions = (feedId) => ({
+    path: `ticker/`,
+    listeners: createListeners(feedId),
+    // tokenProvider: new TokenProvider()
+});
+
+let subscription1 = instance.subscribeResuming(createSubscribeOptions('my-feed'));
+// let subscription2 = instance.subscribeNonResuming(createSubscribeOptions('hey-2'));
+
+function tryUnsubscribe() {
+    subscription1.unsubscribe();
+    // subscription2.unsubscribe();
 }
 

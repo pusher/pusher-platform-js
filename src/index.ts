@@ -1,4 +1,4 @@
-import { createH2TransportStrategy } from './transports';
+import { createTransportStrategy } from './transports';
 import { executeNetworkRequest, NetworkRequest, RequestOptions } from './request';
 import { createResumingStrategy } from './resuming-subscription';
 import {
@@ -16,16 +16,15 @@ import { BaseClient, BaseClientOptions } from './base-client';
 import { Logger, ConsoleLogger, EmptyLogger } from './logger';
 import { createRetryingStrategy } from './retrying-subscription';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
-import { BaseSubscription, BaseSubscriptionConstruction, BaseSubscriptionState } from './base-subscription';
 import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, XhrReadyState } from './network';
 
 export {
   Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners, SubscriptionEvent,
   BaseClient,  BaseClientOptions,
 
-  Subscription, BaseSubscriptionConstruction, BaseSubscription, BaseSubscriptionState,
-  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createH2TransportStrategy,
-
+  Subscription,
+  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createTransportStrategy, 
+  
   ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
   RequestOptions, NetworkRequest, executeNetworkRequest,
 

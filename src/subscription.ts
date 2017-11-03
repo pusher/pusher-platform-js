@@ -1,4 +1,3 @@
-import { BaseSubscription } from './base-subscription';
 import { ElementsHeaders } from './network';
 
 export interface Subscription {
@@ -28,13 +27,21 @@ export interface SubscriptionEvent {
     body: any;
 }
 
+export interface SubscriptionTransport {
+    subscribe(
+        path: string,
+        listeners: SubscriptionListeners,
+        headers: ElementsHeaders
+    ): Subscription
+};
+
 export type SubscriptionConstructor = (
-    onOpen: (headers:ElementsHeaders) => void , 
+    onOpen: (headers:ElementsHeaders) => void,
     onError: (error: any) => void, 
     onEvent: (event: SubscriptionEvent) => void,
     onEnd: (error: any) => void,
     headers: ElementsHeaders, 
-) => BaseSubscription;
+) => Subscription;
 
 //Move this util somewhere else?
 let noop = (arg?) => {};

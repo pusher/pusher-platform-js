@@ -52,25 +52,25 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
                             .then( token => {
                                 this.putTokenIntoHeader(token);
                                 this.underlyingSubscription = nextSubscribeStrategy(
-                                {
-                                    onOpen: headers => {
-                                        onTransition(new OpenSubscriptionState(headers, this.underlyingSubscription, onTransition));
-                                    },
-                                    onRetrying: listeners.onRetrying,
-                                    onError: error => {
-                                        if(isTokenExpiredError(error)){
-                                            tokenProvider.clearToken(token);
-                                            fetchTokenAndExecuteSubscription();
+                                    {
+                                        onOpen: headers => {
+                                            onTransition(new OpenSubscriptionState(headers, this.underlyingSubscription, onTransition));
+                                        },
+                                        onRetrying: listeners.onRetrying,
+                                        onError: error => {
+                                            if(isTokenExpiredError(error)){
+                                                tokenProvider.clearToken(token);
+                                                fetchTokenAndExecuteSubscription();
+                                            }
+                                            else{
+                                                onTransition(new FailedSubscriptionState(error));
+                                            }
+                                        },
+                                        onEvent: listeners.onEvent,
+                                        onEnd: error => {
+                                            onTransition(new EndedSubscriptionState(error));
                                         }
-                                        else{
-                                            onTransition(new FailedSubscriptionState(error));
-                                        }
                                     },
-                                    onEvent: listeners.onEvent,
-                                    onEnd: error => {
-                                        onTransition(new EndedSubscriptionState(error));
-                                    }
-                                },
                                     headers
                                 )
                             })
@@ -98,9 +98,9 @@ export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubs
             }
 
             class OpenSubscriptionState implements SubscriptionState {
-                constructor(headers: ElementsHeaders, private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
+                constructor(private headers: ElementsHeaders, private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
                     logger.verbose(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
-                    listeners.onOpen(headers)
+                    listeners.onOpen(headers);
                 }
 
                 unsubscribe(){
