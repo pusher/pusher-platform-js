@@ -24,7 +24,7 @@ export function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: 
 
         xhr.onreadystatechange  = () => {
             if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
+                if (xhr.status >= 200 && xhr.status < 300) {
                     resolve(xhr.response);
                 } else if (xhr.status !== 0) {
                     reject(ErrorResponse.fromXHR(xhr));
