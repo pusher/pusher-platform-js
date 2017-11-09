@@ -1,5 +1,5 @@
-const { default: PusherPlatform } = require('../../target/pusher-platform.js');
-    
+const { default: PusherPlatform } = require('../../dist/web/pusher-platform.js');
+
 const PATH_10_AND_EOS = "subscribe10";
 const PATH_3_AND_OPEN = "subscribe_3_continuous";
 const PATH_0_EOS = "subscribe_0_eos";
@@ -9,7 +9,7 @@ describe('Instance Subscribe', () => {
         let logger = new PusherPlatform.ConsoleLogger(1);
 
         instance = new PusherPlatform.Instance({
-            instanceId: "v1:api-ceres:1",
+            locator: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
             host: "localhost:10443",
@@ -46,7 +46,7 @@ describe('Instance Subscribe', () => {
                 },
                 onError: (err) => {
                     fail();
-                } 
+                }
             }
         });
     });
@@ -70,14 +70,14 @@ describe('Instance Subscribe', () => {
         });
     });
 
-    it('subscribes to a subscription that is kept open', (done) => {        
+    it('subscribes to a subscription that is kept open', (done) => {
         let sub = instance.subscribeNonResuming({
             path: PATH_3_AND_OPEN,
             retryStrategyOptions: neverRetryOptions,
             listeners: {
                 onOpen: headers => {},
                 onEvent: (event) => {
-                    eventCount += 1;                
+                    eventCount += 1;
                     if(eventCount > 3){
                         fail(`Too many events received: ${eventCount}`);
                     }
@@ -103,7 +103,7 @@ describe('Instance Subscribe', () => {
             listeners: {
                 onOpen: headers => {},
                 onEvent: (event) => {
-                    eventCount += 1;                
+                    eventCount += 1;
                     if(eventCount > 3){
                         fail(`Too many events received: ${eventCount}`);
                     }
