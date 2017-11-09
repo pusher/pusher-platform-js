@@ -79,7 +79,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 function responseToHeadersObject(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -133,7 +133,7 @@ var XhrReadyState;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var network_1 = __webpack_require__(0);
 exports.createRetryStrategyOptionsOrDefault = function (options) {
     var initialTimeoutMillis = options.initialTimeoutMillis || 1000;
@@ -241,7 +241,7 @@ exports.RetryResolution = RetryResolution;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["VERBOSE"] = 1] = "VERBOSE";
@@ -324,7 +324,7 @@ exports.EmptyLogger = EmptyLogger;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 exports.createTransportStrategy = function (path, transport, logger) {
     var strategy = function (listeners, headers) { return (transport.subscribe(path, listeners, headers)); };
     return strategy;
@@ -337,7 +337,7 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var network_1 = __webpack_require__(0);
 function executeNetworkRequest(createXhr, options) {
     return new Promise(function (resolve, reject) {
@@ -367,7 +367,7 @@ exports.executeNetworkRequest = executeNetworkRequest;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var retry_strategy_1 = __webpack_require__(1);
 var network_1 = __webpack_require__(0);
 exports.createResumingStrategy = function (retryOptions, initialEventId, nextSubscribeStrategy, logger) {
@@ -471,7 +471,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
                             },
                             onEnd: function (error) {
                                 onTransition(new EndedSubscriptionState(error));
-                            },
+                            }
                         }, headers);
                     };
                     executeSubscriptionOnce(error, lastEventId);
@@ -528,7 +528,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var retrying_subscription_1 = __webpack_require__(7);
 var resuming_subscription_1 = __webpack_require__(5);
 var request_1 = __webpack_require__(4);
@@ -544,8 +544,8 @@ var BaseClient = (function () {
         this.options = options;
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
-        this.websocketTransport = new websocket_1.default(this.host);
-        this.httpTransport = new http_1.default(this.host);
+        this.websocketTransport = new websocket_1["default"](this.host);
+        this.httpTransport = new http_1["default"](this.host);
     }
     BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
         var _this = this;
@@ -553,7 +553,7 @@ var BaseClient = (function () {
             return tokenProvider.fetchToken(tokenParams).then(function (token) {
                 options.headers['Authorization'] = "Bearer " + token;
                 return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-            }).catch(function (error) {
+            })["catch"](function (error) {
                 _this.logger.error(error);
             });
         }
@@ -610,7 +610,7 @@ exports.BaseClient = BaseClient;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var retry_strategy_1 = __webpack_require__(1);
 var network_1 = __webpack_require__(0);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
@@ -733,7 +733,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var network_1 = __webpack_require__(0);
 exports.createTokenProvidingStrategy = function (nextSubscribeStrategy, logger, tokenProvider) {
     if (tokenProvider) {
@@ -781,8 +781,7 @@ var TokenProvidingSubscription = (function () {
                     }
                 }
             });
-        })
-            .catch(function (error) {
+        })["catch"](function (error) {
             _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
             _this.state = new InactiveState(_this.logger);
         });
@@ -851,7 +850,7 @@ var InactiveState = (function () {
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var transports_1 = __webpack_require__(3);
 exports.createTransportStrategy = transports_1.createTransportStrategy;
 var request_1 = __webpack_require__(4);
@@ -864,7 +863,7 @@ exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
 var instance_1 = __webpack_require__(10);
-exports.Instance = instance_1.default;
+exports.Instance = instance_1["default"];
 var base_client_1 = __webpack_require__(6);
 exports.BaseClient = base_client_1.BaseClient;
 var logger_1 = __webpack_require__(2);
@@ -879,10 +878,10 @@ exports.ErrorResponse = network_1.ErrorResponse;
 exports.NetworkError = network_1.NetworkError;
 exports.responseToHeadersObject = network_1.responseToHeadersObject;
 exports.XhrReadyState = network_1.XhrReadyState;
-exports.default = {
-    Instance: instance_1.default,
+exports["default"] = {
+    Instance: instance_1["default"],
     BaseClient: base_client_1.BaseClient,
-    ConsoleLogger: logger_1.ConsoleLogger, EmptyLogger: logger_1.EmptyLogger,
+    ConsoleLogger: logger_1.ConsoleLogger, EmptyLogger: logger_1.EmptyLogger
 };
 
 
@@ -892,7 +891,7 @@ exports.default = {
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var base_client_1 = __webpack_require__(6);
 var logger_1 = __webpack_require__(2);
 var HOST_BASE = "pusherplatform.io";
@@ -946,7 +945,7 @@ var Instance = (function () {
     };
     return Instance;
 }());
-exports.default = Instance;
+exports["default"] = Instance;
 
 
 /***/ }),
@@ -955,7 +954,7 @@ exports.default = Instance;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 ;
 var noop = function (arg) { };
 exports.replaceMissingListenersWithNoOps = function (listeners) {
@@ -982,7 +981,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListeners) {
     return {
         onOpen: subListeners.onOpen,
@@ -1008,7 +1007,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     }
     return t;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var network_1 = __webpack_require__(0);
 var SubscribeMessageType = 100;
 var OpenMessageType = 101;
@@ -1312,7 +1311,7 @@ var WebSocketTransport = (function () {
     };
     return WebSocketTransport;
 }());
-exports.default = WebSocketTransport;
+exports["default"] = WebSocketTransport;
 
 
 /***/ }),
@@ -1321,7 +1320,7 @@ exports.default = WebSocketTransport;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var network_1 = __webpack_require__(0);
 var HttpTransportState;
 (function (HttpTransportState) {
@@ -1544,7 +1543,7 @@ var HttpTransport = (function () {
     };
     return HttpTransport;
 }());
-exports.default = HttpTransport;
+exports["default"] = HttpTransport;
 
 
 /***/ })
