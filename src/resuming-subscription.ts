@@ -108,7 +108,7 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
     
                         let errorResolution = resolveError(error);
                         if(errorResolution instanceof Retry){
-                            this.timeout = window.setTimeout(() => {
+                            this.timeout = global.setTimeout(() => {
                                 executeNextSubscribeStrategy(lastEventId)
                             }, errorResolution.waitTimeMillis);
                         }
@@ -150,8 +150,8 @@ export let createResumingStrategy: (retryingOptions: RetryStrategyOptions, initi
 
                 unsubscribe() {
                     this.onTransition(new EndingSubscriptionState());
-                    window.clearTimeout(this.timeout);
                     this.underlyingSubscription.unsubscribe(); 
+                    global.clearTimeout(this.timeout);
                   }
             }
 

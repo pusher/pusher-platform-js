@@ -17,54 +17,69 @@ export interface Logger {
 /**
  * Default implementation of the Logger. Wraps standards console calls.
  * Logs only calls that are at or above the threshold (verbose/debug/info/warn/error)
- * If error is passed, it will append the message to the error object. 
+ * If error is passed, it will append the message to the error object.
  */
 export class ConsoleLogger implements Logger {
     private threshold: LogLevel;
 
-    constructor(threshold: LogLevel = 2){
-        this.threshold = threshold;
+    constructor(threshold: LogLevel = 2) {
+      this.threshold = threshold;
+
+      const groups = [];
+      const hr =
+        '--------------------------------------------------------------------------------';
+
+      if (!global.console.group) {
+        global.console.group = label => {
+          groups.push(label);
+          global.console.log('%c \nBEGIN GROUP: %c', hr, label);
+        };
+      }
+      if (!global.console.groupEnd) {
+        global.console.groupEnd = () => {
+          global.console.log('END GROUP: %c\n%c', groups.pop(), hr);
+        };
+      }
+    }
+
+    verbose(message: string, error?: any) {
+        this.log(global.console.log, LogLevel.VERBOSE, message, error);
+    }
+
+    debug(message: string, error?: any) {
+        this.log(global.console.log, LogLevel.DEBUG, message, error);
+    }
+
+    info(message: string, error?: any) {
+        this.log(global.console.info, LogLevel.INFO, message, error);
+    }
+
+    warn(message: string, error?: any) {
+        this.log(global.console.warn, LogLevel.WARNING, message, error);
+    }
+
+    error(message: string, error?: any) {
+        this.log(global.console.error, LogLevel.ERROR, message, error);
     }
 
     private log(
-        logFunction: (msg) => void, 
-        level: LogLevel, 
-        message: string, 
-        error?: any): void {
+      logFunction: (msg) => void,
+      level: LogLevel,
+      message: string,
+      error?: any,
+    ): void {
+      if (level >= this.threshold) {
+        const loggerSignature = `Logger.${LogLevel[level]}`;
 
-            if(level >= this.threshold){
-                let loggerSignature = `Logger.${LogLevel[level]}`;
-
-                if(error){
-                    console.group();
-                    logFunction(`${loggerSignature}: ${message}`);
-                    logFunction(error);
-                    console.groupEnd();
-                }
-                else{
-                    logFunction(`${loggerSignature}: ${message}`);
-                }
-            }
-    }
-
-    verbose(message: string, error?: any){
-        this.log(console.log, LogLevel.VERBOSE, message, error);
-    }
-
-    debug(message: string, error?: any){
-        this.log(console.log, LogLevel.DEBUG, message, error);
-    }
-
-    info(message: string, error?: any){
-        this.log(console.info, LogLevel.INFO, message, error);
-    }
-
-    warn(message: string, error?: any){
-        this.log(console.warn, LogLevel.WARNING, message, error);
-    }
-
-    error(message: string, error?: any){
-        this.log(console.error, LogLevel.ERROR, message, error);
+        if (error) {
+          global.console.group();
+          logFunction(`${loggerSignature}: ${message}`);
+          logFunction(error);
+          global.console.groupEnd();
+        } else {
+          logFunction(`${loggerSignature}: ${message}`);
+        }
+      }
     }
 }
 

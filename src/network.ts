@@ -1,3 +1,5 @@
+import { XMLHttpRequest } from 'xmlhttprequest';
+
 export type ElementsHeaders = {
     [key: string]: string;
 }

@@ -1,5 +1,6 @@
 import { Subscription, SubscriptionEvent, SubscriptionTransport, SubscriptionListeners } from '../subscription';
 import { ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError } from '../network';
+import { WebSocket } from 'websocket';
 
 type WsMessageType = number;
 type Message = any[];
@@ -134,9 +135,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
     this.forcedClose = false;
     this.closedError = null;
 
-    this.socket = new WebSocket(this.baseURL);
-    
-    this.socket.addEventListener('open', (event) => {
+    this.socket = new global.WebSocket(this.baseURL);
+
+    this.socket.onopen = event => {
       const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
 
       // Re-subscribe old subscriptions for new connection
@@ -147,7 +148,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
       this.pendingSubscriptions.removeAll();
 
-      this.pingInterval = setInterval(() => {
+      this.pingInterval = global.setInterval(() => {
         if (this.pongTimeout) {
           return;
         }
@@ -166,8 +167,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
         );
   
         this.lastSentPingID = now;
-  
-        this.pongTimeout = setTimeout(() => {
+
+        this.pongTimeout = global.setTimeout(() => {
           const now = new Date().getTime();
   
           if (pingTimeoutMs > (now - this.lastMessageReceivedTimestamp)) {
@@ -179,13 +180,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
         }, pingTimeoutMs);
   
       }, pingIntervalMs);
-    });
-    
-    this.socket.addEventListener('message', (event) => this.receiveMessage(event));
-    this.socket.addEventListener('error', (event) => {
-        this.close(new NetworkError('Connection was lost.'));
-    });
-    this.socket.addEventListener('close', (event) => {
+    };
+
+    this.socket.onmessage = event => this.receiveMessage(event);
+    this.socket.onerror = event => {
+      this.close(new NetworkError('Connection was lost.'));
+    };
+    this.socket.onclose = event => {
       if (!this.forcedClose) {
         this.tryReconnectIfNeeded();
         return;
@@ -208,20 +209,20 @@ export default class WebSocketTransport implements SubscriptionTransport {
       if (this.closedError) {
         this.tryReconnectIfNeeded();
       }
-    });
+    };
   }
 
   private close (error?) {
-    if (!(this.socket instanceof WebSocket)) {
+    if (!(this.socket instanceof global.WebSocket)) {
       return;
     }
     
     this.forcedClose = true;
     this.closedError = error;
     this.socket.close();
-    
-    clearTimeout(this.pingInterval);
-    clearTimeout(this.pongTimeout);
+
+    global.clearTimeout(this.pingInterval);
+    global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
     this.lastSentPingID = null;
   }
@@ -312,7 +313,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private sendMessage (message: Message) {
     if (this.socket.readyState !== WSReadyState.Open) {
-      return console.warn(`Can't send in "${WSReadyState[this.socket.readyState]}" state`);
+      return global.console.warn(
+        `Can't send in "${WSReadyState[this.socket.readyState]}" state`,
+      );
     }
 
     this.socket.send(JSON.stringify(message));
@@ -465,7 +468,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
       this.close(new NetworkError(`Didn't received pong with proper ID`));
     }
 
-    clearTimeout(this.pongTimeout);
+    global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
     this.lastSentPingID = null;
   }

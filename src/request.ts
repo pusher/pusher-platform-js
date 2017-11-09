@@ -1,5 +1,7 @@
 import { ErrorResponse, NetworkError, ElementsHeaders } from './network';
 import { Logger } from './logger';
+import { XMLHttpRequest } from 'xmlhttprequest';
+
 import * as PCancelable from 'p-cancelable';
 
 export type NetworkRequest<T> = (parameters?: any) => Promise<T>;

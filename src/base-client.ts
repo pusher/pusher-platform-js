@@ -46,7 +46,7 @@ export class BaseClient {
                     )
                 }
             ).catch( error => {
-                console.log(error);
+                this.logger.error(error);
             })
         }
         else {

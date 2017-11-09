@@ -68,7 +68,7 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                         
                         let errorResolution = resolveError(error);
                         if (errorResolution instanceof Retry) {
-                            this.timeout = window.setTimeout(() => {
+                            this.timeout = global.setTimeout(() => {
                                 executeNextSubscribeStrategy();
                             }, errorResolution.waitTimeMillis);
                         } else {
@@ -97,7 +97,7 @@ export let createRetryingStrategy: (retryingOptions: RetryStrategyOptions, nextS
                 }
                 
                 unsubscribe() {
-                    window.clearTimeout(this.timeout);
+                    global.clearTimeout(this.timeout);
                     this.onTransition(new EndedSubscriptionState());
                 }
             }
