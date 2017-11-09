@@ -1,5 +1,5 @@
-const { default: PusherPlatform } = require('../../target/pusher-platform.js');
-    
+const { default: PusherPlatform } = require('../../dist/web/pusher-platform.js');
+
 const PATH_NOT_EXISTING = "subscribe_missing";
 const PATH_FORBIDDEN = "subscribe_forbidden";
 
@@ -9,7 +9,7 @@ describe('Instance Subscribe errors nicely', () => {
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
-            instanceId: "v1:api-ceres:1",
+            locator: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
             host: "localhost:10443",
@@ -54,7 +54,7 @@ describe('Instance Subscribe errors nicely', () => {
                     fail("Expecting onError");
                 },
                 onError: (err) => {
-    
+
                     expect(err.statusCode).toBe(403);
                     done();
                 },
@@ -74,7 +74,7 @@ describe('Instance Subscribe errors nicely', () => {
                     fail("Expecting onError");
                 },
                 onEnd: () => {
-                    console.log("end");                    
+                    console.log("end");
                     fail("Expecting onError");
                 },
                 onError: (err) => {
@@ -92,7 +92,7 @@ describe('Instance Subscribe errors nicely', () => {
     //         path: "services/platform_lib_tester/v1/subscribe_try_resuming",
     //         lastEventId: "1234",
     //         onEvent: (event) => {
-                
+
     //             fail("Expecting onError");
     //         },
     //         onEnd: () => {
