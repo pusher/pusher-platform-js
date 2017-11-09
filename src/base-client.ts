@@ -1,150 +1,150 @@
-import { createRetryingStrategy } from './retrying-subscription';
-import { createResumingStrategy } from './resuming-subscription';
-import { TokenProvider } from './token-provider';
-import { RetryStrategyOptions } from './retry-strategy';
-import { RequestOptions, executeNetworkRequest } from './request';
 import { ConsoleLogger, Logger } from './logger';
-import { Subscription, SubscriptionListeners, SubscriptionConstructor, replaceMissingListenersWithNoOps } from './subscription';
-import { createTokenProvidingStrategy } from './token-providing-subscription';
-import { createTransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
+import { executeNetworkRequest, RequestOptions } from './request';
+import { createResumingStrategy } from './resuming-subscription';
+import { RetryStrategyOptions } from './retry-strategy';
+import { createRetryingStrategy } from './retrying-subscription';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
-
-import WebSocketTransport from './transport/websocket';
+import {
+  replaceMissingListenersWithNoOps,
+  Subscription,
+  SubscriptionConstructor,
+  SubscriptionListeners,
+} from './subscription';
+import { TokenProvider } from './token-provider';
+import { createTokenProvidingStrategy } from './token-providing-subscription';
 import HttpTransport from './transport/http';
+import WebSocketTransport from './transport/websocket';
+import { createTransportStrategy } from './transports';
 
 export interface BaseClientOptions {
-    host: string;
-    encrypted?: boolean;
-    logger?: Logger;
+  host: string;
+  encrypted?: boolean;
+  logger?: Logger;
 }
 
 export class BaseClient {
-    private host: string;
-    private XMLHttpRequest: any;
-    private logger: Logger;
-    private websocketTransport: WebSocketTransport;
-    private httpTransport: HttpTransport;
+  private host: string;
+  private XMLHttpRequest: any;
+  private logger: Logger;
+  private websocketTransport: WebSocketTransport;
+  private httpTransport: HttpTransport;
 
-    constructor(private options: BaseClientOptions) {
-        this.host = options.host.replace(/(\/)+$/, '');
-        this.logger = options.logger || new ConsoleLogger();
+  constructor(private options: BaseClientOptions) {
+    this.host = options.host.replace(/(\/)+$/, '');
+    this.logger = options.logger || new ConsoleLogger();
+    this.websocketTransport = new WebSocketTransport(this.host);
+    this.httpTransport = new HttpTransport(this.host);
+  }
 
-        this.websocketTransport = new WebSocketTransport(this.host);
-        this.httpTransport = new HttpTransport(this.host);
+  request(
+    options: RequestOptions,
+    tokenProvider?: TokenProvider,
+    tokenParams?: any,
+  ): Promise<any> {
+    if (tokenProvider) {
+      return tokenProvider
+        .fetchToken(tokenParams)
+        .then(token => {
+          // tslint:disable-next-line:no-string-literal
+          options.headers['Authorization'] = `Bearer ${token}`;
+          return executeNetworkRequest(
+            () => this.httpTransport.request(options),
+            options,
+          );
+        })
+        .catch(error => {
+          this.logger.error(error);
+        });
+    } else {
+      return executeNetworkRequest(
+        () => this.httpTransport.request(options),
+        options,
+      );
     }
+  }
 
-    public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any> {
-        if(tokenProvider){
-            return tokenProvider.fetchToken(tokenParams).then(token =>
-                {
-                    options.headers['Authorization'] = `Bearer ${token}`
-                    return executeNetworkRequest(
-                        () => this.httpTransport.request(options),
-                        options
-                    )
-                }
-            ).catch( error => {
-                this.logger.error(error);
-            })
-        }
-        else {
-            return executeNetworkRequest(
-                () => this.httpTransport.request(options),
-                options
-            );
-        }
+  subscribeResuming(
+    path: string,
+    headers: ElementsHeaders,
+    listeners: SubscriptionListeners,
+    retryStrategyOptions: RetryStrategyOptions,
+    initialEventId: string,
+    tokenProvider?: TokenProvider,
+  ): Subscription {
+    listeners = replaceMissingListenersWithNoOps(listeners);
+    const subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(
+      listeners,
+    );
+    const subscriptionStrategy = createResumingStrategy(
+      retryStrategyOptions,
+      initialEventId,
+      createTokenProvidingStrategy(
+        createTransportStrategy(path, this.websocketTransport, this.logger),
+        this.logger,
+        tokenProvider,
+      ),
 
-    }
+      this.logger,
+    );
 
-    public subscribeResuming(
-        path: string,
-        headers: ElementsHeaders,
-        listeners: SubscriptionListeners,
-        retryStrategyOptions: RetryStrategyOptions,
-        initialEventId: string,
-        tokenProvider?: TokenProvider,
-    ): Subscription {
-        listeners = replaceMissingListenersWithNoOps(listeners);
-        let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
+    let opened = false;
+    return subscriptionStrategy(
+      {
+        onEnd: subscribeStrategyListeners.onEnd,
+        onError: subscribeStrategyListeners.onError,
+        onEvent: subscribeStrategyListeners.onEvent,
+        onOpen: headers => {
+          if (!opened) {
+            opened = true;
+            listeners.onOpen(headers);
+          }
+          listeners.onSubscribe();
+        },
+        onRetrying: subscribeStrategyListeners.onRetrying,
+      },
+      headers,
+    );
+  }
 
-        let subscriptionStrategy = createResumingStrategy(
-            retryStrategyOptions,
-            initialEventId,
-            createTokenProvidingStrategy(
-                createTransportStrategy(
-                    path,
-                    this.websocketTransport,
-                    this.logger
-                ),
-                this.logger,
-                tokenProvider
-            ),
+  subscribeNonResuming(
+    path: string,
+    headers: ElementsHeaders,
+    listeners: SubscriptionListeners,
+    retryStrategyOptions: RetryStrategyOptions,
+    tokenProvider?: TokenProvider,
+  ) {
+    listeners = replaceMissingListenersWithNoOps(listeners);
+    const subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(
+      listeners,
+    );
 
-            this.logger
-        );
+    const subscriptionStrategy = createRetryingStrategy(
+      retryStrategyOptions,
+      createTokenProvidingStrategy(
+        createTransportStrategy(path, this.websocketTransport, this.logger),
+        this.logger,
+        tokenProvider,
+      ),
+      this.logger,
+    );
 
-
-        let opened = false;
-        return subscriptionStrategy(
-            {
-                onOpen: headers => {
-                    if(!opened){
-                        opened = true;
-                        listeners.onOpen(headers);
-                    }
-                    listeners.onSubscribe();
-                },
-                onRetrying: subscribeStrategyListeners.onRetrying,
-                onError: subscribeStrategyListeners.onError,
-                onEvent: subscribeStrategyListeners.onEvent,
-                onEnd: subscribeStrategyListeners.onEnd
-            },
-            headers
-        );
-    }
-
-    public subscribeNonResuming(
-        path: string,
-        headers: ElementsHeaders,
-        listeners: SubscriptionListeners,
-        retryStrategyOptions: RetryStrategyOptions,
-        tokenProvider?: TokenProvider
-    ){
-        listeners = replaceMissingListenersWithNoOps(listeners);
-        let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
-
-        let subscriptionStrategy = createRetryingStrategy(
-            retryStrategyOptions,
-            createTokenProvidingStrategy(
-                createTransportStrategy(
-                    path,
-                    this.websocketTransport,
-                    this.logger
-                ),
-                this.logger,
-                tokenProvider
-            ),
-            this.logger
-        );
-
-        let opened = false;
-        return subscriptionStrategy(
-            {
-                onOpen: headers => {
-                    if(!opened){
-                        opened = true;
-                        listeners.onOpen(headers);
-                    }
-                    listeners.onSubscribe();
-                },
-                onRetrying: subscribeStrategyListeners.onRetrying,
-                onError: subscribeStrategyListeners.onError,
-                onEvent: subscribeStrategyListeners.onEvent,
-                onEnd: subscribeStrategyListeners.onEnd
-            },
-            headers
-        );
-    }
-
+    let opened = false;
+    return subscriptionStrategy(
+      {
+        onEnd: subscribeStrategyListeners.onEnd,
+        onError: subscribeStrategyListeners.onError,
+        onEvent: subscribeStrategyListeners.onEvent,
+        onOpen: headers => {
+          if (!opened) {
+            opened = true;
+            listeners.onOpen(headers);
+          }
+          listeners.onSubscribe();
+        },
+        onRetrying: subscribeStrategyListeners.onRetrying,
+      },
+      headers,
+    );
+  }
 }

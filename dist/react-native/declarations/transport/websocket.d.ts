@@ -1,5 +1,5 @@
-import { Subscription, SubscriptionTransport, SubscriptionListeners } from '../subscription';
 import { ElementsHeaders } from '../network';
+import { Subscription, SubscriptionListeners, SubscriptionTransport } from '../subscription';
 export declare enum WSReadyState {
     Connecting = 0,
     Open = 1,
@@ -20,12 +20,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
     private pongTimeout;
     private lastSentPingID;
     constructor(host: string);
+    subscribe(path: string, listeners: SubscriptionListeners, headers: ElementsHeaders): Subscription;
+    unsubscribe(subID: number): void;
     private connect();
     private close(error?);
     private tryReconnectIfNeeded();
-    subscribe(path: string, listeners: SubscriptionListeners, headers: ElementsHeaders): Subscription;
     private subscribePending(path, listeners, headers, subID);
-    unsubscribe(subID: number): void;
     private getMessage(messageType, id, path?, headers?);
     private sendMessage(message);
     private subscription(subID);

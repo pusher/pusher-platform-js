@@ -1,9 +1,9 @@
-import { TokenProvider } from './token-provider';
-import { RetryStrategyOptions } from './retry-strategy';
-import { RequestOptions } from './request';
 import { Logger } from './logger';
-import { Subscription, SubscriptionListeners } from './subscription';
 import { ElementsHeaders } from './network';
+import { RequestOptions } from './request';
+import { RetryStrategyOptions } from './retry-strategy';
+import { Subscription, SubscriptionListeners } from './subscription';
+import { TokenProvider } from './token-provider';
 export interface BaseClientOptions {
     host: string;
     encrypted?: boolean;

@@ -11,7 +11,8 @@ export interface SubscriptionListeners {
     onEnd?: (error: any) => void;
 }
 export interface SubscriptionState {
-    unsubscribe(): void;
+    unsubscribe(): any;
+    unsubscribe(): any;
 }
 export interface SubscriptionEvent {
     eventId: string;
