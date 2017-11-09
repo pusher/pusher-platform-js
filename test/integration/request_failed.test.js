@@ -1,4 +1,4 @@
-const {default: PusherPlatform } = require('../../target/pusher-platform.js');
+const {default: PusherPlatform } = require('../../dist/web/pusher-platform.js');
 
 //these just test GET - everything else should just work.
 describe('Instance requests - failing', () => {
@@ -7,7 +7,7 @@ describe('Instance requests - failing', () => {
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
-            instanceId: "v1:api-ceres:1",
+            locator: "v1:api-ceres:1",
             serviceName: "platform_lib_tester",
             serviceVersion: "v1",
             host: "localhost:10443"
