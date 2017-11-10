@@ -79,7 +79,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 function responseToHeadersObject(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -133,7 +133,7 @@ var XhrReadyState;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createRetryStrategyOptionsOrDefault = function (options) {
     var initialTimeoutMillis = options.initialTimeoutMillis || 1000;
@@ -241,7 +241,7 @@ exports.RetryResolution = RetryResolution;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["VERBOSE"] = 1] = "VERBOSE";
@@ -324,7 +324,7 @@ exports.EmptyLogger = EmptyLogger;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.createTransportStrategy = function (path, transport, logger) {
     var strategy = function (listeners, headers) { return (transport.subscribe(path, listeners, headers)); };
     return strategy;
@@ -337,7 +337,7 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var PCancelable = __webpack_require__(10);
 function executeNetworkRequest(createXhr, options) {
@@ -372,7 +372,7 @@ exports.executeNetworkRequest = executeNetworkRequest;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var retry_strategy_1 = __webpack_require__(1);
 var network_1 = __webpack_require__(0);
 exports.createResumingStrategy = function (retryOptions, initialEventId, nextSubscribeStrategy, logger) {
@@ -476,7 +476,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
                             },
                             onEnd: function (error) {
                                 onTransition(new EndedSubscriptionState(error));
-                            }
+                            },
                         }, headers);
                     };
                     executeSubscriptionOnce(error, lastEventId);
@@ -533,7 +533,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var retrying_subscription_1 = __webpack_require__(7);
 var resuming_subscription_1 = __webpack_require__(5);
 var request_1 = __webpack_require__(4);
@@ -549,8 +549,8 @@ var BaseClient = (function () {
         this.options = options;
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
-        this.websocketTransport = new websocket_1["default"](this.host);
-        this.httpTransport = new http_1["default"](this.host);
+        this.websocketTransport = new websocket_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host);
     }
     BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
         var _this = this;
@@ -558,7 +558,7 @@ var BaseClient = (function () {
             return tokenProvider.fetchToken(tokenParams).then(function (token) {
                 options.headers['Authorization'] = "Bearer " + token;
                 return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-            })["catch"](function (error) {
+            }).catch(function (error) {
                 _this.logger.error(error);
             });
         }
@@ -615,7 +615,7 @@ exports.BaseClient = BaseClient;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var retry_strategy_1 = __webpack_require__(1);
 var network_1 = __webpack_require__(0);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
@@ -738,7 +738,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStrategy, logger) {
     var TokenProvidingSubscription = (function () {
@@ -783,7 +783,8 @@ exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStr
                                     onTransition(new EndedSubscriptionState(error));
                                 }
                             }, headers);
-                        })["catch"](function (error) {
+                        })
+                            .catch(function (error) {
                             (function (error) {
                                 onTransition(new FailedSubscriptionState(error));
                             });
@@ -860,7 +861,7 @@ exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStr
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var transports_1 = __webpack_require__(3);
 exports.createTransportStrategy = transports_1.createTransportStrategy;
 var request_1 = __webpack_require__(4);
@@ -873,7 +874,7 @@ exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
 var instance_1 = __webpack_require__(11);
-exports.Instance = instance_1["default"];
+exports.Instance = instance_1.default;
 var base_client_1 = __webpack_require__(6);
 exports.BaseClient = base_client_1.BaseClient;
 var logger_1 = __webpack_require__(2);
@@ -888,10 +889,10 @@ exports.ErrorResponse = network_1.ErrorResponse;
 exports.NetworkError = network_1.NetworkError;
 exports.responseToHeadersObject = network_1.responseToHeadersObject;
 exports.XhrReadyState = network_1.XhrReadyState;
-exports["default"] = {
-    Instance: instance_1["default"],
+exports.default = {
+    Instance: instance_1.default,
     BaseClient: base_client_1.BaseClient,
-    ConsoleLogger: logger_1.ConsoleLogger, EmptyLogger: logger_1.EmptyLogger
+    ConsoleLogger: logger_1.ConsoleLogger, EmptyLogger: logger_1.EmptyLogger,
 };
 
 
@@ -985,7 +986,7 @@ module.exports.CancelError = CancelError;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(6);
 var logger_1 = __webpack_require__(2);
 var HOST_BASE = "pusherplatform.io";
@@ -1039,7 +1040,7 @@ var Instance = (function () {
     };
     return Instance;
 }());
-exports["default"] = Instance;
+exports.default = Instance;
 
 
 /***/ }),
@@ -1048,7 +1049,7 @@ exports["default"] = Instance;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var noop = function (arg) { };
 exports.replaceMissingListenersWithNoOps = function (listeners) {
@@ -1075,7 +1076,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListeners) {
     return {
         onOpen: subListeners.onOpen,
@@ -1101,7 +1102,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     }
     return t;
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var SubscribeMessageType = 100;
 var OpenMessageType = 101;
@@ -1405,7 +1406,7 @@ var WebSocketTransport = (function () {
     };
     return WebSocketTransport;
 }());
-exports["default"] = WebSocketTransport;
+exports.default = WebSocketTransport;
 
 
 /***/ }),
@@ -1414,7 +1415,7 @@ exports["default"] = WebSocketTransport;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var HttpTransportState;
 (function (HttpTransportState) {
@@ -1637,7 +1638,7 @@ var HttpTransport = (function () {
     };
     return HttpTransport;
 }());
-exports["default"] = HttpTransport;
+exports.default = HttpTransport;
 
 
 /***/ })

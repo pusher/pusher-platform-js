@@ -1,9 +1,9 @@
+var _ = require('lodash');
 var path = require('path');
 
-var mergeDeep = require('./merge-deep');
 var sharedConfig = require('./config.shared');
 
-module.exports = mergeDeep(sharedConfig, {
+module.exports = _.merge(sharedConfig, {
   output: {
     library: "PusherPlatform",
     libraryTarget:"commonjs2",

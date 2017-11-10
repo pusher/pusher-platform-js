@@ -1,10 +1,10 @@
+var _ = require('lodash');
 var path = require('path');
 var webpack = require('webpack');
 
-var mergeDeep = require('./merge-deep');
 var sharedConfig = require('./config.shared');
 
-var config = mergeDeep(sharedConfig, {
+module.exports = _.merge(sharedConfig, {
   output: {
     library: "PusherPlatform",
     path: path.join(__dirname, "../dist/web"),
@@ -17,5 +17,3 @@ var config = mergeDeep(sharedConfig, {
     }),
   ],
 });
-
-module.exports = config;
