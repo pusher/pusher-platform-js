@@ -1,15 +1,15 @@
 ### What?
 
-...
 
-#### Why?
 
-...
+### Why?
 
-#### How?
 
-...
+
+### How?
+
+
 
 ----
 
-CC @pusher/sigsdk 
+CC @pusher/sigsdk
