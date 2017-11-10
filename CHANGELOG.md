@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.11.1] 2017-11-03
+
+### Fixes
+
+- Treat all 2XX status codes as successful
+
 ## [v0.11.0] 2017-11-03
 
 ### Changes
@@ -11,7 +17,7 @@ as basic transport for all subscriptions. On the other
 hand there are no changes on public interfaces (library is using different transport internally).
 
 - Added `websockets` as basic transport for all subscriptions
-- Separate `HTPP` related code into HTPP transport object
+- Separate `HTTP` related code into HTTP transport object
 
 ## [v0.10.0] 2017-10-27
 
