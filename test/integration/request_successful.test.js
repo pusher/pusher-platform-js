@@ -7,7 +7,7 @@ describe('Instance Requests - Successful', () => {
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
             locator: "v1:api-ceres:1",
-            serviceName: "platform_lib_tester",
+            serviceName: "platform_sdk_tester",
             serviceVersion: "v1",
             host: "localhost:10443"
         });

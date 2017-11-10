@@ -10,7 +10,7 @@ describe('Instance Subscribe errors nicely', () => {
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
             locator: "v1:api-ceres:1",
-            serviceName: "platform_lib_tester",
+            serviceName: "platform_sdk_tester",
             serviceVersion: "v1",
             host: "localhost:10443",
             logger: logger
@@ -54,7 +54,6 @@ describe('Instance Subscribe errors nicely', () => {
                     fail("Expecting onError");
                 },
                 onError: (err) => {
-
                     expect(err.statusCode).toBe(403);
                     done();
                 },
