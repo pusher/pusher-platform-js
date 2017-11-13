@@ -12,11 +12,7 @@ import {
   responseToHeadersObject,
   XhrReadyState,
 } from './network';
-import {
-  executeNetworkRequest,
-  NetworkRequest,
-  RequestOptions,
-} from './request';
+import { executeNetworkRequest, RequestOptions } from './request';
 import { createResumingStrategy } from './resuming-subscription';
 import {
   createRetryStrategyOptionsOrDefault,
@@ -54,7 +50,6 @@ export {
   Instance,
   Logger,
   NetworkError,
-  NetworkRequest,
   RequestOptions,
   responseToHeadersObject,
   ResumableSubscribeOptions,

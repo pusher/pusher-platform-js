@@ -20,14 +20,14 @@ import {
 
 export let createResumingStrategy: (
   retryingOptions: RetryStrategyOptions,
-  initialEventId: string,
   nextSubscribeStrategy: SubscribeStrategy,
   logger: Logger,
+  initialEventId?: string,
 ) => SubscribeStrategy = (
   retryOptions,
-  initialEventId,
   nextSubscribeStrategy,
   logger,
+  initialEventId,
 ) => {
   retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
   const retryResolution = new RetryResolution(retryOptions, logger);

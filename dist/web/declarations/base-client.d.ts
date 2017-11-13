@@ -18,6 +18,6 @@ export declare class BaseClient {
     private httpTransport;
     constructor(options: BaseClientOptions);
     request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any>;
-    subscribeResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, initialEventId: string, tokenProvider?: TokenProvider): Subscription;
+    subscribeResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, initialEventId?: string, tokenProvider?: TokenProvider): Subscription;
     subscribeNonResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, tokenProvider?: TokenProvider): Subscription;
 }

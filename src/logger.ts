@@ -7,11 +7,11 @@ export enum LogLevel {
 }
 
 export interface Logger {
-  verbose(message: string, error?: any);
-  debug(message: string, error?: any);
-  info(message: string, error?: any);
-  warn(message: string, error?: any);
-  error(message: string, error?: any);
+  verbose(message: string, error?: any): void;
+  debug(message: string, error?: any): void;
+  info(message: string, error?: any): void;
+  warn(message: string, error?: any): void;
+  error(message: string, error?: any): void;
 }
 
 /**
@@ -25,12 +25,12 @@ export class ConsoleLogger implements Logger {
   constructor(threshold: LogLevel = 2) {
     this.threshold = threshold;
 
-    const groups = [];
+    const groups = Array<string>();
     const hr =
       '--------------------------------------------------------------------------------';
 
     if (!global.console.group) {
-      global.console.group = label => {
+      global.console.group = (label: string) => {
         groups.push(label);
         global.console.log('%c \nBEGIN GROUP: %c', hr, label);
       };
@@ -63,7 +63,7 @@ export class ConsoleLogger implements Logger {
   }
 
   private log(
-    logFunction: (msg) => void,
+    logFunction: (msg: string) => void,
     level: LogLevel,
     message: string,
     error?: any,

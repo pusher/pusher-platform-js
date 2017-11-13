@@ -89,7 +89,7 @@ class WsSubscriptions {
   getAllAsArray(): SubscriptionData[] {
     return Object.keys(this.subscriptions).map(subID => ({
       subID: parseInt(subID, 10),
-      ...this.subscriptions[subID],
+      ...this.subscriptions[parseInt(subID, 10)],
     }));
   }
 

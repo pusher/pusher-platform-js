@@ -70,7 +70,7 @@ module.exports =
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 function responseToHeadersObject(headerStr) {
     var headers = {};
     if (!headerStr) {
@@ -151,7 +151,7 @@ module.exports = g;
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["VERBOSE"] = 1] = "VERBOSE";
@@ -164,7 +164,7 @@ var ConsoleLogger = (function () {
     function ConsoleLogger(threshold) {
         if (threshold === void 0) { threshold = 2; }
         this.threshold = threshold;
-        var groups = [];
+        var groups = Array();
         var hr = '--------------------------------------------------------------------------------';
         if (!global.console.group) {
             global.console.group = function (label) {
@@ -230,7 +230,7 @@ exports.EmptyLogger = EmptyLogger;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createRetryStrategyOptionsOrDefault = function (options) {
     var initialTimeoutMillis = options.initialTimeoutMillis || 1000;
@@ -257,7 +257,7 @@ exports.createRetryStrategyOptionsOrDefault = function (options) {
         increaseTimeout: increaseTimeout,
         initialTimeoutMillis: initialTimeoutMillis,
         limit: limit,
-        maxTimeoutMillis: maxTimeoutMillis
+        maxTimeoutMillis: maxTimeoutMillis,
     };
 };
 var Retry = (function () {
@@ -345,7 +345,7 @@ exports.RetryResolution = RetryResolution;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = __webpack_require__(2);
 var request_1 = __webpack_require__(5);
 var resuming_subscription_1 = __webpack_require__(6);
@@ -361,8 +361,8 @@ var BaseClient = (function () {
         this.options = options;
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
-        this.websocketTransport = new websocket_1["default"](this.host);
-        this.httpTransport = new http_1["default"](this.host);
+        this.websocketTransport = new websocket_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host);
     }
     BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
         var _this = this;
@@ -372,18 +372,17 @@ var BaseClient = (function () {
                 .then(function (token) {
                 options.headers['Authorization'] = "Bearer " + token;
                 return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-            })["catch"](function (error) {
+            })
+                .catch(function (error) {
                 _this.logger.error(error);
             });
         }
-        else {
-            return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-        }
+        return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
     };
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
         listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
         var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
-        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, initialEventId, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger);
+        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger, initialEventId);
         var opened = false;
         return subscriptionStrategy({
             onEnd: subscribeStrategyListeners.onEnd,
@@ -396,7 +395,7 @@ var BaseClient = (function () {
                 }
                 listeners.onSubscribe();
             },
-            onRetrying: subscribeStrategyListeners.onRetrying
+            onRetrying: subscribeStrategyListeners.onRetrying,
         }, headers);
     };
     BaseClient.prototype.subscribeNonResuming = function (path, headers, listeners, retryStrategyOptions, tokenProvider) {
@@ -415,7 +414,7 @@ var BaseClient = (function () {
                 }
                 listeners.onSubscribe();
             },
-            onRetrying: subscribeStrategyListeners.onRetrying
+            onRetrying: subscribeStrategyListeners.onRetrying,
         }, headers);
     };
     return BaseClient;
@@ -429,7 +428,7 @@ exports.BaseClient = BaseClient;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 function executeNetworkRequest(createXhr, options) {
     return new Promise(function (resolve, reject) {
@@ -459,10 +458,10 @@ exports.executeNetworkRequest = executeNetworkRequest;
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var retry_strategy_1 = __webpack_require__(3);
-exports.createResumingStrategy = function (retryOptions, initialEventId, nextSubscribeStrategy, logger) {
+exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, logger, initialEventId) {
     retryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
     var retryResolution = new retry_strategy_1.RetryResolution(retryOptions, logger);
     var ResumingSubscription = (function () {
@@ -498,7 +497,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
                         onOpen: function (headers) {
                             onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
                         },
-                        onRetrying: listeners.onRetrying
+                        onRetrying: listeners.onRetrying,
                     }, headers);
                 }
                 OpeningSubscriptionState.prototype.unsubscribe = function () {
@@ -563,7 +562,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
                             onOpen: function (headers) {
                                 onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
                             },
-                            onRetrying: listeners.onRetrying
+                            onRetrying: listeners.onRetrying,
                         }, headers);
                     };
                     executeSubscriptionOnce(error, lastEventId);
@@ -619,7 +618,7 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var retry_strategy_1 = __webpack_require__(3);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
@@ -647,7 +646,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
                         onOpen: function (headers) {
                             return onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
                         },
-                        onRetrying: listeners.onRetrying
+                        onRetrying: listeners.onRetrying,
                     }, headers);
                 }
                 OpeningSubscriptionState.prototype.unsubscribe = function () {
@@ -688,7 +687,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
                             onOpen: function (headers) {
                                 onTransition(new OpenSubscriptionState(headers, underlyingSubscription, onTransition));
                             },
-                            onRetrying: listeners.onRetrying
+                            onRetrying: listeners.onRetrying,
                         }, headers);
                     };
                     executeSubscriptionOnce(error);
@@ -747,7 +746,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createTokenProvidingStrategy = function (nextSubscribeStrategy, logger, tokenProvider) {
     if (tokenProvider) {
@@ -794,9 +793,10 @@ var TokenProvidingSubscription = (function () {
                     }
                 },
                 onEvent: _this.listeners.onEvent,
-                onOpen: _this.listeners.onOpen
+                onOpen: _this.listeners.onOpen,
             });
-        })["catch"](function (error) {
+        })
+            .catch(function (error) {
             _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
             _this.state = new InactiveState(_this.logger);
         });
@@ -832,7 +832,7 @@ var ActiveState = (function () {
                 _this.logger.verbose("TokenProvidingSubscription: subscription opened");
                 listeners.onOpen(headers);
             },
-            onRetrying: listeners.onRetrying
+            onRetrying: listeners.onRetrying,
         }, this.headers);
     };
     ActiveState.prototype.unsubscribe = function () {
@@ -865,7 +865,7 @@ var InactiveState = (function () {
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.createTransportStrategy = function (path, transport, logger) {
     return function (listeners, headers) { return transport.subscribe(path, listeners, headers); };
 };
@@ -877,11 +877,11 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(4);
 exports.BaseClient = base_client_1.BaseClient;
 var instance_1 = __webpack_require__(15);
-exports.Instance = instance_1["default"];
+exports.Instance = instance_1.default;
 var logger_1 = __webpack_require__(2);
 exports.ConsoleLogger = logger_1.ConsoleLogger;
 exports.EmptyLogger = logger_1.EmptyLogger;
@@ -905,11 +905,11 @@ var token_providing_subscription_1 = __webpack_require__(8);
 exports.createTokenProvidingStrategy = token_providing_subscription_1.createTokenProvidingStrategy;
 var transports_1 = __webpack_require__(9);
 exports.createTransportStrategy = transports_1.createTransportStrategy;
-exports["default"] = {
+exports.default = {
     BaseClient: base_client_1.BaseClient,
     ConsoleLogger: logger_1.ConsoleLogger,
     EmptyLogger: logger_1.EmptyLogger,
-    Instance: instance_1["default"]
+    Instance: instance_1.default,
 };
 
 
@@ -919,14 +919,14 @@ exports["default"] = {
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListeners) {
     return {
         onEnd: subListeners.onEnd,
         onError: subListeners.onError,
         onEvent: subListeners.onEvent,
         onOpen: subListeners.onOpen,
-        onRetrying: subListeners.onRetrying
+        onRetrying: subListeners.onRetrying,
     };
 };
 
@@ -937,7 +937,7 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var noop = function (arg) { };
 exports.replaceMissingListenersWithNoOps = function (listeners) {
     var onOpen = listeners.onOpen || noop;
@@ -952,7 +952,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
         onEvent: onEvent,
         onOpen: onOpen,
         onRetrying: onRetrying,
-        onSubscribe: onSubscribe
+        onSubscribe: onSubscribe,
     };
 };
 
@@ -963,7 +963,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var HttpTransportState;
 (function (HttpTransportState) {
@@ -1167,7 +1167,7 @@ var HttpTransport = (function () {
         var requestOptions = {
             headers: headers,
             method: 'SUBSCRIBE',
-            path: path
+            path: path,
         };
         return new HttpSubscription(this.createXHR(this.baseURL, requestOptions), listeners);
     };
@@ -1191,7 +1191,7 @@ var HttpTransport = (function () {
     };
     return HttpTransport;
 }());
-exports["default"] = HttpTransport;
+exports.default = HttpTransport;
 
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
@@ -1209,7 +1209,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     }
     return t;
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var SubscribeMessageType = 100;
 var OpenMessageType = 101;
@@ -1234,7 +1234,7 @@ var WsSubscriptions = (function () {
         this.subscriptions[subID] = {
             headers: headers,
             listeners: listeners,
-            path: path
+            path: path,
         };
         return subID;
     };
@@ -1255,7 +1255,7 @@ var WsSubscriptions = (function () {
     };
     WsSubscriptions.prototype.getAllAsArray = function () {
         var _this = this;
-        return Object.keys(this.subscriptions).map(function (subID) { return (__assign({ subID: parseInt(subID, 10) }, _this.subscriptions[subID])); });
+        return Object.keys(this.subscriptions).map(function (subID) { return (__assign({ subID: parseInt(subID, 10) }, _this.subscriptions[parseInt(subID, 10)])); });
     };
     WsSubscriptions.prototype.removeAll = function () {
         this.subscriptions = {};
@@ -1505,7 +1505,7 @@ var WebSocketTransport = (function () {
     };
     return WebSocketTransport;
 }());
-exports["default"] = WebSocketTransport;
+exports.default = WebSocketTransport;
 
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
@@ -1515,7 +1515,7 @@ exports["default"] = WebSocketTransport;
 
 "use strict";
 
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var base_client_1 = __webpack_require__(4);
 var logger_1 = __webpack_require__(2);
 var HOST_BASE = 'pusherplatform.io';
@@ -1546,7 +1546,7 @@ var Instance = (function () {
                 new base_client_1.BaseClient({
                     encrypted: options.encrypted,
                     host: this.host,
-                    logger: this.logger
+                    logger: this.logger,
                 });
         this.tokenProvider = options.tokenProvider;
     }
@@ -1577,7 +1577,7 @@ var Instance = (function () {
     };
     return Instance;
 }());
-exports["default"] = Instance;
+exports.default = Instance;
 
 
 /***/ })

@@ -3,8 +3,6 @@ import { ElementsHeaders, ErrorResponse, NetworkError } from './network';
 
 import { XMLHttpRequest } from 'xmlhttprequest';
 
-export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
-
 export interface RequestOptions {
   method: string;
   path: string;
@@ -14,6 +12,7 @@ export interface RequestOptions {
   logger?: Logger;
 }
 
+// TODO: Could we make this generic and remove the `any`s?
 export function executeNetworkRequest(
   createXhr: () => XMLHttpRequest,
   options: RequestOptions,

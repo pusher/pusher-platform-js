@@ -1,7 +1,6 @@
 import { Logger } from './logger';
 import { ElementsHeaders } from './network';
 import { XMLHttpRequest } from 'xmlhttprequest';
-export declare type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 export interface RequestOptions {
     method: string;
     path: string;

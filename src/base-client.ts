@@ -36,7 +36,6 @@ export class BaseClient {
     this.websocketTransport = new WebSocketTransport(this.host);
     this.httpTransport = new HttpTransport(this.host);
   }
-
   request(
     options: RequestOptions,
     tokenProvider?: TokenProvider,
@@ -56,12 +55,12 @@ export class BaseClient {
         .catch(error => {
           this.logger.error(error);
         });
-    } else {
-      return executeNetworkRequest(
-        () => this.httpTransport.request(options),
-        options,
-      );
     }
+
+    return executeNetworkRequest(
+      () => this.httpTransport.request(options),
+      options,
+    );
   }
 
   subscribeResuming(
@@ -69,7 +68,7 @@ export class BaseClient {
     headers: ElementsHeaders,
     listeners: SubscriptionListeners,
     retryStrategyOptions: RetryStrategyOptions,
-    initialEventId: string,
+    initialEventId?: string,
     tokenProvider?: TokenProvider,
   ): Subscription {
     listeners = replaceMissingListenersWithNoOps(listeners);
@@ -78,14 +77,13 @@ export class BaseClient {
     );
     const subscriptionStrategy = createResumingStrategy(
       retryStrategyOptions,
-      initialEventId,
       createTokenProvidingStrategy(
         createTransportStrategy(path, this.websocketTransport, this.logger),
         this.logger,
         tokenProvider,
       ),
-
       this.logger,
+      initialEventId,
     );
 
     let opened = false;
