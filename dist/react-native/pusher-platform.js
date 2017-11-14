@@ -240,7 +240,7 @@ exports.createRetryStrategyOptionsOrDefault = function (options) {
         limit = options.limit;
     }
     var increaseTimeout;
-    if (options.increaseTimeout) {
+    if (options.increaseTimeout !== undefined) {
         increaseTimeout = options.increaseTimeout;
     }
     else {
@@ -370,8 +370,16 @@ var BaseClient = (function () {
             return tokenProvider
                 .fetchToken(tokenParams)
                 .then(function (token) {
-                options.headers['Authorization'] = "Bearer " + token;
+                if (options.headers !== undefined) {
+                    options.headers['Authorization'] = "Bearer " + token;
+                }
+                else {
+                    options.headers = (_a = {},
+                        _a['Authorization'] = "Bearer " + token,
+                        _a);
+                }
                 return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
+                var _a;
             })
                 .catch(function (error) {
                 _this.logger.error(error);
@@ -380,8 +388,8 @@ var BaseClient = (function () {
         return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
     };
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
-        listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
-        var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
+        var completeListeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
+        var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(completeListeners);
         var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger, initialEventId);
         var opened = false;
         return subscriptionStrategy({
@@ -391,16 +399,16 @@ var BaseClient = (function () {
             onOpen: function (headers) {
                 if (!opened) {
                     opened = true;
-                    listeners.onOpen(headers);
+                    subscribeStrategyListeners.onOpen(headers);
                 }
-                listeners.onSubscribe();
+                completeListeners.onSubscribe();
             },
             onRetrying: subscribeStrategyListeners.onRetrying,
         }, headers);
     };
     BaseClient.prototype.subscribeNonResuming = function (path, headers, listeners, retryStrategyOptions, tokenProvider) {
-        listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
-        var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
+        var completeListeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
+        var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(completeListeners);
         var subscriptionStrategy = retrying_subscription_1.createRetryingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger);
         var opened = false;
         return subscriptionStrategy({
@@ -410,9 +418,9 @@ var BaseClient = (function () {
             onOpen: function (headers) {
                 if (!opened) {
                     opened = true;
-                    listeners.onOpen(headers);
+                    subscribeStrategyListeners.onOpen(headers);
                 }
-                listeners.onSubscribe();
+                completeListeners.onSubscribe();
             },
             onRetrying: subscribeStrategyListeners.onRetrying,
         }, headers);
@@ -462,8 +470,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var retry_strategy_1 = __webpack_require__(3);
 exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, logger, initialEventId) {
-    retryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
-    var retryResolution = new retry_strategy_1.RetryResolution(retryOptions, logger);
+    var completeRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
+    var retryResolution = new retry_strategy_1.RetryResolution(completeRetryOptions, logger);
     var ResumingSubscription = (function () {
         function ResumingSubscription(listeners, headers) {
             var _this = this;
@@ -488,7 +496,7 @@ exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, 
                             onTransition(new EndedSubscriptionState(error));
                         },
                         onError: function (error) {
-                            onTransition(new ResumingSubscriptionState(error, lastEventId, onTransition));
+                            onTransition(new ResumingSubscriptionState(error, onTransition, lastEventId));
                         },
                         onEvent: function (event) {
                             lastEventId = event.eventId;
@@ -520,7 +528,7 @@ exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, 
                 return OpenSubscriptionState;
             }());
             var ResumingSubscriptionState = (function () {
-                function ResumingSubscriptionState(error, lastEventId, onTransition) {
+                function ResumingSubscriptionState(error, onTransition, lastEventId) {
                     var _this = this;
                     this.onTransition = onTransition;
                     logger.verbose("ResumingSubscription: transitioning to ResumingSubscriptionState");
@@ -622,8 +630,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var retry_strategy_1 = __webpack_require__(3);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
-    retryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
-    var retryResolution = new retry_strategy_1.RetryResolution(retryOptions, logger);
+    var enrichedRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
+    var retryResolution = new retry_strategy_1.RetryResolution(enrichedRetryOptions, logger);
     var RetryingSubscription = (function () {
         function RetryingSubscription(listeners, headers) {
             var _this = this;
@@ -938,14 +946,19 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var noop = function (arg) { };
 exports.replaceMissingListenersWithNoOps = function (listeners) {
-    var onOpen = listeners.onOpen || noop;
-    var onSubscribe = listeners.onSubscribe || noop;
-    var onEvent = listeners.onEvent || noop;
-    var onError = listeners.onError || noop;
-    var onEnd = listeners.onEnd || noop;
-    var onRetrying = listeners.onRetrying || noop;
+    var onEndNoOp = function (error) { };
+    var onEnd = listeners.onEnd || onEndNoOp;
+    var onErrorNoOp = function (error) { };
+    var onError = listeners.onError || onErrorNoOp;
+    var onEventNoOp = function (event) { };
+    var onEvent = listeners.onEvent || onEventNoOp;
+    var onOpenNoOp = function (headers) { };
+    var onOpen = listeners.onOpen || onOpenNoOp;
+    var onRetryingNoOp = function () { };
+    var onRetrying = listeners.onRetrying || onRetryingNoOp;
+    var onSubscribeNoOp = function () { };
+    var onSubscribe = listeners.onSubscribe || onSubscribeNoOp;
     return {
         onEnd: onEnd,
         onError: onError,
@@ -1003,7 +1016,9 @@ var HttpSubscription = (function () {
     HttpSubscription.prototype.unsubscribe = function () {
         this.state = HttpTransportState.ENDED;
         this.xhr.abort();
-        this.listeners.onEnd(null);
+        if (this.listeners.onEnd) {
+            this.listeners.onEnd(null);
+        }
     };
     HttpSubscription.prototype.onLoading = function () {
         this.assertStateIsIn(HttpTransportState.OPENING, HttpTransportState.OPEN, HttpTransportState.ENDING);
@@ -1011,7 +1026,9 @@ var HttpSubscription = (function () {
             if (this.state === HttpTransportState.OPENING) {
                 this.state = HttpTransportState.OPEN;
                 global.console.log(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
-                this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+                if (this.listeners.onOpen) {
+                    this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+                }
             }
             this.assertStateIsIn(HttpTransportState.OPEN);
             var err = this.onChunk();
@@ -1019,7 +1036,9 @@ var HttpSubscription = (function () {
             if (err) {
                 this.state = HttpTransportState.ENDED;
                 if (err instanceof network_1.ErrorResponse && err.statusCode !== 204) {
-                    this.listeners.onError(err);
+                    if (this.listeners.onError) {
+                        this.listeners.onError(err);
+                    }
                 }
             }
             else {
@@ -1030,24 +1049,34 @@ var HttpSubscription = (function () {
         if (this.xhr.status === 200) {
             if (this.state === HttpTransportState.OPENING) {
                 this.state = HttpTransportState.OPEN;
-                this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+                if (this.listeners.onOpen) {
+                    this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+                }
             }
             this.assertStateIsIn(HttpTransportState.OPEN, HttpTransportState.ENDING);
             var err = this.onChunk();
             if (err) {
                 this.state = HttpTransportState.ENDED;
                 if (err.statusCode === 204) {
-                    this.listeners.onEnd(null);
+                    if (this.listeners.onEnd) {
+                        this.listeners.onEnd(null);
+                    }
                 }
                 else {
-                    this.listeners.onError(err);
+                    if (this.listeners.onError) {
+                        this.listeners.onError(err);
+                    }
                 }
             }
             else if (this.state <= HttpTransportState.ENDING) {
-                this.listeners.onError(new Error('HTTP response ended without receiving EOS message'));
+                if (this.listeners.onError) {
+                    this.listeners.onError(new Error('HTTP response ended without receiving EOS message'));
+                }
             }
             else {
-                this.listeners.onEnd(null);
+                if (this.listeners.onEnd) {
+                    this.listeners.onEnd(null);
+                }
             }
         }
         else {
@@ -1056,10 +1085,14 @@ var HttpSubscription = (function () {
                 return;
             }
             else if (this.xhr.status === 0) {
-                this.listeners.onError(new network_1.NetworkError('Connection lost.'));
+                if (this.listeners.onError) {
+                    this.listeners.onError(new network_1.NetworkError('Connection lost.'));
+                }
             }
             else {
-                this.listeners.onError(network_1.ErrorResponse.fromXHR(this.xhr));
+                if (this.listeners.onError) {
+                    this.listeners.onError(network_1.ErrorResponse.fromXHR(this.xhr));
+                }
             }
         }
     };
@@ -1126,7 +1159,10 @@ var HttpSubscription = (function () {
         if (typeof headers !== 'object' || Array.isArray(headers)) {
             return new Error('Invalid event headers in message: ' + JSON.stringify(eventMessage));
         }
-        this.listeners.onEvent({ body: body, headers: headers, eventId: id });
+        if (this.listeners.onEvent) {
+            this.listeners.onEvent({ body: body, headers: headers, eventId: id });
+        }
+        return null;
     };
     HttpSubscription.prototype.onEOSMessage = function (eosMessage) {
         this.assertStateIsIn(HttpTransportState.OPEN);
@@ -1182,9 +1218,11 @@ var HttpTransport = (function () {
         if (options.jwt) {
             xhr.setRequestHeader('authorization', "Bearer " + options.jwt);
         }
-        for (var key in options.headers) {
-            if (options.headers.hasOwnProperty(key)) {
-                xhr.setRequestHeader(key, options.headers[key]);
+        if (options.headers) {
+            for (var key in options.headers) {
+                if (options.headers.hasOwnProperty(key)) {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                }
             }
         }
         return xhr;
@@ -1298,7 +1336,10 @@ var WebSocketTransport = (function () {
     };
     WebSocketTransport.prototype.unsubscribe = function (subID) {
         this.sendMessage(this.getMessage(UnsubscribeMessageType, subID));
-        this.subscriptions.get(subID).listeners.onEnd(null);
+        var subscription = this.subscriptions.get(subID);
+        if (subscription.listeners.onEnd) {
+            subscription.listeners.onEnd(null);
+        }
         this.subscriptions.remove(subID);
     };
     WebSocketTransport.prototype.connect = function () {
@@ -1344,8 +1385,16 @@ var WebSocketTransport = (function () {
                 return;
             }
             var callback = _this.closedError
-                ? function (subscription) { return subscription.listeners.onError(_this.closedError); }
-                : function (subscription) { return subscription.listeners.onEnd(null); };
+                ? function (subscription) {
+                    if (subscription.listeners.onError) {
+                        subscription.listeners.onError(_this.closedError);
+                    }
+                }
+                : function (subscription) {
+                    if (subscription.listeners.onEnd) {
+                        subscription.listeners.onEnd(null);
+                    }
+                };
             var allSubscriptions = _this.pendingSubscriptions.isEmpty() === false
                 ? _this.pendingSubscriptions
                 : _this.subscriptions;
@@ -1375,6 +1424,10 @@ var WebSocketTransport = (function () {
         this.connect();
     };
     WebSocketTransport.prototype.subscribePending = function (path, listeners, headers, subID) {
+        if (subID === undefined) {
+            global.console.logger.debug("Subscription to path " + path + " has an undefined ID");
+            return;
+        }
         this.subscriptions.add(subID, path, listeners, headers);
         this.sendMessage(this.getMessage(SubscribeMessageType, subID, path, headers));
     };
@@ -1448,7 +1501,9 @@ var WebSocketTransport = (function () {
         return null;
     };
     WebSocketTransport.prototype.onOpenMessage = function (message, subID, subscriptionListeners) {
-        subscriptionListeners.onOpen(message[1]);
+        if (subscriptionListeners.onOpen) {
+            subscriptionListeners.onOpen(message[1]);
+        }
     };
     WebSocketTransport.prototype.onEventMessage = function (eventMessage, subscriptionListeners) {
         if (eventMessage.length !== 3) {
@@ -1461,24 +1516,41 @@ var WebSocketTransport = (function () {
         if (typeof headers !== 'object' || Array.isArray(headers)) {
             return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
         }
-        subscriptionListeners.onEvent({ eventId: eventId, headers: headers, body: body });
+        if (subscriptionListeners.onEvent) {
+            subscriptionListeners.onEvent({ eventId: eventId, headers: headers, body: body });
+        }
     };
     WebSocketTransport.prototype.onEOSMessage = function (eosMessage, subID, subscriptionListeners) {
         this.subscriptions.remove(subID);
         if (eosMessage.length !== 3) {
-            return subscriptionListeners.onError(new Error("EOS message has " + eosMessage.length + " elements (expected 4)"));
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error("EOS message has " + eosMessage.length + " elements (expected 4)"));
+            }
+            return;
         }
         var statusCode = eosMessage[0], headers = eosMessage[1], body = eosMessage[2];
         if (typeof statusCode !== 'number') {
-            return subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+            }
+            return;
         }
         if (typeof headers !== 'object' || Array.isArray(headers)) {
-            return subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+            }
+            return;
         }
         if (statusCode === 204) {
-            return subscriptionListeners.onEnd(null);
+            if (subscriptionListeners.onEnd) {
+                subscriptionListeners.onEnd(null);
+            }
+            return;
         }
-        return subscriptionListeners.onError(new network_1.ErrorResponse(statusCode, headers, body));
+        if (subscriptionListeners.onError) {
+            subscriptionListeners.onError(new network_1.ErrorResponse(statusCode, headers, body));
+        }
+        return;
     };
     WebSocketTransport.prototype.onCloseMessage = function (closeMessage) {
         var statusCode = closeMessage[0], headers = closeMessage[1], body = closeMessage[2];

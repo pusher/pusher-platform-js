@@ -25,7 +25,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     private connect();
     private close(error?);
     private tryReconnectIfNeeded();
-    private subscribePending(path, listeners, headers, subID);
+    private subscribePending(path, listeners, headers, subID?);
     private getMessage(messageType, id, path?, headers?);
     private sendMessage(message);
     private subscription(subID);

@@ -26,17 +26,22 @@ export let createRetryingStrategy: (
   nextSubscribeStrategy,
   logger,
 ): SubscribeStrategy => {
-  retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
-  const retryResolution = new RetryResolution(retryOptions, logger);
+  const enrichedRetryOptions = createRetryStrategyOptionsOrDefault(
+    retryOptions,
+  );
+  const retryResolution = new RetryResolution(enrichedRetryOptions, logger);
 
   class RetryingSubscription implements Subscription {
     private state: SubscriptionState;
 
-    constructor(listeners: SubscribeStrategyListeners, headers) {
+    constructor(
+      listeners: SubscribeStrategyListeners,
+      headers: ElementsHeaders,
+    ) {
       class OpeningSubscriptionState implements SubscriptionState {
         private underlyingSubscription: Subscription;
 
-        constructor(onTransition: (SubscriptionState) => void) {
+        constructor(onTransition: (newState: SubscriptionState) => void) {
           logger.verbose(
             `RetryingSubscription: transitioning to OpeningSubscriptionState`,
           );
@@ -74,7 +79,7 @@ export let createRetryingStrategy: (
 
         constructor(
           error: any,
-          private onTransition: (SubscriptionState) => void,
+          private onTransition: (newState: SubscriptionState) => void,
         ) {
           logger.verbose(
             `RetryingSubscription: transitioning to RetryingSubscriptionState`,

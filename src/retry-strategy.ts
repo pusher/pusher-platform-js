@@ -2,15 +2,22 @@ import { Logger } from './logger';
 import { ErrorResponse, NetworkError } from './network';
 
 export interface RetryStrategyOptions {
-  initialTimeoutMillis?: number;
-  maxTimeoutMillis?: number;
-  limit?: number;
   increaseTimeout?: (currentTimeout: number) => number;
+  initialTimeoutMillis?: number;
+  limit?: number;
+  maxTimeoutMillis?: number;
+}
+
+export interface CompleteRetryStrategyOptions {
+  increaseTimeout: (currentTimeout: number) => number;
+  initialTimeoutMillis: number;
+  limit: number;
+  maxTimeoutMillis: number;
 }
 
 export let createRetryStrategyOptionsOrDefault: (
   options: RetryStrategyOptions,
-) => RetryStrategyOptions = (options: RetryStrategyOptions) => {
+) => CompleteRetryStrategyOptions = (options: RetryStrategyOptions) => {
   const initialTimeoutMillis = options.initialTimeoutMillis || 1000;
   const maxTimeoutMillis = options.maxTimeoutMillis || 5000;
 
@@ -21,7 +28,7 @@ export let createRetryStrategyOptionsOrDefault: (
 
   let increaseTimeout: (currentTimeout: number) => number;
 
-  if (options.increaseTimeout) {
+  if (options.increaseTimeout !== undefined) {
     increaseTimeout = options.increaseTimeout;
   } else {
     increaseTimeout = currentTimeout => {
@@ -47,7 +54,7 @@ export interface RetryStrategyResult {}
 export class Retry implements RetryStrategyResult {
   waitTimeMillis: number;
 
-  constructor(waitTimeMillis) {
+  constructor(waitTimeMillis: number) {
     this.waitTimeMillis = waitTimeMillis;
   }
 }
@@ -70,16 +77,16 @@ const requestMethodIsSafe: (method: string) => boolean = method => {
 };
 
 export class RetryResolution {
-  private initialTimeoutMillis;
-  private maxTimeoutMillis;
-  private limit;
-  private increaseTimeoutFunction;
+  private initialTimeoutMillis: number;
+  private maxTimeoutMillis: number;
+  private limit: number;
+  private increaseTimeoutFunction: (currentTimeout: number) => number;
 
   private currentRetryCount = 0;
   private currentBackoffMillis: number;
 
   constructor(
-    private options: RetryStrategyOptions,
+    private options: CompleteRetryStrategyOptions,
     private logger: Logger,
     private retryUnsafeRequests?: boolean,
   ) {

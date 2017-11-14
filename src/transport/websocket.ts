@@ -121,7 +121,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private lastMessageReceivedTimestamp: number;
   private pingInterval: any;
   private pongTimeout: any;
-  private lastSentPingID: number;
+  private lastSentPingID: number | null;
 
   constructor(host: string) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
@@ -161,7 +161,10 @@ export default class WebSocketTransport implements SubscriptionTransport {
   unsubscribe(subID: number): void {
     this.sendMessage(this.getMessage(UnsubscribeMessageType, subID));
 
-    this.subscriptions.get(subID).listeners.onEnd(null);
+    const subscription = this.subscriptions.get(subID);
+    if (subscription.listeners.onEnd) {
+      subscription.listeners.onEnd(null);
+    }
     this.subscriptions.remove(subID);
   }
 
@@ -225,8 +228,16 @@ export default class WebSocketTransport implements SubscriptionTransport {
       }
 
       const callback = this.closedError
-        ? subscription => subscription.listeners.onError(this.closedError)
-        : subscription => subscription.listeners.onEnd(null);
+        ? (subscription: SubscriptionData) => {
+            if (subscription.listeners.onError) {
+              subscription.listeners.onError(this.closedError);
+            }
+          }
+        : (subscription: SubscriptionData) => {
+            if (subscription.listeners.onEnd) {
+              subscription.listeners.onEnd(null);
+            }
+          };
 
       const allSubscriptions =
         this.pendingSubscriptions.isEmpty() === false
@@ -243,7 +254,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     };
   }
 
-  private close(error?) {
+  private close(error?: any) {
     if (!(this.socket instanceof global.WebSocket)) {
       return;
     }
@@ -270,8 +281,15 @@ export default class WebSocketTransport implements SubscriptionTransport {
     path: string,
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
-    subID: number,
+    subID?: number,
   ) {
+    if (subID === undefined) {
+      global.console.logger.debug(
+        `Subscription to path ${path} has an undefined ID`,
+      );
+      return;
+    }
+
     // Add or select subscription
     this.subscriptions.add(subID, path, listeners, headers);
 
@@ -375,7 +393,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
    * @param message The message to check.
    * @returns null or error if the message is wrong.
    */
-  private validateMessage(message: Message): Error {
+  private validateMessage(message: Message): Error | null {
     if (!Array.isArray(message)) {
       return new Error(
         `Message is expected to be an array. Getting: ${JSON.stringify(
@@ -396,13 +414,15 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID: number,
     subscriptionListeners: SubscriptionListeners,
   ) {
-    subscriptionListeners.onOpen(message[1]);
+    if (subscriptionListeners.onOpen) {
+      subscriptionListeners.onOpen(message[1]);
+    }
   }
 
   private onEventMessage(
     eventMessage: Message,
     subscriptionListeners: SubscriptionListeners,
-  ): Error {
+  ): Error | void {
     if (eventMessage.length !== 3) {
       return new Error(
         'Event message has ' + eventMessage.length + ' elements (expected 4)',
@@ -422,7 +442,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
       );
     }
 
-    subscriptionListeners.onEvent({ eventId, headers, body });
+    if (subscriptionListeners.onEvent) {
+      subscriptionListeners.onEvent({ eventId, headers, body });
+    }
   }
 
   private onEOSMessage(
@@ -433,31 +455,45 @@ export default class WebSocketTransport implements SubscriptionTransport {
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
-      return subscriptionListeners.onError(
-        new Error(`EOS message has ${eosMessage.length} elements (expected 4)`),
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new Error(
+            `EOS message has ${eosMessage.length} elements (expected 4)`,
+          ),
+        );
+      }
+      return;
     }
 
     const [statusCode, headers, body] = eosMessage;
     if (typeof statusCode !== 'number') {
-      return subscriptionListeners.onError(
-        new Error('Invalid EOS Status Code'),
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+      }
+      return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return subscriptionListeners.onError(
-        new Error('Invalid EOS ElementsHeaders'),
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+      }
+      return;
     }
 
     if (statusCode === 204) {
-      return subscriptionListeners.onEnd(null);
+      if (subscriptionListeners.onEnd) {
+        subscriptionListeners.onEnd(null);
+      }
+      return;
     }
 
-    return subscriptionListeners.onError(
-      new ErrorResponse(statusCode, headers, body),
-    );
+    if (subscriptionListeners.onError) {
+      subscriptionListeners.onError(
+        new ErrorResponse(statusCode, headers, body),
+      );
+    }
+
+    return;
   }
 
   private onCloseMessage(closeMessage: Message) {

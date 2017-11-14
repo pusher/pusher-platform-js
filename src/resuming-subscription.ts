@@ -29,8 +29,10 @@ export let createResumingStrategy: (
   logger,
   initialEventId,
 ) => {
-  retryOptions = createRetryStrategyOptionsOrDefault(retryOptions);
-  const retryResolution = new RetryResolution(retryOptions, logger);
+  const completeRetryOptions = createRetryStrategyOptionsOrDefault(
+    retryOptions,
+  );
+  const retryResolution = new RetryResolution(completeRetryOptions, logger);
 
   class ResumingSubscription implements Subscription {
     private state: SubscriptionState;
@@ -42,7 +44,9 @@ export let createResumingStrategy: (
       class OpeningSubscriptionState implements SubscriptionState {
         private underlyingSubscription: Subscription;
 
-        constructor(private onTransition: (newState) => void) {
+        constructor(
+          private onTransition: (newState: SubscriptionState) => void,
+        ) {
           let lastEventId = initialEventId;
           logger.verbose(
             `ResumingSubscription: transitioning to OpeningSubscriptionState`,
@@ -64,8 +68,8 @@ export let createResumingStrategy: (
                 onTransition(
                   new ResumingSubscriptionState(
                     error,
-                    lastEventId,
                     onTransition,
+                    lastEventId,
                   ),
                 );
               },
@@ -117,14 +121,17 @@ export let createResumingStrategy: (
 
         constructor(
           error: any,
-          lastEventId: string,
           private onTransition: (newState: SubscriptionState) => void,
+          lastEventId?: string,
         ) {
           logger.verbose(
             `ResumingSubscription: transitioning to ResumingSubscriptionState`,
           );
 
-          const executeSubscriptionOnce = (error: any, lastEventId: string) => {
+          const executeSubscriptionOnce = (
+            error: any,
+            lastEventId?: string,
+          ) => {
             listeners.onRetrying();
             const resolveError: (error: any) => RetryStrategyResult = error => {
               if (error instanceof ErrorResponse) {
@@ -143,7 +150,7 @@ export let createResumingStrategy: (
             }
           };
 
-          const executeNextSubscribeStrategy = (lastEventId: string) => {
+          const executeNextSubscribeStrategy = (lastEventId?: string) => {
             logger.verbose(
               `ResumingSubscription: trying to re-establish the subscription`,
             );

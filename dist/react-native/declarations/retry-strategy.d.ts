@@ -1,16 +1,22 @@
 import { Logger } from './logger';
 export interface RetryStrategyOptions {
-    initialTimeoutMillis?: number;
-    maxTimeoutMillis?: number;
-    limit?: number;
     increaseTimeout?: (currentTimeout: number) => number;
+    initialTimeoutMillis?: number;
+    limit?: number;
+    maxTimeoutMillis?: number;
 }
-export declare let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) => RetryStrategyOptions;
+export interface CompleteRetryStrategyOptions {
+    increaseTimeout: (currentTimeout: number) => number;
+    initialTimeoutMillis: number;
+    limit: number;
+    maxTimeoutMillis: number;
+}
+export declare let createRetryStrategyOptionsOrDefault: (options: RetryStrategyOptions) => CompleteRetryStrategyOptions;
 export interface RetryStrategyResult {
 }
 export declare class Retry implements RetryStrategyResult {
     waitTimeMillis: number;
-    constructor(waitTimeMillis: any);
+    constructor(waitTimeMillis: number);
 }
 export declare class DoNotRetry implements RetryStrategyResult {
     error: Error;
@@ -26,7 +32,7 @@ export declare class RetryResolution {
     private increaseTimeoutFunction;
     private currentRetryCount;
     private currentBackoffMillis;
-    constructor(options: RetryStrategyOptions, logger: Logger, retryUnsafeRequests?: boolean);
+    constructor(options: CompleteRetryStrategyOptions, logger: Logger, retryUnsafeRequests?: boolean | undefined);
     attemptRetry(error: any): RetryStrategyResult;
     private shouldSafeRetry(error);
     private calulateMillisToRetry();

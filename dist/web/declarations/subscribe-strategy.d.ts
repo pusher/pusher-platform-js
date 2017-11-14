@@ -1,11 +1,11 @@
 import { ElementsHeaders } from './network';
-import { Subscription, SubscriptionEvent, SubscriptionListeners } from './subscription';
+import { CompleteSubscriptionListeners, Subscription, SubscriptionEvent } from './subscription';
 export interface SubscribeStrategyListeners {
-    onOpen: (headers: ElementsHeaders) => void;
-    onRetrying: () => void;
+    onEnd: (error: any) => void;
     onError: (error: any) => void;
     onEvent: (event: SubscriptionEvent) => void;
-    onEnd: (error: any) => void;
+    onOpen: (headers: ElementsHeaders) => void;
+    onRetrying: () => void;
 }
 export declare type SubscribeStrategy = (listeners: SubscribeStrategyListeners, headers: ElementsHeaders) => Subscription;
-export declare let subscribeStrategyListenersFromSubscriptionListeners: (subListeners: SubscriptionListeners) => SubscribeStrategyListeners;
+export declare let subscribeStrategyListenersFromSubscriptionListeners: (subListeners: CompleteSubscriptionListeners) => SubscribeStrategyListeners;

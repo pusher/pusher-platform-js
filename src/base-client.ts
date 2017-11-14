@@ -45,8 +45,14 @@ export class BaseClient {
       return tokenProvider
         .fetchToken(tokenParams)
         .then(token => {
-          // tslint:disable-next-line:no-string-literal
-          options.headers['Authorization'] = `Bearer ${token}`;
+          if (options.headers !== undefined) {
+            // tslint:disable-next-line:no-string-literal
+            options.headers['Authorization'] = `Bearer ${token}`;
+          } else {
+            options.headers = {
+              ['Authorization']: `Bearer ${token}`,
+            };
+          }
           return executeNetworkRequest(
             () => this.httpTransport.request(options),
             options,
@@ -71,9 +77,9 @@ export class BaseClient {
     initialEventId?: string,
     tokenProvider?: TokenProvider,
   ): Subscription {
-    listeners = replaceMissingListenersWithNoOps(listeners);
+    const completeListeners = replaceMissingListenersWithNoOps(listeners);
     const subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(
-      listeners,
+      completeListeners,
     );
     const subscriptionStrategy = createResumingStrategy(
       retryStrategyOptions,
@@ -95,9 +101,9 @@ export class BaseClient {
         onOpen: headers => {
           if (!opened) {
             opened = true;
-            listeners.onOpen(headers);
+            subscribeStrategyListeners.onOpen(headers);
           }
-          listeners.onSubscribe();
+          completeListeners.onSubscribe();
         },
         onRetrying: subscribeStrategyListeners.onRetrying,
       },
@@ -112,9 +118,9 @@ export class BaseClient {
     retryStrategyOptions: RetryStrategyOptions,
     tokenProvider?: TokenProvider,
   ) {
-    listeners = replaceMissingListenersWithNoOps(listeners);
+    const completeListeners = replaceMissingListenersWithNoOps(listeners);
     const subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(
-      listeners,
+      completeListeners,
     );
 
     const subscriptionStrategy = createRetryingStrategy(
@@ -136,9 +142,9 @@ export class BaseClient {
         onOpen: headers => {
           if (!opened) {
             opened = true;
-            listeners.onOpen(headers);
+            subscribeStrategyListeners.onOpen(headers);
           }
-          listeners.onSubscribe();
+          completeListeners.onSubscribe();
         },
         onRetrying: subscribeStrategyListeners.onRetrying,
       },

@@ -1,7 +1,7 @@
 import { ElementsHeaders } from './network';
 
 export interface Subscription {
-  unsubscribe();
+  unsubscribe(): void;
 }
 
 export interface SubscriptionListeners {
@@ -13,9 +13,17 @@ export interface SubscriptionListeners {
   onEnd?: (error: any) => void;
 }
 
+export interface CompleteSubscriptionListeners {
+  onOpen: (headers: ElementsHeaders) => void;
+  onSubscribe: () => void;
+  onRetrying: () => void;
+  onEvent: (event: SubscriptionEvent) => void;
+  onError: (error: any) => void;
+  onEnd: (error: any) => void;
+}
+
 export interface SubscriptionState {
-  unsubscribe();
-  unsubscribe();
+  unsubscribe(): void;
 }
 
 export interface SubscriptionEvent {
@@ -40,19 +48,28 @@ export type SubscriptionConstructor = (
   headers: ElementsHeaders,
 ) => Subscription;
 
-// Move this util somewhere else?
-/* tslint:disable-next-line:no-empty */
-const noop = (arg?) => {};
-
 export let replaceMissingListenersWithNoOps: (
   listeners: SubscriptionListeners,
-) => SubscriptionListeners = listeners => {
-  const onOpen = listeners.onOpen || noop;
-  const onSubscribe = listeners.onSubscribe || noop;
-  const onEvent = listeners.onEvent || noop;
-  const onError = listeners.onError || noop;
-  const onEnd = listeners.onEnd || noop;
-  const onRetrying = listeners.onRetrying || noop;
+) => CompleteSubscriptionListeners = listeners => {
+  /* tslint:disable:no-empty */
+  const onEndNoOp = (error: any) => {};
+  const onEnd = listeners.onEnd || onEndNoOp;
+
+  const onErrorNoOp = (error: any) => {};
+  const onError = listeners.onError || onErrorNoOp;
+
+  const onEventNoOp = (event: SubscriptionEvent) => {};
+  const onEvent = listeners.onEvent || onEventNoOp;
+
+  const onOpenNoOp = (headers: ElementsHeaders) => {};
+  const onOpen = listeners.onOpen || onOpenNoOp;
+
+  const onRetryingNoOp = () => {};
+  const onRetrying = listeners.onRetrying || onRetryingNoOp;
+
+  const onSubscribeNoOp = () => {};
+  const onSubscribe = listeners.onSubscribe || onSubscribeNoOp;
+  /* tslint:enable:no-empty */
 
   return {
     onEnd,

@@ -1,5 +1,6 @@
 import { ElementsHeaders } from './network';
 import {
+  CompleteSubscriptionListeners,
   Subscription,
   SubscriptionConstructor,
   SubscriptionEvent,
@@ -8,11 +9,11 @@ import {
 
 // Just like the top-level SubscriptionListeners, but all mandatory and without the onSubscribe callback.
 export interface SubscribeStrategyListeners {
-  onOpen: (headers: ElementsHeaders) => void;
-  onRetrying: () => void;
+  onEnd: (error: any) => void;
   onError: (error: any) => void;
   onEvent: (event: SubscriptionEvent) => void;
-  onEnd: (error: any) => void;
+  onOpen: (headers: ElementsHeaders) => void;
+  onRetrying: () => void;
 }
 
 export type SubscribeStrategy = (
@@ -21,7 +22,7 @@ export type SubscribeStrategy = (
 ) => Subscription;
 
 export let subscribeStrategyListenersFromSubscriptionListeners = (
-  subListeners: SubscriptionListeners,
+  subListeners: CompleteSubscriptionListeners,
 ): SubscribeStrategyListeners => {
   return {
     onEnd: subListeners.onEnd,

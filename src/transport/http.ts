@@ -61,7 +61,9 @@ class HttpSubscription implements Subscription {
   unsubscribe(): void {
     this.state = HttpTransportState.ENDED;
     this.xhr.abort();
-    this.listeners.onEnd(null);
+    if (this.listeners.onEnd) {
+      this.listeners.onEnd(null);
+    }
   }
 
   private onLoading(): void {
@@ -78,9 +80,11 @@ class HttpSubscription implements Subscription {
         global.console.log(
           responseToHeadersObject(this.xhr.getAllResponseHeaders()),
         );
-        this.listeners.onOpen(
-          responseToHeadersObject(this.xhr.getAllResponseHeaders()),
-        );
+        if (this.listeners.onOpen) {
+          this.listeners.onOpen(
+            responseToHeadersObject(this.xhr.getAllResponseHeaders()),
+          );
+        }
       }
 
       this.assertStateIsIn(HttpTransportState.OPEN);
@@ -90,7 +94,9 @@ class HttpSubscription implements Subscription {
       if (err) {
         this.state = HttpTransportState.ENDED;
         if (err instanceof ErrorResponse && err.statusCode !== 204) {
-          this.listeners.onError(err);
+          if (this.listeners.onError) {
+            this.listeners.onError(err);
+          }
         }
         // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
         // and so we will not call the event handler again.
@@ -105,9 +111,11 @@ class HttpSubscription implements Subscription {
     if (this.xhr.status === 200) {
       if (this.state === HttpTransportState.OPENING) {
         this.state = HttpTransportState.OPEN;
-        this.listeners.onOpen(
-          responseToHeadersObject(this.xhr.getAllResponseHeaders()),
-        );
+        if (this.listeners.onOpen) {
+          this.listeners.onOpen(
+            responseToHeadersObject(this.xhr.getAllResponseHeaders()),
+          );
+        }
       }
       this.assertStateIsIn(HttpTransportState.OPEN, HttpTransportState.ENDING);
       const err = this.onChunk();
@@ -115,17 +123,25 @@ class HttpSubscription implements Subscription {
         this.state = HttpTransportState.ENDED;
         if ((err as any).statusCode === 204) {
           // TODO: That cast is horrific
-          this.listeners.onEnd(null);
+          if (this.listeners.onEnd) {
+            this.listeners.onEnd(null);
+          }
         } else {
-          this.listeners.onError(err);
+          if (this.listeners.onError) {
+            this.listeners.onError(err);
+          }
         }
       } else if (this.state <= HttpTransportState.ENDING) {
-        this.listeners.onError(
-          new Error('HTTP response ended without receiving EOS message'),
-        );
+        if (this.listeners.onError) {
+          this.listeners.onError(
+            new Error('HTTP response ended without receiving EOS message'),
+          );
+        }
       } else {
         // Stream ended normally.
-        this.listeners.onEnd(null);
+        if (this.listeners.onEnd) {
+          this.listeners.onEnd(null);
+        }
       }
     } else {
       this.assertStateIsIn(
@@ -139,14 +155,18 @@ class HttpSubscription implements Subscription {
         return;
       } else if (this.xhr.status === 0) {
         // Something terrible has happened. Most likely a network error. XHR is useless at that point.
-        this.listeners.onError(new NetworkError('Connection lost.'));
+        if (this.listeners.onError) {
+          this.listeners.onError(new NetworkError('Connection lost.'));
+        }
       } else {
-        this.listeners.onError(ErrorResponse.fromXHR(this.xhr));
+        if (this.listeners.onError) {
+          this.listeners.onError(ErrorResponse.fromXHR(this.xhr));
+        }
       }
     }
   }
 
-  private onChunk(): Error {
+  private onChunk(): Error | undefined {
     this.assertStateIsIn(HttpTransportState.OPEN);
     const response = this.xhr.responseText;
     const newlineIndex = response.lastIndexOf('\n');
@@ -190,7 +210,7 @@ class HttpSubscription implements Subscription {
    * Calls options.onEvent 0+ times, then returns an Error or null
    * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
    */
-  private onMessage(message: any[]): Error {
+  private onMessage(message: any[]): Error | null {
     this.assertStateIsIn(HttpTransportState.OPEN);
     this.verifyMessage(message);
 
@@ -207,7 +227,7 @@ class HttpSubscription implements Subscription {
   }
 
   // EITHER calls options.onEvent, OR returns an error
-  private onEventMessage(eventMessage: any[]): Error {
+  private onEventMessage(eventMessage: any[]): Error | null {
     this.assertStateIsIn(HttpTransportState.OPEN);
 
     if (eventMessage.length !== 4) {
@@ -226,7 +246,11 @@ class HttpSubscription implements Subscription {
         'Invalid event headers in message: ' + JSON.stringify(eventMessage),
       );
     }
-    this.listeners.onEvent({ body, headers, eventId: id });
+
+    if (this.listeners.onEvent) {
+      this.listeners.onEvent({ body, headers, eventId: id });
+    }
+    return null;
   }
 
   /**
@@ -312,9 +336,11 @@ export default class HttpTransport implements SubscriptionTransport {
       xhr.setRequestHeader('authorization', `Bearer ${options.jwt}`);
     }
 
-    for (const key in options.headers) {
-      if (options.headers.hasOwnProperty(key)) {
-        xhr.setRequestHeader(key, options.headers[key]);
+    if (options.headers) {
+      for (const key in options.headers) {
+        if (options.headers.hasOwnProperty(key)) {
+          xhr.setRequestHeader(key, options.headers[key]);
+        }
       }
     }
     return xhr;
