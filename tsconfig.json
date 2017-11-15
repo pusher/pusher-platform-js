@@ -3,10 +3,18 @@
     "target": "ES5",
     "sourceMap": true,
     "module": "commonjs",
-    "lib": ["ES6", "dom"],
+    "lib": ["ES6"],
     "declaration": true,
-    "declarationDir": "declarations"  
+    "declarationDir": "declarations",
+    "removeComments": true
     },
+    "files": [
+      "src/declarations/global/global.d.ts",
+      "src/declarations/window/websocket.d.ts",
+      "src/declarations/window/xmlhttprequest.d.ts",
+      "src/declarations/websocket/websocket.d.ts",
+      "src/declarations/xmlhttprequest/xmlhttprequest.d.ts"
+    ],
     "exclude": [
       "node_modules",
       "target",

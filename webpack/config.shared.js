@@ -1,13 +1,8 @@
-const webpack = require('webpack');
+var webpack = require('webpack');
 
 module.exports = {
   entry: {
     'pusher-platform': './src/index.ts'
-  },
-  output: {
-    filename: 'target/[name].js',
-    libraryTarget: 'umd',
-    library: 'PusherPlatform',
   },
   resolve: {
     extensions: ['.ts', '.js'],

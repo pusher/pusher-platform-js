@@ -3,6 +3,7 @@ import { Subscription, SubscriptionListeners } from '../subscription';
 import { XhrReadyState, ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError } from '../network';
 import { SubscriptionEvent, SubscriptionTransport } from '../subscription';
 import { Logger } from '../logger';
+import { XMLHttpRequest } from 'xmlhttprequest';
 
 export enum HttpTransportState {
   UNOPENED = 0, // haven't called xhr.send()
@@ -64,8 +65,10 @@ class HttpSubscription implements Subscription {
       //Check if we just transitioned to the open state
       if (this.state === HttpTransportState.OPENING) {
         this.state = HttpTransportState.OPEN;
-        console.log(responseToHeadersObject(this.xhr.getAllResponseHeaders()));
         this.listeners.onOpen(responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+        global.console.log(
+          responseToHeadersObject(this.xhr.getAllResponseHeaders()),
+        );
       }
 
       this.assertStateIsIn(HttpTransportState.OPEN);
@@ -158,7 +161,11 @@ class HttpSubscription implements Subscription {
     if (!stateIsValid) {
       const expectedStates = validStates.map(state => HttpTransportState[state]).join(', ');
       const actualState = HttpTransportState[this.state];
-      console.warn(`Expected this.state to be one of [${expectedStates}] but it is ${actualState}`);
+      global.console.warn(
+        `Expected this.state to be one of [${expectedStates}] but it is ${
+          actualState
+        }`,
+      );
     }
   }
 
@@ -272,10 +279,9 @@ export default class HttpTransport implements SubscriptionTransport {
   }
 
   private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-    let XMLHttpRequest: any = (<any>window).XMLHttpRequest;
-    let xhr = new XMLHttpRequest();
     let path = options.path.replace(/^\/+/, "");
     let endpoint = `${baseURL}/${path}`;
+    const xhr = new global.XMLHttpRequest();
     xhr.open(options.method.toUpperCase(), endpoint, true);
     if (options.body) {
       xhr.setRequestHeader("content-type", "application/json");
