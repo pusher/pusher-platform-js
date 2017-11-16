@@ -2,8 +2,6 @@ import { ErrorResponse, NetworkError, ElementsHeaders } from './network';
 import { Logger } from './logger';
 import { XMLHttpRequest } from 'xmlhttprequest';
 
-import * as PCancelable from 'p-cancelable';
-
 export type NetworkRequest<T> = (parameters?: any) => Promise<T>;
 
 export interface RequestOptions {
@@ -15,14 +13,9 @@ export interface RequestOptions {
     logger?: Logger;
 }
 
-export function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: RequestOptions): PCancelable<any> {
-
-    let cancelablePromise: PCancelable<any> = new PCancelable( (onCancel, resolve, reject) => {
+export function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: RequestOptions): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
         const xhr = createXhr();
-
-        onCancel( () => {
-            xhr.abort();
-        });
 
         xhr.onreadystatechange  = () => {
             if (xhr.readyState === 4) {
@@ -37,6 +30,4 @@ export function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: 
         };
         xhr.send(JSON.stringify(options.body));
     });
-
-    return cancelablePromise;
 }

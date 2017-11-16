@@ -1,6 +1,4 @@
-import { PCancelable } from 'p-cancelable';
-
 export interface TokenProvider {
-    fetchToken(tokenParams?: any): PCancelable<string>;
+    fetchToken(tokenParams?: any): Promise<string>;
     clearToken(token?: string);
 }
