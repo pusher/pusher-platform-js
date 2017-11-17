@@ -358,13 +358,9 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(11);
 function executeNetworkRequest(createXhr, options) {
-    var cancelablePromise = new PCancelable(function (onCancel, resolve, reject) {
+    return new Promise(function (resolve, reject) {
         var xhr = createXhr();
-        onCancel(function () {
-            xhr.abort();
-        });
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
                 if (xhr.status >= 200 && xhr.status < 300) {
@@ -380,7 +376,6 @@ function executeNetworkRequest(createXhr, options) {
         };
         xhr.send(JSON.stringify(options.body));
     });
-    return cancelablePromise;
 }
 exports.executeNetworkRequest = executeNetworkRequest;
 
@@ -558,12 +553,12 @@ var retrying_subscription_1 = __webpack_require__(8);
 var resuming_subscription_1 = __webpack_require__(6);
 var request_1 = __webpack_require__(5);
 var logger_1 = __webpack_require__(3);
-var subscription_1 = __webpack_require__(13);
+var subscription_1 = __webpack_require__(12);
 var token_providing_subscription_1 = __webpack_require__(9);
 var transports_1 = __webpack_require__(4);
-var subscribe_strategy_1 = __webpack_require__(14);
-var websocket_1 = __webpack_require__(15);
-var http_1 = __webpack_require__(16);
+var subscribe_strategy_1 = __webpack_require__(13);
+var websocket_1 = __webpack_require__(14);
+var http_1 = __webpack_require__(15);
 var BaseClient = (function () {
     function BaseClient(options) {
         this.options = options;
@@ -589,7 +584,7 @@ var BaseClient = (function () {
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
         listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
         var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
-        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, initialEventId, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger), this.logger);
+        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, initialEventId, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger);
         var opened = false;
         return subscriptionStrategy({
             onOpen: function (headers) {
@@ -608,7 +603,7 @@ var BaseClient = (function () {
     BaseClient.prototype.subscribeNonResuming = function (path, headers, listeners, retryStrategyOptions, tokenProvider) {
         listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
         var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
-        var subscriptionStrategy = retrying_subscription_1.createRetryingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger), this.logger);
+        var subscriptionStrategy = retrying_subscription_1.createRetryingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger, tokenProvider), this.logger);
         var opened = false;
         return subscriptionStrategy({
             onOpen: function (headers) {
@@ -761,119 +756,114 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStrategy, logger) {
-    var TokenProvidingSubscription = (function () {
-        function TokenProvidingSubscription(listeners, headers) {
-            var _this = this;
-            this.onTransition = function (newState) {
-                _this.state = newState;
-            };
-            this.unsubscribe = function () {
-                _this.state.unsubscribe();
-            };
-            var TokenProvidingState = (function () {
-                function TokenProvidingState(onTransition) {
-                    var _this = this;
-                    this.onTransition = onTransition;
-                    logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
-                    var isTokenExpiredError = function (error) {
-                        return (error instanceof network_1.ErrorResponse &&
-                            error.statusCode === 401 &&
-                            error.info === "authentication/expired");
-                    };
-                    var fetchTokenAndExecuteSubscription = function () {
-                        _this.tokenPromise = tokenProvider.fetchToken()
-                            .then(function (token) {
-                            _this.putTokenIntoHeader(token);
-                            _this.underlyingSubscription = nextSubscribeStrategy({
-                                onOpen: function (headers) {
-                                    onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
-                                },
-                                onRetrying: listeners.onRetrying,
-                                onError: function (error) {
-                                    if (isTokenExpiredError(error)) {
-                                        tokenProvider.clearToken(token);
-                                        fetchTokenAndExecuteSubscription();
-                                    }
-                                    else {
-                                        onTransition(new FailedSubscriptionState(error));
-                                    }
-                                },
-                                onEvent: listeners.onEvent,
-                                onEnd: function (error) {
-                                    onTransition(new EndedSubscriptionState(error));
-                                }
-                            }, headers);
-                        })
-                            .catch(function (error) {
-                            (function (error) {
-                                onTransition(new FailedSubscriptionState(error));
-                            });
-                        });
-                    };
-                    fetchTokenAndExecuteSubscription();
-                }
-                TokenProvidingState.prototype.unsubscribe = function () {
-                    if (this.tokenPromise)
-                        this.tokenPromise.cancel();
-                    this.underlyingSubscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
-                };
-                TokenProvidingState.prototype.putTokenIntoHeader = function (token) {
-                    if (token) {
-                        headers['Authorization'] = "Bearer " + token;
-                        logger.verbose("TokenProvidingSubscription: token fetched: " + token);
-                    }
-                };
-                return TokenProvidingState;
-            }());
-            var OpenSubscriptionState = (function () {
-                function OpenSubscriptionState(headers, underlyingSubscription, onTransition) {
-                    this.headers = headers;
-                    this.underlyingSubscription = underlyingSubscription;
-                    this.onTransition = onTransition;
-                    logger.verbose("TokenProvidingSubscription: transitioning to OpenSubscriptionState");
-                    listeners.onOpen(headers);
-                }
-                OpenSubscriptionState.prototype.unsubscribe = function () {
-                    this.underlyingSubscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
-                };
-                return OpenSubscriptionState;
-            }());
-            var FailedSubscriptionState = (function () {
-                function FailedSubscriptionState(error) {
-                    logger.verbose("TokenProvidingSubscription: transitioning to FailedSubscriptionState", error);
-                    listeners.onError(error);
-                }
-                FailedSubscriptionState.prototype.unsubscribe = function () {
-                    throw new Error("Subscription has already ended");
-                };
-                return FailedSubscriptionState;
-            }());
-            var EndedSubscriptionState = (function () {
-                function EndedSubscriptionState(error) {
-                    logger.verbose("TokenProvidingSubscription: transitioning to EndedSubscriptionState");
-                    listeners.onEnd(error);
-                }
-                EndedSubscriptionState.prototype.unsubscribe = function () {
-                    throw new Error("Subscription has already ended");
-                };
-                return EndedSubscriptionState;
-            }());
-            this.state = new TokenProvidingState(this.onTransition);
-        }
-        return TokenProvidingSubscription;
-    }());
+exports.createTokenProvidingStrategy = function (nextSubscribeStrategy, logger, tokenProvider) {
     if (tokenProvider) {
-        return function (listeners, headers) { return new TokenProvidingSubscription(listeners, headers); };
-    }
-    else {
         return function (listeners, headers) {
-            return nextSubscribeStrategy(listeners, headers);
+            return new TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy);
         };
     }
+    return nextSubscribeStrategy;
 };
+var TokenProvidingSubscription = (function () {
+    function TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy) {
+        var _this = this;
+        this.logger = logger;
+        this.listeners = listeners;
+        this.headers = headers;
+        this.tokenProvider = tokenProvider;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
+        this.unsubscribe = function () {
+            _this.state.unsubscribe();
+            _this.state = new InactiveState(_this.logger);
+        };
+        this.state = new ActiveState(logger, headers, nextSubscribeStrategy);
+        this.subscribe();
+    }
+    TokenProvidingSubscription.prototype.subscribe = function () {
+        var _this = this;
+        this.tokenProvider.fetchToken()
+            .then(function (token) {
+            var existingListeners = Object.assign({}, _this.listeners);
+            _this.state.subscribe(token, {
+                onOpen: _this.listeners.onOpen,
+                onEvent: _this.listeners.onEvent,
+                onEnd: function (error) {
+                    _this.state = new InactiveState(_this.logger);
+                    existingListeners.onEnd(error);
+                },
+                onError: function (error) {
+                    if (_this.isTokenExpiredError(error)) {
+                        _this.tokenProvider.clearToken(token);
+                        _this.subscribe();
+                    }
+                    else {
+                        _this.state = new InactiveState(_this.logger);
+                        existingListeners.onError(error);
+                    }
+                }
+            });
+        })
+            .catch(function (error) {
+            _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
+            _this.state = new InactiveState(_this.logger);
+        });
+    };
+    TokenProvidingSubscription.prototype.isTokenExpiredError = function (error) {
+        return (error instanceof network_1.ErrorResponse &&
+            error.statusCode === 401 &&
+            error.info === "authentication/expired");
+    };
+    return TokenProvidingSubscription;
+}());
+var ActiveState = (function () {
+    function ActiveState(logger, headers, nextSubscribeStrategy) {
+        this.logger = logger;
+        this.headers = headers;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
+        logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
+    }
+    ActiveState.prototype.subscribe = function (token, listeners) {
+        var _this = this;
+        this.putTokenIntoHeader(token);
+        this.underlyingSubscription = this.nextSubscribeStrategy({
+            onOpen: function (headers) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription opened");
+                listeners.onOpen(headers);
+            },
+            onRetrying: listeners.onRetrying,
+            onError: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription errored: " + error);
+                listeners.onError(error);
+            },
+            onEvent: listeners.onEvent,
+            onEnd: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription ended");
+                listeners.onEnd(error);
+            }
+        }, this.headers);
+    };
+    ActiveState.prototype.unsubscribe = function () {
+        this.underlyingSubscription.unsubscribe();
+    };
+    ActiveState.prototype.putTokenIntoHeader = function (token) {
+        this.headers['Authorization'] = "Bearer " + token;
+        this.logger.verbose("TokenProvidingSubscription: token fetched: " + token);
+    };
+    return ActiveState;
+}());
+var InactiveState = (function () {
+    function InactiveState(logger) {
+        this.logger = logger;
+        logger.verbose("TokenProvidingSubscription: transitioning to OpenTokenProvidingSubscriptionState");
+    }
+    InactiveState.prototype.subscribe = function (token, listeners) {
+        this.logger.verbose("TokenProvidingSubscription: subscribe called in Inactive state; doing nothing");
+    };
+    InactiveState.prototype.unsubscribe = function () {
+        this.logger.verbose("TokenProvidingSubscription: unsubscribe called in Inactive state; doing nothing");
+    };
+    return InactiveState;
+}());
 
 
 /***/ }),
@@ -894,7 +884,7 @@ exports.createRetryStrategyOptionsOrDefault = retry_strategy_1.createRetryStrate
 exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
-var instance_1 = __webpack_require__(12);
+var instance_1 = __webpack_require__(11);
 exports.Instance = instance_1.default;
 var base_client_1 = __webpack_require__(7);
 exports.BaseClient = base_client_1.BaseClient;
@@ -919,90 +909,6 @@ exports.default = {
 
 /***/ }),
 /* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-class CancelError extends Error {
-	constructor() {
-		super('Promise was canceled');
-		this.name = 'CancelError';
-	}
-}
-
-class PCancelable {
-	static fn(fn) {
-		return function () {
-			const args = [].slice.apply(arguments);
-			return new PCancelable((onCancel, resolve, reject) => {
-				args.unshift(onCancel);
-				fn.apply(null, args).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._pending = true;
-		this._canceled = false;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			return executor(
-				fn => {
-					this._cancel = fn;
-				},
-				val => {
-					this._pending = false;
-					resolve(val);
-				},
-				err => {
-					this._pending = false;
-					reject(err);
-				}
-			);
-		});
-	}
-
-	then() {
-		return this._promise.then.apply(this._promise, arguments);
-	}
-
-	catch() {
-		return this._promise.catch.apply(this._promise, arguments);
-	}
-
-	cancel() {
-		if (!this._pending || this._canceled) {
-			return;
-		}
-
-		if (typeof this._cancel === 'function') {
-			try {
-				this._cancel();
-			} catch (err) {
-				this._reject(err);
-			}
-		}
-
-		this._canceled = true;
-		this._reject(new CancelError());
-	}
-
-	get canceled() {
-		return this._canceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
-
-
-/***/ }),
-/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1065,7 +971,7 @@ exports.default = Instance;
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1092,7 +998,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1110,7 +1016,7 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1432,7 +1338,7 @@ exports.default = WebSocketTransport;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

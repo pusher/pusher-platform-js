@@ -9,7 +9,6 @@ import { createTokenProvidingStrategy } from './token-providing-subscription';
 import { createTransportStrategy } from './transports';
 import { ElementsHeaders, responseToHeadersObject } from './network';
 import { subscribeStrategyListenersFromSubscriptionListeners } from './subscribe-strategy';
-import * as PCancelable from 'p-cancelable';
 
 import WebSocketTransport from './transport/websocket';
 import HttpTransport from './transport/http';
@@ -34,8 +33,8 @@ export class BaseClient {
         this.websocketTransport = new WebSocketTransport(this.host);
         this.httpTransport = new HttpTransport(this.host);
     }
-    
-    public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable {
+
+    public request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any> {
         if(tokenProvider){
             return tokenProvider.fetchToken(tokenParams).then(token =>
                 {
@@ -64,7 +63,7 @@ export class BaseClient {
         listeners: SubscriptionListeners,
         retryStrategyOptions: RetryStrategyOptions,
         initialEventId: string,
-        tokenProvider: TokenProvider,
+        tokenProvider?: TokenProvider,
     ): Subscription {
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
@@ -73,13 +72,13 @@ export class BaseClient {
             retryStrategyOptions,
             initialEventId,
             createTokenProvidingStrategy(
-                tokenProvider,
                 createTransportStrategy(
                     path,
                     this.websocketTransport,
                     this.logger
-                ), 
-                this.logger
+                ),
+                this.logger,
+                tokenProvider
             ),
 
             this.logger
@@ -110,7 +109,7 @@ export class BaseClient {
         headers: ElementsHeaders,
         listeners: SubscriptionListeners,
         retryStrategyOptions: RetryStrategyOptions,
-        tokenProvider: TokenProvider
+        tokenProvider?: TokenProvider
     ){
         listeners = replaceMissingListenersWithNoOps(listeners);
         let subscribeStrategyListeners = subscribeStrategyListenersFromSubscriptionListeners(listeners);
@@ -118,13 +117,13 @@ export class BaseClient {
         let subscriptionStrategy = createRetryingStrategy(
             retryStrategyOptions,
             createTokenProvidingStrategy(
-                tokenProvider, 
                 createTransportStrategy(
                     path,
                     this.websocketTransport,
                     this.logger
                 ),
-                this.logger
+                this.logger,
+                tokenProvider
             ),
             this.logger
         );

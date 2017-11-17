@@ -4,7 +4,6 @@ import { RequestOptions } from './request';
 import { Logger } from './logger';
 import { Subscription, SubscriptionListeners } from './subscription';
 import { ElementsHeaders } from './network';
-import * as PCancelable from 'p-cancelable';
 export interface BaseClientOptions {
     host: string;
     encrypted?: boolean;
@@ -18,7 +17,7 @@ export declare class BaseClient {
     private websocketTransport;
     private httpTransport;
     constructor(options: BaseClientOptions);
-    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable;
-    subscribeResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, initialEventId: string, tokenProvider: TokenProvider): Subscription;
-    subscribeNonResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, tokenProvider: TokenProvider): Subscription;
+    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any>;
+    subscribeResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, initialEventId: string, tokenProvider?: TokenProvider): Subscription;
+    subscribeNonResuming(path: string, headers: ElementsHeaders, listeners: SubscriptionListeners, retryStrategyOptions: RetryStrategyOptions, tokenProvider?: TokenProvider): Subscription;
 }

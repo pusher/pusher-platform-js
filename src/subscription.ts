@@ -14,11 +14,7 @@ export interface SubscriptionListeners {
 }
 
 export interface SubscriptionState {
-    unsubscribe();
-}
-
-export interface SubscriptionStateTransition {
-    onTransition(newState: SubscriptionState): void;
+  unsubscribe(): void;
 }
 
 export interface SubscriptionEvent {

@@ -5,7 +5,6 @@ import { BaseClient } from './base-client';
 import { Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
-import * as PCancelable from 'p-cancelable';
 export interface InstanceOptions {
     locator: string;
     serviceName: string;
@@ -37,7 +36,7 @@ export default class Instance {
     private tokenProvider?;
     logger: Logger;
     constructor(options: InstanceOptions);
-    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable;
+    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any>;
     subscribeNonResuming(options: SubscribeOptions): Subscription;
     subscribeResuming(options: ResumableSubscribeOptions): Subscription;
     private absPath(relativePath);

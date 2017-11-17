@@ -1,147 +1,150 @@
 import { ErrorResponse, ElementsHeaders } from './network';
 import {
-    Subscription,
-    SubscriptionConstructor,
-    SubscriptionEvent,
-    SubscriptionState,
+  Subscription,
+  SubscriptionConstructor,
+  SubscriptionEvent,
+  SubscriptionListeners,
 } from './subscription';
 import { Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { SubscribeStrategy, SubscribeStrategyListeners } from './subscribe-strategy';
-import { PCancelable } from 'p-cancelable';
 
-export let createTokenProvidingStrategy: (tokenProvider: TokenProvider, nextSubscribeStrategy: SubscribeStrategy, logger: Logger) => SubscribeStrategy = 
-(tokenProvider, nextSubscribeStrategy, logger) => {
+export let createTokenProvidingStrategy: (
+  nextSubscribeStrategy: SubscribeStrategy,
+  logger: Logger,
+  tokenProvider?: TokenProvider
+) => SubscribeStrategy = (nextSubscribeStrategy, logger, tokenProvider) => {
+  // Token provider might not be provided. If missing, go straight to underlying subscribe strategy.
+  if (tokenProvider) {
+    return (listeners, headers) =>
+      new TokenProvidingSubscription(
+        logger,
+        listeners,
+        headers,
+        tokenProvider,
+        nextSubscribeStrategy
+      );
+  }
+  return nextSubscribeStrategy;
+}
 
-    class TokenProvidingSubscription implements Subscription {
+interface TokenProvidingSubscriptionState {
+  subscribe(token: string, listeners: SubscriptionListeners): void;
+  unsubscribe(): void;
+}
 
-        private state: SubscriptionState;
+class TokenProvidingSubscription implements Subscription {
+  private state: TokenProvidingSubscriptionState;
 
-        private onTransition = (newState: SubscriptionState) => {
-            this.state = newState;    
+  constructor(
+    private logger: Logger,
+    private listeners: SubscribeStrategyListeners,
+    private headers: ElementsHeaders,
+    private tokenProvider: TokenProvider,
+    private nextSubscribeStrategy: SubscribeStrategy
+  ) {
+    this.state = new ActiveState(logger, headers, nextSubscribeStrategy);
+    this.subscribe();
+  }
+
+  public unsubscribe = () => {
+    this.state.unsubscribe();
+    this.state = new InactiveState(this.logger);
+  }
+
+  private subscribe(): void {
+    this.tokenProvider.fetchToken()
+      .then(token => {
+        const existingListeners = Object.assign({}, this.listeners);
+        this.state.subscribe(token, {
+          onOpen: this.listeners.onOpen,
+          onEvent: this.listeners.onEvent,
+          onEnd: (error: any) => {
+            this.state = new InactiveState(this.logger);
+            existingListeners.onEnd(error);
+          },
+          onError: (error: any) => {
+            if (this.isTokenExpiredError(error)) {
+              this.tokenProvider.clearToken(token);
+              this.subscribe();
+            } else {
+              this.state = new InactiveState(this.logger);
+              existingListeners.onError(error);
+            }
+          }
+        });
+      })
+      .catch((error: any) => {
+        this.logger.debug(`TokenProvidingSubscription: error when fetching token: ${error}`);
+        this.state = new InactiveState(this.logger);
+      });
+  }
+
+  private isTokenExpiredError(error: any): boolean {
+    return (
+      error instanceof ErrorResponse &&
+      error.statusCode === 401 &&
+      error.info === "authentication/expired"
+    );
+  }
+}
+
+class ActiveState implements TokenProvidingSubscriptionState {
+  private underlyingSubscription: Subscription;
+
+  constructor(
+    private logger: Logger,
+    private headers: ElementsHeaders,
+    private nextSubscribeStrategy: SubscribeStrategy
+  ) {
+    logger.verbose(`TokenProvidingSubscription: transitioning to TokenProvidingState`);
+  }
+
+  subscribe(token: string, listeners: SubscribeStrategyListeners): void {
+    this.putTokenIntoHeader(token);
+    this.underlyingSubscription = this.nextSubscribeStrategy(
+      {
+        onOpen: headers => {
+          this.logger.verbose(`TokenProvidingSubscription: subscription opened`);
+          listeners.onOpen(headers);
+        },
+        onRetrying: listeners.onRetrying,
+        onError: error => {
+          this.logger.verbose(`TokenProvidingSubscription: subscription errored: ${error}`);
+          listeners.onError(error);
+        },
+        onEvent: listeners.onEvent,
+        onEnd: error => {
+          this.logger.verbose(`TokenProvidingSubscription: subscription ended`);
+          listeners.onEnd(error);
         }
-        
-        public unsubscribe = () => {
-            this.state.unsubscribe();   
-        }
+      },
+      this.headers
+    )
+  }
 
-        constructor(
-            listeners: SubscribeStrategyListeners,
-            headers
-        ){
-            class TokenProvidingState implements SubscriptionState {
+  unsubscribe() {
+    this.underlyingSubscription.unsubscribe();
+  }
 
-                private underlyingSubscription: Subscription;
-                private tokenPromise: PCancelable<string>;
+  private putTokenIntoHeader(token: string) {
+    this.headers['Authorization'] = `Bearer ${token}`;
+    this.logger.verbose(`TokenProvidingSubscription: token fetched: ${token}`);
+  }
+}
 
-                constructor(private onTransition: (SubscriptionState) => void){
+class InactiveState implements TokenProvidingSubscriptionState {
 
-                    logger.verbose(`TokenProvidingSubscription: transitioning to TokenProvidingState`);
+  constructor(private logger: Logger){
+    logger.verbose(`TokenProvidingSubscription: transitioning to OpenTokenProvidingSubscriptionState`);
+  }
 
-                    let isTokenExpiredError: (error: any) => boolean = error => {
-                        return (
-                            error instanceof ErrorResponse && 
-                            error.statusCode === 401 && 
-                            error.info === "authentication/expired"
-                        ); 
-                    }
+  subscribe(token: string, listeners: SubscribeStrategyListeners): void {
+    this.logger.verbose("TokenProvidingSubscription: subscribe called in Inactive state; doing nothing");
+  }
 
-                    let fetchTokenAndExecuteSubscription = () => {
+  unsubscribe(): void {
+    this.logger.verbose("TokenProvidingSubscription: unsubscribe called in Inactive state; doing nothing");
+  }
 
-                        this.tokenPromise = tokenProvider.fetchToken()
-                            .then( token => {
-                                this.putTokenIntoHeader(token);
-                                this.underlyingSubscription = nextSubscribeStrategy(
-                                    {
-                                        onOpen: headers => {
-                                            onTransition(new OpenSubscriptionState(headers, this.underlyingSubscription, onTransition));
-                                        },
-                                        onRetrying: listeners.onRetrying,
-                                        onError: error => {
-                                            if(isTokenExpiredError(error)){
-                                                tokenProvider.clearToken(token);
-                                                fetchTokenAndExecuteSubscription();
-                                            }
-                                            else{
-                                                onTransition(new FailedSubscriptionState(error));
-                                            }
-                                        },
-                                        onEvent: listeners.onEvent,
-                                        onEnd: error => {
-                                            onTransition(new EndedSubscriptionState(error));
-                                        }
-                                    },
-                                    headers
-                                )
-                            })
-                            .catch( error => {
-                                error => {
-                                    onTransition(new FailedSubscriptionState(error));
-                                }
-                            });
-                    }
-                    fetchTokenAndExecuteSubscription();
-                }
-                
-                unsubscribe(){
-                    if(this.tokenPromise) this.tokenPromise.cancel();
-                    this.underlyingSubscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
-                }
-
-                private putTokenIntoHeader(token: any) {
-                    if(token) {
-                        headers['Authorization'] = `Bearer ${token}`;
-                        logger.verbose(`TokenProvidingSubscription: token fetched: ${token}`);
-                    }
-                }               
-            }
-
-            class OpenSubscriptionState implements SubscriptionState {
-                constructor(private headers: ElementsHeaders, private underlyingSubscription: Subscription, private onTransition: (SubscriptionState) => void){
-                    logger.verbose(`TokenProvidingSubscription: transitioning to OpenSubscriptionState`);
-                    listeners.onOpen(headers);
-                }
-
-                unsubscribe(){
-                    this.underlyingSubscription.unsubscribe();
-                    this.onTransition(new EndedSubscriptionState());
-                }
-            }
-
-            class FailedSubscriptionState implements SubscriptionState {
-                constructor(error: any){
-                    
-                    logger.verbose(`TokenProvidingSubscription: transitioning to FailedSubscriptionState`, error);
-
-                    listeners.onError(error);
-                }
-                unsubscribe(){
-                    throw new Error("Subscription has already ended");
-                }
-            }
-
-            class EndedSubscriptionState implements SubscriptionState {
-                constructor(error?: any){
-                    logger.verbose(`TokenProvidingSubscription: transitioning to EndedSubscriptionState`);
-                    listeners.onEnd(error);
-                }
-                unsubscribe(){
-                    throw new Error("Subscription has already ended");
-                }
-            }
-
-            this.state = new TokenProvidingState(this.onTransition);
-        }
-    }
-
-    //Token provider might not be there. If missing, go straight to the underlying subscribe strategy
-    if(tokenProvider){
-        return (listeners, headers) => new TokenProvidingSubscription(listeners, headers);
-    }
-
-    else{
-        return (listeners, headers) => 
-            nextSubscribeStrategy(listeners, headers);
-    }
 }

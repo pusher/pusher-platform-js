@@ -5,7 +5,6 @@ import { BaseClient } from './base-client';
 import { ConsoleLogger, Logger } from './logger';
 import { TokenProvider } from './token-provider';
 import { RetryStrategyOptions } from './retry-strategy';
-import * as PCancelable from 'p-cancelable';
 
 const HOST_BASE = "pusherplatform.io";
 
@@ -69,7 +68,7 @@ export default class Instance {
         this.tokenProvider = options.tokenProvider;
     }
 
-    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable{
+    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any> {
         options.path = this.absPath(options.path);
         if(options.headers == null || options.headers == undefined){
             options.headers = {}

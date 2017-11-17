@@ -25,8 +25,7 @@
     "test": "yarn build && yarn test-jest && yarn test-integration"
   },
   "dependencies": {
-    "jwt-simple": "^0.5.1",
-    "p-cancelable": "^0.3.0"
+    "jwt-simple": "^0.5.1"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
