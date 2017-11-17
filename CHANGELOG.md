@@ -2,6 +2,24 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.12.0] 2017-11-17
+
+### Changes
+
+- `request` no longer takes `tokenProvider` as a second parameter, it is now a part of the `options` parameter, of type `RequestOptions`
+- `TokenProvider`'s `fetchToken` now returns a normal a Promise instead of a PCancelable
+- `request` in `Instance` and `BaseClient` now return a normal `Promise` instead of a `PCancelable`
+- React Native support (use `pusher-platform/react-native`)
+- Code formatted using prettier
+- Code linted using tslint
+- strict mode enabled in `tsconfig.json`
+- Refactored TokenProvidingSubscription
+- Removed jwt-simple as dependency
+- Removed p-cancelable as dependency
+- Build artifacts now live in dist/ instead of target/
+- Single index.d.ts declarations file no longer generated (removed dts-bundle as a dependency)
+
+
 ## [v0.11.1] 2017-11-03
 
 ### Fixes
