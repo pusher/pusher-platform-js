@@ -36,7 +36,7 @@ export default class Instance {
     private serviceName;
     private tokenProvider?;
     constructor(options: InstanceOptions);
-    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any>;
+    request(options: RequestOptions, tokenParams?: any): Promise<any>;
     subscribeNonResuming(options: SubscribeOptions): Subscription;
     subscribeResuming(options: ResumableSubscribeOptions): Subscription;
     private absPath(relativePath);

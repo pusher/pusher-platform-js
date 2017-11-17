@@ -1,5 +1,6 @@
 import { Logger } from './logger';
 import { ElementsHeaders, ErrorResponse, NetworkError } from './network';
+import { TokenProvider } from './token-provider';
 
 import { XMLHttpRequest } from 'xmlhttprequest';
 
@@ -10,6 +11,7 @@ export interface RequestOptions {
   headers?: ElementsHeaders;
   body?: any;
   logger?: Logger;
+  tokenProvider?: TokenProvider;
 }
 
 // TODO: Could we make this generic and remove the `any`s?

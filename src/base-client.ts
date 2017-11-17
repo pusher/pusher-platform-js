@@ -36,13 +36,9 @@ export class BaseClient {
     this.websocketTransport = new WebSocketTransport(this.host);
     this.httpTransport = new HttpTransport(this.host);
   }
-  request(
-    options: RequestOptions,
-    tokenProvider?: TokenProvider,
-    tokenParams?: any,
-  ): Promise<any> {
-    if (tokenProvider) {
-      return tokenProvider
+  request(options: RequestOptions, tokenParams?: any): Promise<any> {
+    if (options.tokenProvider) {
+      return options.tokenProvider
         .fetchToken(tokenParams)
         .then(token => {
           if (options.headers !== undefined) {

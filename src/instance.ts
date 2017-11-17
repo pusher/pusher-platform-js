@@ -80,17 +80,13 @@ export default class Instance {
     this.tokenProvider = options.tokenProvider;
   }
 
-  request(
-    options: RequestOptions,
-    tokenProvider?: TokenProvider,
-    tokenParams?: any,
-  ): Promise<any> {
+  request(options: RequestOptions, tokenParams?: any): Promise<any> {
     options.path = this.absPath(options.path);
     if (options.headers == null || options.headers === undefined) {
       options.headers = {};
     }
-    const tokenProviderToUse = tokenProvider || this.tokenProvider;
-    return this.client.request(options, tokenProviderToUse, tokenParams);
+    options.tokenProvider = options.tokenProvider || this.tokenProvider;
+    return this.client.request(options, tokenParams);
   }
 
   subscribeNonResuming(options: SubscribeOptions): Subscription {

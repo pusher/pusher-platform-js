@@ -345,10 +345,10 @@ var BaseClient = (function () {
         this.websocketTransport = new websocket_1.default(this.host);
         this.httpTransport = new http_1.default(this.host);
     }
-    BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
+    BaseClient.prototype.request = function (options, tokenParams) {
         var _this = this;
-        if (tokenProvider) {
-            return tokenProvider
+        if (options.tokenProvider) {
+            return options.tokenProvider
                 .fetchToken(tokenParams)
                 .then(function (token) {
                 if (options.headers !== undefined) {
@@ -1599,13 +1599,13 @@ var Instance = (function () {
                 });
         this.tokenProvider = options.tokenProvider;
     }
-    Instance.prototype.request = function (options, tokenProvider, tokenParams) {
+    Instance.prototype.request = function (options, tokenParams) {
         options.path = this.absPath(options.path);
         if (options.headers == null || options.headers === undefined) {
             options.headers = {};
         }
-        var tokenProviderToUse = tokenProvider || this.tokenProvider;
-        return this.client.request(options, tokenProviderToUse, tokenParams);
+        options.tokenProvider = options.tokenProvider || this.tokenProvider;
+        return this.client.request(options, tokenParams);
     };
     Instance.prototype.subscribeNonResuming = function (options) {
         var headers = options.headers || {};
