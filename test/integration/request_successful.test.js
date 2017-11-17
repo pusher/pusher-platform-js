@@ -1,4 +1,4 @@
-const { default: PusherPlatform} = require('../../target/pusher-platform.js');
+const { default: PusherPlatform} = require('../../dist/web/pusher-platform.js');
 
 describe('Instance Requests - Successful', () => {
 
@@ -6,8 +6,8 @@ describe('Instance Requests - Successful', () => {
 
     beforeAll(() => {
         instance = new PusherPlatform.Instance({
-            instanceId: "v1:api-ceres:1",
-            serviceName: "platform_lib_tester",
+            locator: "v1:api-ceres:1",
+            serviceName: "platform_sdk_tester",
             serviceVersion: "v1",
             host: "localhost:10443"
         });
@@ -62,7 +62,7 @@ describe('Instance Requests - Successful', () => {
         }).then((res) => {
             done();
         });
-        
+
     });
 
 });

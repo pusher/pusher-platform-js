@@ -1,10 +1,10 @@
-import { ElementsHeaders } from './network';
-import { Subscription, SubscriptionListeners } from './subscription';
-import { RequestOptions } from './request';
 import { BaseClient } from './base-client';
 import { Logger } from './logger';
-import { TokenProvider } from './token-provider';
+import { ElementsHeaders } from './network';
+import { RequestOptions } from './request';
 import { RetryStrategyOptions } from './retry-strategy';
+import { Subscription, SubscriptionListeners } from './subscription';
+import { TokenProvider } from './token-provider';
 export interface InstanceOptions {
     locator: string;
     serviceName: string;
@@ -26,6 +26,7 @@ export interface ResumableSubscribeOptions extends SubscribeOptions {
     initialEventId?: string;
 }
 export default class Instance {
+    logger: Logger;
     private client;
     private host;
     private id;
@@ -34,9 +35,8 @@ export default class Instance {
     private serviceVersion;
     private serviceName;
     private tokenProvider?;
-    logger: Logger;
     constructor(options: InstanceOptions);
-    request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): Promise<any>;
+    request(options: RequestOptions, tokenParams?: any): Promise<any>;
     subscribeNonResuming(options: SubscribeOptions): Subscription;
     subscribeResuming(options: ResumableSubscribeOptions): Subscription;
     private absPath(relativePath);

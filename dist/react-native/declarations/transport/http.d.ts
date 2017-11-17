@@ -1,7 +1,6 @@
-import { RequestOptions } from '../request';
-import { Subscription, SubscriptionListeners } from '../subscription';
 import { ElementsHeaders } from '../network';
-import { SubscriptionTransport } from '../subscription';
+import { RequestOptions } from '../request';
+import { Subscription, SubscriptionListeners, SubscriptionTransport } from '../subscription';
 import { XMLHttpRequest } from 'xmlhttprequest';
 export declare enum HttpTransportState {
     UNOPENED = 0,

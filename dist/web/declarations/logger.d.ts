@@ -6,11 +6,11 @@ export declare enum LogLevel {
     ERROR = 5,
 }
 export interface Logger {
-    verbose(message: string, error?: any): any;
-    debug(message: string, error?: any): any;
-    info(message: string, error?: any): any;
-    warn(message: string, error?: any): any;
-    error(message: string, error?: any): any;
+    verbose(message: string, error?: any): void;
+    debug(message: string, error?: any): void;
+    info(message: string, error?: any): void;
+    warn(message: string, error?: any): void;
+    error(message: string, error?: any): void;
 }
 export declare class ConsoleLogger implements Logger {
     private threshold;

@@ -1,27 +1,34 @@
 import { ElementsHeaders } from './network';
-import { Subscription, SubscriptionConstructor, SubscriptionEvent, SubscriptionListeners } from './subscription';
+import {
+  CompleteSubscriptionListeners,
+  Subscription,
+  SubscriptionConstructor,
+  SubscriptionEvent,
+  SubscriptionListeners,
+} from './subscription';
 
-//just like the top-level SubscriptionListeners, but all mandatory and without the onSubscribe callback.
+// Just like the top-level SubscriptionListeners, but all mandatory and without the onSubscribe callback.
 export interface SubscribeStrategyListeners {
-    onOpen: (headers: ElementsHeaders) => void,
-    onRetrying: () => void,
-    onError: (error: any) => void,
-    onEvent: (event: SubscriptionEvent) => void,
-    onEnd: (error: any) => void
+  onEnd: (error: any) => void;
+  onError: (error: any) => void;
+  onEvent: (event: SubscriptionEvent) => void;
+  onOpen: (headers: ElementsHeaders) => void;
+  onRetrying: () => void;
 }
 
 export type SubscribeStrategy = (
-    listeners: SubscribeStrategyListeners,
-    headers: ElementsHeaders
+  listeners: SubscribeStrategyListeners,
+  headers: ElementsHeaders,
 ) => Subscription;
 
-export let subscribeStrategyListenersFromSubscriptionListeners = (subListeners: SubscriptionListeners): SubscribeStrategyListeners => {
-
-    return {
-        onOpen: subListeners.onOpen,
-        onRetrying: subListeners.onRetrying,
-        onError: subListeners.onError,
-        onEvent: subListeners.onEvent,
-        onEnd: subListeners.onEnd
-    }
-}
+export let subscribeStrategyListenersFromSubscriptionListeners = (
+  subListeners: CompleteSubscriptionListeners,
+): SubscribeStrategyListeners => {
+  return {
+    onEnd: subListeners.onEnd,
+    onError: subListeners.onError,
+    onEvent: subListeners.onEvent,
+    onOpen: subListeners.onOpen,
+    onRetrying: subListeners.onRetrying,
+  };
+};

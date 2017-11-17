@@ -1,4 +1,4 @@
-const PusherPlatform = require('../../target/pusher-platform.js').default;
+const PusherPlatform = require('../../dist/web/pusher-platform.js').default;
 
 describe('Resumable Subscription', () => {
 

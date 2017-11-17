@@ -1,43 +1,73 @@
-import { createTransportStrategy } from './transports';
-import { executeNetworkRequest, NetworkRequest, RequestOptions } from './request';
+import { BaseClient, BaseClientOptions } from './base-client';
+import {
+  default as Instance,
+  ResumableSubscribeOptions,
+  SubscribeOptions,
+} from './instance';
+import { ConsoleLogger, EmptyLogger, Logger } from './logger';
+import {
+  ElementsHeaders,
+  ErrorResponse,
+  NetworkError,
+  responseToHeadersObject,
+  XhrReadyState,
+} from './network';
+import { executeNetworkRequest, RequestOptions } from './request';
 import { createResumingStrategy } from './resuming-subscription';
 import {
-    createRetryStrategyOptionsOrDefault,
-    DoNotRetry,
-    Retry,
-    RetryResolution,
-    RetryStrategyOptions,
-    RetryStrategyResult,
+  createRetryStrategyOptionsOrDefault,
+  DoNotRetry,
+  Retry,
+  RetryResolution,
+  RetryStrategyOptions,
+  RetryStrategyResult,
 } from './retry-strategy';
-import { TokenProvider } from './token-provider';
-import { Subscription, SubscriptionConstructor, SubscriptionListeners, SubscriptionEvent } from './subscription';
-import { default as Instance, ResumableSubscribeOptions, SubscribeOptions } from './instance';
-import { BaseClient, BaseClientOptions } from './base-client';
-import { Logger, ConsoleLogger, EmptyLogger } from './logger';
 import { createRetryingStrategy } from './retrying-subscription';
+import {
+  Subscription,
+  SubscriptionConstructor,
+  SubscriptionEvent,
+  SubscriptionListeners,
+} from './subscription';
+import { TokenProvider } from './token-provider';
 import { createTokenProvidingStrategy } from './token-providing-subscription';
-import { ElementsHeaders, ErrorResponse, NetworkError, responseToHeadersObject, XhrReadyState } from './network';
+import { createTransportStrategy } from './transports';
 
 export {
-  Instance, SubscribeOptions, ResumableSubscribeOptions, SubscriptionListeners, SubscriptionEvent,
-  BaseClient,  BaseClientOptions,
-
+  BaseClient,
+  BaseClientOptions,
+  ConsoleLogger,
+  createResumingStrategy,
+  createRetryingStrategy,
+  createRetryStrategyOptionsOrDefault,
+  createTokenProvidingStrategy,
+  createTransportStrategy,
+  DoNotRetry,
+  ElementsHeaders,
+  EmptyLogger,
+  ErrorResponse,
+  executeNetworkRequest,
+  Instance,
+  Logger,
+  NetworkError,
+  RequestOptions,
+  responseToHeadersObject,
+  ResumableSubscribeOptions,
+  RetryStrategyResult,
+  Retry,
+  RetryStrategyOptions,
+  RetryResolution,
+  SubscribeOptions,
   Subscription,
-  createResumingStrategy, createRetryingStrategy, createTokenProvidingStrategy, createTransportStrategy, 
-  
-  ElementsHeaders, responseToHeadersObject, ErrorResponse, NetworkError, XhrReadyState,
-  RequestOptions, NetworkRequest, executeNetworkRequest,
-
-
-
-  RetryStrategyResult, Retry, DoNotRetry, RetryStrategyOptions, RetryResolution, createRetryStrategyOptionsOrDefault,
+  SubscriptionEvent,
+  SubscriptionListeners,
   TokenProvider,
-  Logger, ConsoleLogger, EmptyLogger,
-
+  XhrReadyState,
 };
 
 export default {
-  Instance,
   BaseClient,
-  ConsoleLogger, EmptyLogger,
+  ConsoleLogger,
+  EmptyLogger,
+  Instance,
 };

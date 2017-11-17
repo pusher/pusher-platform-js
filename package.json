@@ -3,7 +3,6 @@
   "description": "Pusher Platform client library for web browsers",
   "main": "dist/web/pusher-platform.js",
   "version": "0.11.1",
-  "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/pusher-platform-js",
@@ -20,12 +19,12 @@
     "build:web": "webpack --config=webpack/config.web.js",
     "build:react-native": "webpack --config=webpack/config.react-native.js",
     "clean": "rm -rf dist",
+    "format": "yarn prettier --write",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "prettier": "prettier 'src/**/*.ts'",
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
     "test": "yarn build && yarn test-jest && yarn test-integration"
-  },
-  "dependencies": {
-    "jwt-simple": "^0.5.1"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
@@ -38,7 +37,9 @@
     "karma-jasmine": "^1.1.0",
     "karma-webpack": "^2.0.3",
     "lodash": "^4.17.4",
+    "prettier": "^1.8.1",
     "ts-loader": "^2.1.0",
+    "tslint": "^5.8.0",
     "typescript": "^2.5.2",
     "webpack": "^3.8.1"
   }
