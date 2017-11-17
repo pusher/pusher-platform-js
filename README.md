@@ -4,21 +4,21 @@ This is the official Pusher Platform client library for web browsers. Use it to 
 
 ## Issues, Bugs, and Feature Requests
 
-Feel free to create an issue on Github if you find anything wrong. Please use the existing template. 
-If you wish to contribute, please make a pull request. 
+Feel free to create an issue on GitHub if you find anything wrong. Please use the existing template.
+If you wish to contribute, please make a pull request.
 To summon help you can also ping @pusher/sigsdk or @zmarkan.
 
 ## Installation
 
-We assume you use yarn/npm in your development workflow. You can grab it from the npm/yarn repository:
+We assume you use yarn/npm in your development workflow. You can grab it from the yarn/npm repository:
 
 ```bash
 yarn add 'pusher-platform'
 ```
 
-The latest working version will always be published there. 
+The latest working version will always be published there.
 
-If you like to live dangerously, you can check in the Releases tab on Github for the latest release, or clone a local version and refer to it using a relative path. 
+If you like to live dangerously, you can check in the Releases tab on Github for the latest release, or clone a local version and refer to it using a relative path.
 
 ## Usage and Features
 
@@ -39,7 +39,6 @@ Currently you can access:
 - Instance
 - BaseClient
 - Subscription
-- ResumableSubscription
 
 ```javascript
 import { Instance, ... } from `pusher-platform`;
@@ -52,51 +51,53 @@ let instance = new Instance(...);
 This is the main entry point - represents a single instance of a service running on the Elements infrastructure.
 Initialise with an `InstanceOptions` object that MUST contain at least the `locator`, `serviceName`, and `serviceVersion`.
 
-InstanceOptions: 
+InstanceOptions:
 ```typescript
-    serviceName: string; //Mandatory
-    locator: string; // Mandatory
-    serviceVersion: string //Mandatory
+  serviceName: string; //Mandatory
+  locator: string; // Mandatory
+  serviceVersion: string //Mandatory
 
-    host?: string; // Use in debugging, overrides the cluster setting that is the part of `locator`
-    encrypted?: boolean; // Defaults to true
+  host?: string; // Use in debugging, overrides the cluster setting that is the part of `locator`
+  encrypted?: boolean; // Defaults to true
 
-    client?: BaseClient; // You can provide custom implementation - this will probably be deprecated in the future
-    logger?: Logger; // You can provide custom implementation. Defaults to ConsoleLogger(2) - logging anything non-verbose (level debug and above)
+  client?: BaseClient; // You can provide custom implementation - this will probably be deprecated in the future
+  logger?: Logger; // You can provide custom implementation. Defaults to ConsoleLogger(2) - logging anything non-verbose (level debug and above)
 ```
 
 It has 3 methods of interest:
 
-- `request(options: RequestOptions): CancelablePromise<any>`
+- `request(options: RequestOptions): Promise<any>`
 
 For regular HTTP requests. Relays to BaseClient.
 
 RequestOptions:
+
 ```typescript
 export interface RequestOptions {
-    method: string;
-    path: string;
-    jwt?: string;
-    headers?: ElementsHeaders;
-    body?: any;
-    logger?: Logger;
+  method: string;
+  path: string;
+  jwt?: string;
+  headers?: ElementsHeaders;
+  body?: any;
+  logger?: Logger;
+  tokenProvider?: TokenProvider;
 }
 
-  request(options: RequestOptions, tokenProvider?: TokenProvider, tokenParams?: any): PCancelable
-  
+request(options: RequestOptions, tokenParams?: any): Promise
 ```
 
 - `subscribeNonResuming(options: SubscribeOptions)`
 
-A subscription to events. Creates a SUBSCRIBE call using baseclient. Returns `Subscription`
+A subscription to events. Creates a SUBSCRIBE call using the base client. Returns `Subscription`
 
 - `subscribeResuming(options: ResumableSubscribeOptions)`
 
-Like a subscription, but allows you to specify a `initialEventId` that will return you all items from this ID. Example - Feeds. Returns `Subscription`
+Like a subscription, but allows you to specify a `initialEventId` that will return you all items from this ID. Example - Feeds. Returns `Subscription`.
 
 ### BaseClient
 
-This makes all the requests and executes them. They are [standard XHR objects](https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest). 
+This makes all the requests and executes them. They are [standard XHR objects](https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest).
+
 It also creates XHRs that are used to create instances of `Subscription`.
 
 ### Subscription
@@ -104,20 +105,20 @@ It also creates XHRs that are used to create instances of `Subscription`.
 SubscribeOptions:
 ```typescript
 export interface SubscribeOptions {
-    path: string,
-    headers?: ElementsHeaders,
-    listeners: SubscriptionListeners,
-    retryStrategyOptions?: RetryStrategyOptions,
-    tokenProvider?: TokenProvider
+  path: string;
+  headers?: ElementsHeaders;
+  listeners: SubscriptionListeners;
+  retryStrategyOptions?: RetryStrategyOptions;
+  tokenProvider?: TokenProvider;
 }
 
 export interface SubscriptionListeners {
-    onOpen?: (headers: ElementsHeaders) => void;
-    onSubscribe?: () => void;
-    onRetrying?:() => void;
-    onEvent?: (event: SubscriptionEvent) => void;
-    onError?: (error: any) => void;
-    onEnd?: (error: any) => void;
+  onOpen?: (headers: ElementsHeaders) => void;
+  onSubscribe?: () => void;
+  onRetrying?:() => void;
+  onEvent?: (event: SubscriptionEvent) => void;
+  onError?: (error: any) => void;
+  onEnd?: (error: any) => void;
 }
 
 ```
@@ -127,21 +128,21 @@ There are standard callbacks for different subscription events `onOpen`, `onEven
 Use `unsubscribe()` to close this subscription.
 
 
-### Subscription adn Resumable Subscription
+### Subscription and Resumable Subscription
 
 Options:
 
 ```typescript
 export interface SubscribeOptions {
-    path: string,
-    headers?: ElementsHeaders,
-    listeners: SubscriptionListeners,
-    retryStrategyOptions?: RetryStrategyOptions,
-    tokenProvider?: TokenProvider
+  path: string;
+  headers?: ElementsHeaders;
+  listeners: SubscriptionListeners;
+  retryStrategyOptions?: RetryStrategyOptions;
+  tokenProvider?: TokenProvider;
 }
 
 export interface ResumableSubscribeOptions extends SubscribeOptions {
-    initialEventId?: string
+  initialEventId?: string;
 }
 ```
 
@@ -149,12 +150,12 @@ Listeners:
 
 ```typescript
 export interface SubscriptionListeners {
-    onOpen?: (headers: ElementsHeaders) => void; //Triggered once per subscription
-    onSubscribe?: () => void; //Triggered each time a subscription is established
-    onRetrying?:() => void; //Triggered each time we are retrying to connect
-    onEvent?: (event: SubscriptionEvent) => void; //Triggered for each event
-    onError?: (error: any) => void; //Triggered once. Ends session
-    onEnd?: (error: any) => void; //Triggered once.
+  onOpen?: (headers: ElementsHeaders) => void; // Triggered once per subscription
+  onSubscribe?: () => void; // Triggered each time a subscription is established
+  onRetrying?:() => void; // Triggered each time we are retrying to connect
+  onEvent?: (event: SubscriptionEvent) => void; // Triggered for each event
+  onError?: (error: any) => void; // Triggered once. Ends session
+  onEnd?: (error: any) => void; // Triggered once.
 }
 ```
 
@@ -162,8 +163,8 @@ Token Provider:
 
 ```typescript
 export interface TokenProvider {
-    fetchToken(tokenParams?: any): PCancelable<string>;
-    clearToken(token?: string);
+  fetchToken(tokenParams?: any): Promise<string>;
+  clearToken(token?: string): void;
 }
 ```
 
@@ -172,27 +173,27 @@ export interface TokenProvider {
 
 Retry Strategy:
 
-```typescript 
+```typescript
 export interface RetryStrategyOptions {
-    initialTimeoutMillis?:  number, //Defaults to 1000
-    maxTimeoutMillis?: number, //Defaults to 5000
-    limit?: number, //Defaults to -1 (unlimited). Set to 0 to disable retrying.
-    increaseTimeout?: (currentTimeout: number) => number; //Defaults to currentTimeout*2 or maxTimeoutMillis
+  initialTimeoutMillis?:  number, //Defaults to 1000
+  maxTimeoutMillis?: number, //Defaults to 5000
+  limit?: number, //Defaults to -1 (unlimited). Set to 0 to disable retrying.
+  increaseTimeout?: (currentTimeout: number) => number; //Defaults to currentTimeout*2 or maxTimeoutMillis
 }
 ```
 
 ### Logger
 
-It logs things. 
+It logs things.
 Interface:
 
 ```typescript
 export interface Logger {
-    verbose(message: string, error?: Error);
-    debug(message: string, error?: Error);
-    info(message: string, error?: Error);
-    warn(message: string, error?: Error);
-    error(message: string, error?: Error);
+  verbose(message: string, error?: Error): void;
+  debug(message: string, error?: Error): void;
+  info(message: string, error?: Error): void;
+  warn(message: string, error?: Error): void;
+  error(message: string, error?: Error): void;
 }
 ```
 
@@ -202,11 +203,11 @@ The default log levels are:
 
 ```typescript
 export enum LogLevel {
-     VERBOSE = 1,
-     DEBUG = 2,
-     INFO = 3,
-     WARNING = 4,
-     ERROR = 5
+  VERBOSE = 1,
+  DEBUG = 2,
+  INFO = 3,
+  WARNING = 4,
+  ERROR = 5
 }
 ```
 
@@ -216,8 +217,8 @@ This is up to the service implementer to implement.
 
 ```typescript
 export interface TokenProvider {
-    fetchToken(tokenParams?: any): PCancelable<string>;
-    clearToken(token?: string);
+  fetchToken(tokenParams?: any): Promise<string>;
+  clearToken(token?: string): void;
 }
 ```
 
@@ -225,12 +226,12 @@ export interface TokenProvider {
 
 ```bash
 yarn install
-yarn build  # creates target/pusher-platform.js and target/index.d.ts
+yarn build  # builds both web and react-native versions in dist/
 ```
 
-This will create `target/pusher-platform.js` as the main library and `target/index.d.ts` as the typings file.
+This will create `dist/web/pusher-platform.js` as the main library.
 
-### Testing
+## Testing
 
 We have 2 types of tests - unit and integration.
 
@@ -251,6 +252,24 @@ Then run tests (from this dir): `yarn test-integration`.
 This will run tests and watch the `src/` and `test/` dirs to rebuild every time a file is changed. Good for development.
 
 Once we have some sort of CI setup we'll be able to run just `yarn test` to get everything going and run just once.
+
+## Formatting and linting
+
+Prettier and TSLint are used to keep the code formatted and linted nicely.
+
+To format your code using Prettier, run:
+
+```
+yarn format
+```
+
+To lint your code using TSLint, run:
+
+```
+yarn lint
+```
+
+Please ensure that your code is formatted and linted before merging it into master.
 
 ## License
 
