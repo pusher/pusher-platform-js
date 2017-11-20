@@ -11,4 +11,12 @@ export interface RequestOptions {
     logger?: Logger;
     tokenProvider?: TokenProvider;
 }
+export interface RawRequestOptions {
+    method: string;
+    url: string;
+    headers?: ElementsHeaders;
+    body?: any;
+    logger?: Logger;
+}
 export declare function executeNetworkRequest(createXhr: () => XMLHttpRequest, options: RequestOptions): Promise<any>;
+export declare function sendRawRequest(options: RawRequestOptions): Promise<any>;
