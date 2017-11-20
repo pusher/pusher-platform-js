@@ -21,7 +21,7 @@
     "clean": "rm -rf dist",
     "format": "yarn prettier --write",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prettier": "prettier 'src/**/*.ts'",
+    "prettier": "prettier 'src/**/*.ts' 'test/**/*.js'",
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
     "test": "yarn build && yarn test-jest && yarn test-integration"
