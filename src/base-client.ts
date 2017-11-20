@@ -34,8 +34,9 @@ export class BaseClient {
     this.host = options.host.replace(/(\/)+$/, '');
     this.logger = options.logger || new ConsoleLogger();
     this.websocketTransport = new WebSocketTransport(this.host);
-    this.httpTransport = new HttpTransport(this.host);
+    this.httpTransport = new HttpTransport(this.host, options.encrypted);
   }
+
   request(options: RequestOptions, tokenParams?: any): Promise<any> {
     if (options.tokenProvider) {
       return options.tokenProvider

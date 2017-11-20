@@ -299,8 +299,8 @@ class HttpSubscription implements Subscription {
 export default class HttpTransport implements SubscriptionTransport {
   private baseURL: string;
 
-  constructor(host: string, encrypted?: boolean) {
-    this.baseURL = `${encrypted !== false ? 'https' : 'http'}://${host}`;
+  constructor(host: string, encrypted = true) {
+    this.baseURL = `${encrypted ? 'https' : 'http'}://${host}`;
   }
 
   request(requestOptions: RequestOptions): XMLHttpRequest {

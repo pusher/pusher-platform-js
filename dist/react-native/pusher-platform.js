@@ -362,7 +362,7 @@ var BaseClient = (function () {
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
         this.websocketTransport = new websocket_1.default(this.host);
-        this.httpTransport = new http_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host, options.encrypted);
     }
     BaseClient.prototype.request = function (options, tokenParams) {
         var _this = this;
@@ -1194,7 +1194,8 @@ var HttpSubscription = (function () {
 }());
 var HttpTransport = (function () {
     function HttpTransport(host, encrypted) {
-        this.baseURL = (encrypted !== false ? 'https' : 'http') + "://" + host;
+        if (encrypted === void 0) { encrypted = true; }
+        this.baseURL = (encrypted ? 'https' : 'http') + "://" + host;
     }
     HttpTransport.prototype.request = function (requestOptions) {
         return this.createXHR(this.baseURL, requestOptions);
