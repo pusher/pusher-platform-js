@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.12.1] 2017-11-21
+
+### Changes
+
+- Added `sendRawRequest` to allow service-specific SDKs to make requests without having to worry about networking setups themselves. `sendRawRequest` takes an `options` parameter of type `RawRequestOptions`
+
+
 ## [v0.12.0] 2017-11-17
 
 ### Changes
