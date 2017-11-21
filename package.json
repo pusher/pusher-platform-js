@@ -1,6 +1,6 @@
 {
   "name": "pusher-platform",
-  "description": "Pusher Platform client library for web browsers",
+  "description": "Pusher Platform client library for browsers and react native",
   "main": "dist/web/pusher-platform.js",
   "version": "0.12.1",
   "author": "Pusher",
@@ -40,7 +40,7 @@
     "prettier": "^1.8.1",
     "ts-loader": "^2.1.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.5.2",
+    "typescript": "^2.6.1",
     "webpack": "^3.8.1"
   }
 }
