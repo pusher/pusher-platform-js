@@ -421,24 +421,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 function executeNetworkRequest(createXhr, options) {
     return new Promise(function (resolve, reject) {
-        var xhr = createXhr();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else if (xhr.status !== 0) {
-                    reject(network_1.ErrorResponse.fromXHR(xhr));
-                }
-                else {
-                    reject(new network_1.NetworkError('No Connection'));
-                }
-            }
-        };
+        var xhr = attachOnReadyStateChangeHandler(createXhr(), resolve, reject);
         xhr.send(JSON.stringify(options.body));
     });
 }
 exports.executeNetworkRequest = executeNetworkRequest;
+function sendRawRequest(options) {
+    return new Promise(function (resolve, reject) {
+        var xhr = attachOnReadyStateChangeHandler(new window.XMLHttpRequest(), resolve, reject);
+        xhr.open(options.method.toUpperCase(), options.url, true);
+        if (options.headers) {
+            for (var key in options.headers) {
+                if (options.headers.hasOwnProperty(key)) {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                }
+            }
+        }
+        xhr.send(options.body);
+    });
+}
+exports.sendRawRequest = sendRawRequest;
+function attachOnReadyStateChangeHandler(xhr, resolve, reject) {
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.response);
+            }
+            else if (xhr.status !== 0) {
+                reject(network_1.ErrorResponse.fromXHR(xhr));
+            }
+            else {
+                reject(new network_1.NetworkError('No Connection'));
+            }
+        }
+    };
+    return xhr;
+}
 
 
 /***/ }),
@@ -879,6 +897,7 @@ exports.responseToHeadersObject = network_1.responseToHeadersObject;
 exports.XhrReadyState = network_1.XhrReadyState;
 var request_1 = __webpack_require__(4);
 exports.executeNetworkRequest = request_1.executeNetworkRequest;
+exports.sendRawRequest = request_1.sendRawRequest;
 var resuming_subscription_1 = __webpack_require__(5);
 exports.createResumingStrategy = resuming_subscription_1.createResumingStrategy;
 var retry_strategy_1 = __webpack_require__(2);
