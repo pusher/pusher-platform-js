@@ -14,8 +14,6 @@ import {
   SubscriptionTransport,
 } from '../subscription';
 
-import { XMLHttpRequest } from 'xmlhttprequest';
-
 export enum HttpTransportState {
   UNOPENED = 0, // haven't called xhr.send()
   OPENING, // called xhr.send(); not yet received response headers

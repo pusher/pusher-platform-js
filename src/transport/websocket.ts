@@ -11,8 +11,6 @@ import {
   SubscriptionTransport,
 } from '../subscription';
 
-import { WebSocket } from 'websocket';
-
 type WsMessageType = number;
 type Message = any[];
 
@@ -176,7 +174,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.socket = new global.WebSocket(this.baseURL);
 
-    this.socket.onopen = event => {
+    this.socket.onopen = (event: any) => {
       const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
 
       // Re-subscribe old subscriptions for new connection
@@ -217,11 +215,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
       }, pingIntervalMs);
     };
 
-    this.socket.onmessage = event => this.receiveMessage(event);
-    this.socket.onerror = event => {
+    this.socket.onmessage = (event: any) => this.receiveMessage(event);
+    this.socket.onerror = (event: any) => {
       this.close(new NetworkError('Connection was lost.'));
     };
-    this.socket.onclose = event => {
+    this.socket.onclose = (event: any) => {
       if (!this.forcedClose) {
         this.tryReconnectIfNeeded();
         return;

@@ -2,8 +2,6 @@ import { Logger } from './logger';
 import { ElementsHeaders, ErrorResponse, NetworkError } from './network';
 import { TokenProvider } from './token-provider';
 
-import { XMLHttpRequest } from 'xmlhttprequest';
-
 export interface RequestOptions {
   method: string;
   path: string;

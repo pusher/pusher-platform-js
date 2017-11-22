@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "declarations",
-    "lib": ["ES6"],
+    "lib": ["ES6", "webworker"],
     "module": "commonjs",
     "removeComments": true,
     "sourceMap": true,
@@ -10,11 +10,7 @@
     "target": "ES5"
   },
   "files": [
-    "src/declarations/global/global.d.ts",
-    "src/declarations/window/websocket.d.ts",
-    "src/declarations/window/xmlhttprequest.d.ts",
-    "src/declarations/websocket/websocket.d.ts",
-    "src/declarations/xmlhttprequest/xmlhttprequest.d.ts"
+    "src/declarations/global/global.d.ts"
   ],
   "exclude": [
     "node_modules",
