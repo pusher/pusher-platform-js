@@ -80,9 +80,11 @@ class TokenProvidingSubscription implements Subscription {
       })
       .catch((error: any) => {
         this.logger.debug(
-          `TokenProvidingSubscription: error when fetching token: ${error}`,
+          'TokenProvidingSubscription: error when fetching token:',
+          error,
         );
         this.state = new InactiveState(this.logger);
+        this.listeners.onError(error);
       });
   }
 
@@ -118,7 +120,8 @@ class ActiveState implements TokenProvidingSubscriptionState {
         },
         onError: error => {
           this.logger.verbose(
-            `TokenProvidingSubscription: subscription errored: ${error}`,
+            'TokenProvidingSubscription: subscription errored:',
+            error,
           );
           listeners.onError(error);
         },
