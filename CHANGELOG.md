@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.12.3] 2017-11-22
+
+### Fixed
+
+- Call appropriate `onError` listener if `fetchToken` fails as part of a subscription
+
+
 ## [v0.12.2] 2017-11-22
 
 ### Changes
