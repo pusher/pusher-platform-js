@@ -239,7 +239,7 @@ We have 2 types of tests - unit and integration.
 
 Integration testing is trickier as it requires a testing service to be running. Currently it runs locally on your machine but this will eventually be deployed behind the Elements bridge.
 
-The repository for it is here: https://github.com/pusher/platform-lib-tester, and it requires a working Go installation.
+The repository for it is [here](https://github.com/pusher/platform-sdk-tester), and it requires a working Go installation.
 Then hopefully just run from the main directory of that test library:
 
 ```bash
