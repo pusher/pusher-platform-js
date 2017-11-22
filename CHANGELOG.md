@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.12.2] 2017-11-22
+
+### Changes
+
+- Removed custom `XMLHttpRequest` and `WebSocket` and `Window` declarations and added `"webworker"` to `"lib"` in `tsconfig.json`
+
+
 ## [v0.12.1] 2017-11-21
 
 ### Changes
