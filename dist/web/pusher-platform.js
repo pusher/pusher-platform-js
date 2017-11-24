@@ -105,7 +105,13 @@ var ErrorResponse = (function () {
         this.info = info;
     }
     ErrorResponse.fromXHR = function (xhr) {
-        return new ErrorResponse(xhr.status, responseToHeadersObject(xhr.getAllResponseHeaders()), xhr.responseText);
+        var errorInfo = xhr.responseText;
+        try {
+            errorInfo = JSON.parse(xhr.responseText);
+        }
+        catch (e) {
+        }
+        return new ErrorResponse(xhr.status, responseToHeadersObject(xhr.getAllResponseHeaders()), errorInfo);
     };
     return ErrorResponse;
 }());

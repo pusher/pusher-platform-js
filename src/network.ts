@@ -32,10 +32,16 @@ export class ErrorResponse {
   }
 
   static fromXHR(xhr: XMLHttpRequest): ErrorResponse {
+    let errorInfo = xhr.responseText;
+    try {
+      errorInfo = JSON.parse(xhr.responseText);
+    } catch (e) {
+      // Error info is formatted badly so we just return the raw text
+    }
     return new ErrorResponse(
       xhr.status,
       responseToHeadersObject(xhr.getAllResponseHeaders()),
-      xhr.responseText,
+      errorInfo,
     );
   }
 }
