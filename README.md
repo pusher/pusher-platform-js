@@ -20,31 +20,53 @@ The latest working version will always be published there.
 
 If you like to live dangerously, you can check in the Releases tab on Github for the latest release, or clone a local version and refer to it using a relative path.
 
-## Usage and Features
-
-### Importing
+## Importing
 
 We assume you use Webpack or something similar:
 
 Currently there are two ways to import it - either import the whole thing:
 
-```javascript
-import PusherPlatform from `pusher-platform`;
+#### Browser
 
-let instance = new PusherPlatfrm.Instance(...);
+```javascript
+import PusherPlatform from 'pusher-platform';
+
+let instance = new PusherPlatform.Instance(...);
 ```
 
-Or import individual components:
-Currently you can access:
+#### React Native
+
+```javascript
+import PusherPlatform from 'pusher-platform/react-native';
+
+let instance = new PusherPlatform.Instance(...);
+```
+
+
+Or import individual components. Currently you can access:
+
 - Instance
 - BaseClient
 - Subscription
 
+
+#### Browser
+
 ```javascript
-import { Instance, ... } from `pusher-platform`;
+import { Instance, ... } from 'pusher-platform';
 
 let instance = new Instance(...);
 ```
+
+#### React Native
+
+```javascript
+import { Instance, ... } from 'pusher-platform/react-native';
+
+let instance = new Instance(...);
+```
+
+## Usage and Features
 
 ### Instance
 
