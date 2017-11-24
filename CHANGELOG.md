@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.12.4] 2017-11-24
+
+### Fixed
+
+- `fromXHR` in `ErrorResponse` now tries to `JSON.parse` the `responseText` from the `xhr` request to make errors easier to read
+
+
 ## [v0.12.3] 2017-11-22
 
 ### Fixed
