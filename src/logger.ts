@@ -42,43 +42,62 @@ export class ConsoleLogger implements Logger {
     }
   }
 
-  verbose(message: string, error?: any) {
-    this.log(global.console.log, LogLevel.VERBOSE, message, error);
+  verbose(...items: any[]) {
+    this.log(global.console.log, LogLevel.VERBOSE, items);
   }
 
-  debug(message: string, error?: any) {
-    this.log(global.console.log, LogLevel.DEBUG, message, error);
+  debug(...items: any[]) {
+    this.log(global.console.log, LogLevel.DEBUG, items);
   }
 
-  info(message: string, error?: any) {
-    this.log(global.console.info, LogLevel.INFO, message, error);
+  info(...items: any[]) {
+    this.log(global.console.info, LogLevel.INFO, items);
   }
 
-  warn(message: string, error?: any) {
-    this.log(global.console.warn, LogLevel.WARNING, message, error);
+  warn(...items: any[]) {
+    this.log(global.console.warn, LogLevel.WARNING, items);
   }
 
-  error(message: string, error?: any) {
-    this.log(global.console.error, LogLevel.ERROR, message, error);
+  error(...items: any[]) {
+    this.log(global.console.error, LogLevel.ERROR, items);
   }
 
   private log(
-    logFunction: (msg: string) => void,
+    logFunction: (...items: any[]) => void,
     level: LogLevel,
-    message: string,
-    error?: any,
+    items: any[],
   ): void {
     if (level >= this.threshold) {
       const loggerSignature = `Logger.${LogLevel[level]}`;
 
-      if (error) {
+      if (items.length > 1) {
         global.console.group();
-        logFunction(`${loggerSignature}: ${message}`);
-        logFunction(error);
+        items.forEach((item: any) => {
+          this.errorAwareLog(logFunction, item, loggerSignature);
+        });
         global.console.groupEnd();
       } else {
-        logFunction(`${loggerSignature}: ${message}`);
+        this.errorAwareLog(logFunction, items[0], loggerSignature);
       }
+    }
+  }
+
+  private errorAwareLog(
+    logFunction: (...items: any[]) => void,
+    item: any,
+    loggerSignature: string,
+  ): void {
+    if (item.info && item.info.error_uri) {
+      const errorDesc = item.info.error_description;
+      const errorIntro = errorDesc ? errorDesc : 'An error has occurred';
+      logFunction(
+        `${errorIntro}. More information can be found at ${
+          item.info.error_uri
+        }. Error object: `,
+        item,
+      );
+    } else {
+      logFunction(`${loggerSignature}: `, item);
     }
   }
 }
