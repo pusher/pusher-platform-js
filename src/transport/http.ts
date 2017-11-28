@@ -323,13 +323,11 @@ export default class HttpTransport implements SubscriptionTransport {
   }
 
   private createXHR(baseURL: string, options: RequestOptions): XMLHttpRequest {
-    const xhr = new global.XMLHttpRequest();
+    let xhr = new global.XMLHttpRequest();
     const path = options.path.replace(/^\/+/, '');
     const endpoint = `${baseURL}/${path}`;
     xhr.open(options.method.toUpperCase(), endpoint, true);
-    if (options.body) {
-      xhr.setRequestHeader('content-type', 'application/json');
-    }
+    xhr = this.setJSONHeaderIfAppropriate(xhr, options);
     if (options.jwt) {
       xhr.setRequestHeader('authorization', `Bearer ${options.jwt}`);
     }
@@ -340,6 +338,16 @@ export default class HttpTransport implements SubscriptionTransport {
           xhr.setRequestHeader(key, options.headers[key]);
         }
       }
+    }
+    return xhr;
+  }
+
+  private setJSONHeaderIfAppropriate(
+    xhr: XMLHttpRequest,
+    options: any,
+  ): XMLHttpRequest {
+    if (options.json) {
+      xhr.setRequestHeader('content-type', 'application/json');
     }
     return xhr;
   }

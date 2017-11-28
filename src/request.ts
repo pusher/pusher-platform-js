@@ -2,15 +2,24 @@ import { Logger } from './logger';
 import { ElementsHeaders, ErrorResponse, NetworkError } from './network';
 import { TokenProvider } from './token-provider';
 
-export interface RequestOptions {
+export interface BasicRequestOptions {
   method: string;
   path: string;
   jwt?: string;
   headers?: ElementsHeaders;
-  body?: any;
   logger?: Logger;
   tokenProvider?: TokenProvider;
 }
+
+export interface SimpleRequestOptions extends BasicRequestOptions {
+  body?: any;
+}
+
+export interface JSONRequestOptions extends BasicRequestOptions {
+  json?: any;
+}
+
+export type RequestOptions = SimpleRequestOptions | JSONRequestOptions;
 
 export interface RawRequestOptions {
   method: string;
@@ -27,9 +36,16 @@ export function executeNetworkRequest(
 ): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     const xhr = attachOnReadyStateChangeHandler(createXhr(), resolve, reject);
-
-    xhr.send(JSON.stringify(options.body));
+    sendBody(xhr, options);
   });
+}
+
+function sendBody(xhr: XMLHttpRequest, options: any) {
+  if (options.json) {
+    xhr.send(JSON.stringify(options.json));
+  } else {
+    xhr.send(options.body);
+  }
 }
 
 export function sendRawRequest(options: RawRequestOptions): Promise<any> {

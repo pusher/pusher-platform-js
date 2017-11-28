@@ -36,12 +36,12 @@ describe('Instance Requests - Successful', () => {
       });
   });
 
-  it('makes a successful POST request with body', done => {
+  it('makes a successful POST request with JSON body', done => {
     instance
       .request({
         method: 'post',
         path: 'post_ok',
-        body: {
+        json: {
           test: '123',
         },
       })
