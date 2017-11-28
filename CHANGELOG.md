@@ -2,6 +2,15 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.13.0] 2017-11-28
+
+### Changes
+
+- Using `request(...)` on an `Instance` will no longer default to `JSON.stringify`-ing and adding `application/json` as the `Content-Type` when you provide a `body` as part of your `RequestOptions`. If you want to send JSON in your request you can now use the `json` key in your `RequestOptions` instead of `body`. `body` should be used for all body types that aren't JSON. Note that you'll need to set your own `Content-Type` header though (in most cases).
+- `dist/` directory removed from repo (but it's still part of the NPM releases - see `.npmignore` vs `.gitignore`)
+- The default `ConsoleLogger` will now log out `error_uri`s and `error_description`s in a helpful way, if they're present as part of an `ErrorResponse` object passed to a logger call.
+
+
 ## [v0.12.4] 2017-11-24
 
 ### Fixed
