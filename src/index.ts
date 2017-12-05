@@ -1,5 +1,5 @@
 import { BaseClient, BaseClientOptions } from './base-client';
-import { HOST_BASE } from './host_base';
+import { HOST_BASE } from './host-base';
 import {
   default as Instance,
   ResumableSubscribeOptions,

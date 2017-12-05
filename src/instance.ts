@@ -1,5 +1,5 @@
 import { BaseClient } from './base-client';
-import { HOST_BASE } from './host_base';
+import { HOST_BASE } from './host-base';
 import { ConsoleLogger, Logger } from './logger';
 import { ElementsHeaders } from './network';
 import { RequestOptions } from './request';
