@@ -1,12 +1,11 @@
 import { BaseClient } from './base-client';
+import { HOST_BASE } from './host_base';
 import { ConsoleLogger, Logger } from './logger';
 import { ElementsHeaders } from './network';
 import { RequestOptions } from './request';
 import { RetryStrategyOptions } from './retry-strategy';
 import { Subscription, SubscriptionListeners } from './subscription';
 import { TokenProvider } from './token-provider';
-
-const HOST_BASE = 'pusherplatform.io';
 
 export interface InstanceOptions {
   locator: string;
@@ -46,22 +45,25 @@ export default class Instance {
     if (!options.locator) {
       throw new Error('Expected `locator` property in Instance options!');
     }
-    if (options.locator.split(':').length !== 3) {
+
+    const splitInstanceLocator = options.locator.split(':');
+    if (splitInstanceLocator.length !== 3) {
       throw new Error('The instance locator property is in the wrong format!');
     }
+
     if (!options.serviceName) {
       throw new Error('Expected `serviceName` property in Instance options!');
     }
+
     if (!options.serviceVersion) {
       throw new Error(
         'Expected `serviceVersion` property in Instance otpions!',
       );
     }
 
-    const splitLocator = options.locator.split(':');
-    this.platformVersion = splitLocator[0];
-    this.cluster = splitLocator[1];
-    this.id = splitLocator[2];
+    this.platformVersion = splitInstanceLocator[0];
+    this.cluster = splitInstanceLocator[1];
+    this.id = splitInstanceLocator[2];
 
     this.serviceName = options.serviceName;
     this.serviceVersion = options.serviceVersion;
