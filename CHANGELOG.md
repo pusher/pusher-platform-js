@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.13.1] 2017-12-05
+
+### Changes
+
+- `HOST_BASE` is now exported
+
+
 ## [v0.13.0] 2017-11-28
 
 ### Changes
