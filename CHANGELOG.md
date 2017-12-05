@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.13.2] 2017-12-05
+
+### Changes
+
+- `tokenProvider` property on `Instance` is now public
+
+
 ## [v0.13.1] 2017-12-05
 
 ### Changes
