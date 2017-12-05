@@ -32,6 +32,7 @@ export interface ResumableSubscribeOptions extends SubscribeOptions {
 
 export default class Instance {
   logger: Logger;
+  tokenProvider?: TokenProvider;
   private client: BaseClient;
   private host: string;
   private id: string;
@@ -39,7 +40,6 @@ export default class Instance {
   private platformVersion: string;
   private serviceVersion: string;
   private serviceName: string;
-  private tokenProvider?: TokenProvider;
 
   constructor(options: InstanceOptions) {
     if (!options.locator) {
