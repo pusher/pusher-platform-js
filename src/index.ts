@@ -1,4 +1,5 @@
 import { BaseClient, BaseClientOptions } from './base-client';
+import { HOST_BASE } from './host_base';
 import {
   default as Instance,
   ResumableSubscribeOptions,
@@ -52,6 +53,7 @@ export {
   EmptyLogger,
   ErrorResponse,
   executeNetworkRequest,
+  HOST_BASE,
   Instance,
   Logger,
   NetworkError,
