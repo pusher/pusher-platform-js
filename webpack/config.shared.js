@@ -1,9 +1,6 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: {
-    'pusher-platform': './src/index.ts'
-  },
   resolve: {
     extensions: ['.ts', '.js'],
   },

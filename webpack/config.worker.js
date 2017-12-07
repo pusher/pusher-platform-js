@@ -6,17 +6,16 @@ var sharedConfig = require('./config.shared');
 
 module.exports = _.merge(sharedConfig, {
   entry: {
-    'pusher-platform': './src/index.ts'
+    'pusher-platform.worker': './src/index.ts'
   },
   output: {
     library: "PusherPlatform",
-    path: path.join(__dirname, "../dist/web"),
-    filename: "pusher-platform.js",
-    libraryTarget: "umd"
+    path: path.join(__dirname, "../dist/worker"),
+    filename: "pusher-platform.worker.js"
   },
   plugins: [
     new webpack.DefinePlugin({
-      global: "window"
+      global: "self"
     }),
-  ],
+  ]
 });
