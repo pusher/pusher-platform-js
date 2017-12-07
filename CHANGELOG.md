@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## [v0.14.0] 2017-12-07
+
+### Changes
+
+- Added support for web workers with a build for web workers
+
+
 ## [v0.13.2] 2017-12-05
 
 ### Changes
