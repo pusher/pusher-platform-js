@@ -48,7 +48,7 @@ export default class Instance {
 
     const splitInstanceLocator = options.locator.split(':');
     if (splitInstanceLocator.length !== 3) {
-      throw new Error('The instance locator property is in the wrong format!');
+      throw new Error('The instance locator supplied is invalid. Did you copy it correctly from the Pusher dashboard?');
     }
 
     if (!options.serviceName) {
@@ -57,7 +57,7 @@ export default class Instance {
 
     if (!options.serviceVersion) {
       throw new Error(
-        'Expected `serviceVersion` property in Instance otpions!',
+        'Expected `serviceVersion` property in Instance options!',
       );
     }
 
