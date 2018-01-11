@@ -28,8 +28,7 @@ describe('Instance Subscribe', () => {
     errorThrown = false;
   });
 
-  // TODO: this doesn't work o_O
-  xit('subscribes and terminates on EOS after receiving all events', done => {
+  it('subscribes and terminates on EOS after receiving all events', done => {
     instance.subscribeNonResuming({
       path: PATH_10_AND_EOS,
       retryStrategyOptions: neverRetryOptions,
@@ -50,8 +49,7 @@ describe('Instance Subscribe', () => {
     });
   });
 
-  // TODO: This needs websockets to be closed cleanly to work, which they don't currently
-  xit('subscribes, terminates on EOS, and triggers onEnd callback exactly once', done => {
+  it('subscribes, terminates on EOS, and triggers onEnd callback exactly once', done => {
     instance.subscribeNonResuming({
       path: PATH_10_AND_EOS,
       retryStrategyOptions: neverRetryOptions,

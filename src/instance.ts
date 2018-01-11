@@ -48,7 +48,9 @@ export default class Instance {
 
     const splitInstanceLocator = options.locator.split(':');
     if (splitInstanceLocator.length !== 3) {
-      throw new Error('The instance locator supplied is invalid. Did you copy it correctly from the Pusher dashboard?');
+      throw new Error(
+        'The instance locator supplied is invalid. Did you copy it correctly from the Pusher dashboard?',
+      );
     }
 
     if (!options.serviceName) {
