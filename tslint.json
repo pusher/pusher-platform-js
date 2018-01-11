@@ -16,7 +16,6 @@
     "max-classes-per-file": [false],
     "member-access": [true, "no-public"],
     "member-ordering": [true, {"order": "instance-sandwich"}],
-    "no-shadowed-variable": false,
     "quotemark": [
       true,
       "single",

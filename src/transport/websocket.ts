@@ -201,9 +201,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.lastSentPingID = now;
 
         this.pongTimeout = global.setTimeout(() => {
-          const now = new Date().getTime();
+          const pongNow = new Date().getTime();
 
-          if (pingTimeoutMs > now - this.lastMessageReceivedTimestamp) {
+          if (pingTimeoutMs > pongNow - this.lastMessageReceivedTimestamp) {
             this.pongTimeout = null;
             return;
           }
