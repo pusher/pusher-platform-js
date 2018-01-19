@@ -87,7 +87,7 @@ export class ConsoleLogger implements Logger {
     item: any,
     loggerSignature: string,
   ): void {
-    if (item.info && item.info.error_uri) {
+    if (item !== undefined && item.info && item.info.error_uri) {
       const errorDesc = item.info.error_description;
       const errorIntro = errorDesc ? errorDesc : 'An error has occurred';
       logFunction(

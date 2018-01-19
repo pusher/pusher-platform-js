@@ -34,218 +34,264 @@ export let createResumingStrategy: (
   );
   const retryResolution = new RetryResolution(completeRetryOptions, logger);
 
-  class ResumingSubscription implements Subscription {
-    private state: SubscriptionState;
+  // All the magic in the world.
+  return (listeners, headers) => new ResumingSubscription(
+    logger,
+    headers,
+    nextSubscribeStrategy,
+    listeners,
+    retryResolution,
+  );
+};
 
-    constructor(
-      listeners: SubscribeStrategyListeners,
-      headers: ElementsHeaders,
-    ) {
-      class OpeningSubscriptionState implements SubscriptionState {
-        private underlyingSubscription: Subscription;
+class ResumingSubscription implements Subscription {
+  private state: SubscriptionState;
 
-        constructor(
-          private onTransition: (newState: SubscriptionState) => void,
-        ) {
-          let lastEventId = initialEventId;
-          logger.verbose(
-            `ResumingSubscription: transitioning to OpeningSubscriptionState`,
-          );
-
-          if (lastEventId) {
-            headers['Last-Event-Id'] = lastEventId;
-            logger.verbose(
-              `ResumingSubscription: initialEventId is ${lastEventId}`,
-            );
-          }
-
-          this.underlyingSubscription = nextSubscribeStrategy(
-            {
-              onEnd: error => {
-                onTransition(new EndedSubscriptionState(error));
-              },
-              onError: error => {
-                onTransition(
-                  new ResumingSubscriptionState(
-                    error,
-                    onTransition,
-                    lastEventId,
-                  ),
-                );
-              },
-              onEvent: event => {
-                lastEventId = event.eventId;
-                listeners.onEvent(event);
-              },
-              onOpen: headers => {
-                onTransition(
-                  new OpenSubscriptionState(
-                    headers,
-                    this.underlyingSubscription,
-                    onTransition,
-                  ),
-                );
-              },
-              onRetrying: listeners.onRetrying,
-            },
-            headers,
-          );
-        }
-        unsubscribe() {
-          this.onTransition(new EndingSubscriptionState());
-          this.underlyingSubscription.unsubscribe();
-        }
-      }
-
-      class OpenSubscriptionState implements SubscriptionState {
-        constructor(
-          headers: ElementsHeaders,
-          private underlyingSubscription: Subscription,
-          private onTransition: (state: SubscriptionState) => void,
-        ) {
-          logger.verbose(
-            `ResumingSubscription: transitioning to OpenSubscriptionState`,
-          );
-          listeners.onOpen(headers);
-        }
-
-        unsubscribe() {
-          this.onTransition(new EndingSubscriptionState());
-          this.underlyingSubscription.unsubscribe();
-        }
-      }
-
-      class ResumingSubscriptionState implements SubscriptionState {
-        private timeout: number;
-        private underlyingSubscription: Subscription;
-
-        constructor(
-          error: any,
-          private onTransition: (newState: SubscriptionState) => void,
-          lastEventId?: string,
-        ) {
-          logger.verbose(
-            `ResumingSubscription: transitioning to ResumingSubscriptionState`,
-          );
-
-          const executeSubscriptionOnce = (
-            error: any,
-            lastEventId?: string,
-          ) => {
-            listeners.onRetrying();
-            const resolveError: (error: any) => RetryStrategyResult = error => {
-              if (error instanceof ErrorResponse) {
-                error.headers['Request-Method'] = 'SUBSCRIBE';
-              }
-              return retryResolution.attemptRetry(error);
-            };
-
-            const errorResolution = resolveError(error);
-            if (errorResolution instanceof Retry) {
-              this.timeout = global.setTimeout(() => {
-                executeNextSubscribeStrategy(lastEventId);
-              }, errorResolution.waitTimeMillis);
-            } else {
-              onTransition(new FailedSubscriptionState(error));
-            }
-          };
-
-          const executeNextSubscribeStrategy = (lastEventId?: string) => {
-            logger.verbose(
-              `ResumingSubscription: trying to re-establish the subscription`,
-            );
-            if (lastEventId) {
-              logger.verbose(
-                `ResumingSubscription: lastEventId: ${lastEventId}`,
-              );
-              headers['Last-Event-Id'] = lastEventId;
-            }
-
-            this.underlyingSubscription = nextSubscribeStrategy(
-              {
-                onEnd: error => {
-                  onTransition(new EndedSubscriptionState(error));
-                },
-                onError: error => {
-                  executeSubscriptionOnce(error, lastEventId);
-                },
-                onEvent: event => {
-                  lastEventId = event.eventId;
-                  listeners.onEvent(event);
-                },
-                onOpen: headers => {
-                  onTransition(
-                    new OpenSubscriptionState(
-                      headers,
-                      this.underlyingSubscription,
-                      onTransition,
-                    ),
-                  );
-                },
-                onRetrying: listeners.onRetrying,
-              },
-              headers,
-            );
-          };
-          executeSubscriptionOnce(error, lastEventId);
-        }
-
-        unsubscribe() {
-          this.onTransition(new EndingSubscriptionState());
-          global.clearTimeout(this.timeout);
-          this.underlyingSubscription.unsubscribe();
-        }
-      }
-
-      class EndingSubscriptionState implements SubscriptionState {
-        constructor(error?: any) {
-          logger.verbose(
-            `ResumingSubscription: transitioning to EndingSubscriptionState`,
-          );
-        }
-        unsubscribe() {
-          throw new Error('Subscription is already ending');
-        }
-      }
-
-      class EndedSubscriptionState implements SubscriptionState {
-        constructor(error?: any) {
-          logger.verbose(
-            `ResumingSubscription: transitioning to EndedSubscriptionState`,
-          );
-          listeners.onEnd(error);
-        }
-        unsubscribe() {
-          throw new Error('Subscription has already ended');
-        }
-      }
-
-      class FailedSubscriptionState implements SubscriptionState {
-        constructor(error: any) {
-          logger.verbose(
-            `ResumingSubscription: transitioning to FailedSubscriptionState`,
-            error,
-          );
-          listeners.onError(error);
-        }
-        unsubscribe() {
-          throw new Error('Subscription has already ended');
-        }
-      }
-
-      // Here we init the state transition shenaningans
-      this.state = new OpeningSubscriptionState(this.onTransition);
-    }
-
-    unsubscribe = () => {
-      this.state.unsubscribe();
-    };
-
-    private onTransition = (newState: SubscriptionState) => {
-      this.state = newState;
-    };
+  constructor(
+    logger: Logger,
+    headers: ElementsHeaders,
+    nextSubscribeStrategy: SubscribeStrategy,
+    listeners: SubscribeStrategyListeners,
+    retryResolution: RetryResolution,
+  ) {
+    // Here we init the state transition shenaningans
+    this.state = new OpeningSubscriptionState(
+      this.onTransition,
+      logger,
+      headers,
+      nextSubscribeStrategy,
+      listeners,
+      retryResolution,
+    );
   }
 
-  // All the magic in the world.
-  return (listeners, headers) => new ResumingSubscription(listeners, headers);
-};
+  unsubscribe = () => {
+    this.state.unsubscribe();
+  };
+
+  private onTransition = (newState: SubscriptionState) => {
+    this.state = newState;
+  };
+}
+
+class OpeningSubscriptionState implements SubscriptionState {
+  private underlyingSubscription: Subscription;
+
+  constructor(
+    private onTransition: (newState: SubscriptionState) => void,
+    private logger: Logger,
+    private headers: ElementsHeaders,
+    private nextSubscribeStrategy: SubscribeStrategy,
+    private listeners: SubscribeStrategyListeners,
+    private retryResolution: RetryResolution,
+    private initialEventId?: string,
+  ) {
+    let lastEventId = initialEventId;
+    logger.verbose(
+      `ResumingSubscription: transitioning to OpeningSubscriptionState`,
+    );
+
+    if (lastEventId) {
+      headers['Last-Event-Id'] = lastEventId;
+      logger.verbose(`ResumingSubscription: initialEventId is ${lastEventId}`);
+    }
+
+    this.underlyingSubscription = nextSubscribeStrategy(
+      {
+        onEnd: error => {
+          onTransition(new EndedSubscriptionState(logger, listeners, error));
+        },
+        onError: error => {
+          onTransition(
+            new ResumingSubscriptionState(
+              error,
+              onTransition,
+              logger,
+              headers,
+              listeners,
+              nextSubscribeStrategy,
+              retryResolution,
+              lastEventId,
+            ),
+          );
+        },
+        onEvent: event => {
+          lastEventId = event.eventId;
+          listeners.onEvent(event);
+        },
+        onOpen: subHeaders => {
+          onTransition(
+            new OpenSubscriptionState(
+              logger,
+              subHeaders,
+              listeners,
+              this.underlyingSubscription,
+              onTransition,
+            ),
+          );
+        },
+        onRetrying: listeners.onRetrying,
+      },
+      headers,
+    );
+  }
+  unsubscribe() {
+    this.onTransition(new EndingSubscriptionState(this.logger));
+    this.underlyingSubscription.unsubscribe();
+  }
+}
+
+class OpenSubscriptionState implements SubscriptionState {
+  constructor(
+    private logger: Logger,
+    private headers: ElementsHeaders,
+    private listeners: SubscribeStrategyListeners,
+    private underlyingSubscription: Subscription,
+    private onTransition: (state: SubscriptionState) => void,
+  ) {
+    logger.verbose(
+      `ResumingSubscription: transitioning to OpenSubscriptionState`,
+    );
+    listeners.onOpen(headers);
+  }
+
+  unsubscribe() {
+    this.onTransition(new EndingSubscriptionState(this.logger));
+    this.underlyingSubscription.unsubscribe();
+  }
+}
+
+class ResumingSubscriptionState implements SubscriptionState {
+  private timeout: number;
+  private underlyingSubscription: Subscription;
+
+  constructor(
+    error: any,
+    private onTransition: (newState: SubscriptionState) => void,
+    private logger: Logger,
+    private headers: ElementsHeaders,
+    private listeners: SubscribeStrategyListeners,
+    private nextSubscribeStrategy: SubscribeStrategy,
+    private retryResolution: RetryResolution,
+    lastEventId?: string,
+  ) {
+    logger.verbose(
+      `ResumingSubscription: transitioning to ResumingSubscriptionState`,
+    );
+
+    const executeSubscriptionOnce = (
+      subError: any,
+      subLastEventId?: string,
+    ) => {
+      listeners.onRetrying();
+      const resolveError: (
+        errToResolve: any,
+      ) => RetryStrategyResult = errToResolve => {
+        if (errToResolve instanceof ErrorResponse) {
+          errToResolve.headers['Request-Method'] = 'SUBSCRIBE';
+        }
+        return retryResolution.attemptRetry(errToResolve);
+      };
+
+      const errorResolution = resolveError(subError);
+      if (errorResolution instanceof Retry) {
+        this.timeout = global.setTimeout(() => {
+          executeNextSubscribeStrategy(subLastEventId);
+        }, errorResolution.waitTimeMillis);
+      } else {
+        onTransition(new FailedSubscriptionState(logger, listeners, subError));
+      }
+    };
+
+    const executeNextSubscribeStrategy = (subLastEventId?: string) => {
+      logger.verbose(
+        `ResumingSubscription: trying to re-establish the subscription`,
+      );
+      if (subLastEventId) {
+        logger.verbose(`ResumingSubscription: lastEventId: ${subLastEventId}`);
+        headers['Last-Event-Id'] = subLastEventId;
+      }
+
+      this.underlyingSubscription = nextSubscribeStrategy(
+        {
+          onEnd: endError => {
+            onTransition(
+              new EndedSubscriptionState(logger, listeners, endError),
+            );
+          },
+          onError: subError => {
+            executeSubscriptionOnce(subError, lastEventId);
+          },
+          onEvent: event => {
+            lastEventId = event.eventId;
+            listeners.onEvent(event);
+          },
+          onOpen: openHeaders => {
+            onTransition(
+              new OpenSubscriptionState(
+                logger,
+                openHeaders,
+                listeners,
+                this.underlyingSubscription,
+                onTransition,
+              ),
+            );
+          },
+          onRetrying: listeners.onRetrying,
+        },
+        headers,
+      );
+    };
+    executeSubscriptionOnce(error, lastEventId);
+  }
+
+  unsubscribe() {
+    this.onTransition(new EndingSubscriptionState(this.logger));
+    global.clearTimeout(this.timeout);
+    this.underlyingSubscription.unsubscribe();
+  }
+}
+
+class EndingSubscriptionState implements SubscriptionState {
+  constructor(private logger: Logger, error?: any) {
+    logger.verbose(
+      `ResumingSubscription: transitioning to EndingSubscriptionState`,
+    );
+  }
+  unsubscribe() {
+    throw new Error('Subscription is already ending');
+  }
+}
+
+class EndedSubscriptionState implements SubscriptionState {
+  constructor(
+    private logger: Logger,
+    private listeners: SubscribeStrategyListeners,
+    error?: any,
+  ) {
+    logger.verbose(
+      `ResumingSubscription: transitioning to EndedSubscriptionState`,
+    );
+    listeners.onEnd(error);
+  }
+  unsubscribe() {
+    throw new Error('Subscription has already ended');
+  }
+}
+
+class FailedSubscriptionState implements SubscriptionState {
+  constructor(
+    private logger: Logger,
+    private listeners: SubscribeStrategyListeners,
+    error?: any,
+  ) {
+    logger.verbose(
+      `ResumingSubscription: transitioning to FailedSubscriptionState`,
+      error,
+    );
+    listeners.onError(error);
+  }
+  unsubscribe() {
+    throw new Error('Subscription has already ended');
+  }
+}

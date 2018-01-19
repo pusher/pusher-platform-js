@@ -98,11 +98,11 @@ export class RetryResolution {
   }
 
   attemptRetry(error: any): RetryStrategyResult {
-    this.logger.verbose(`${this.constructor.name}:  Error received`, error);
+    this.logger.verbose(`${this.constructor.name}: Error received`, error);
 
     if (this.currentRetryCount >= this.limit && this.limit >= 0) {
       this.logger.verbose(
-        `${this.constructor.name}:  Retry count is over the maximum limit: ${
+        `${this.constructor.name}: Retry count is over the maximum limit: ${
           this.limit
         }`,
       );
@@ -113,7 +113,7 @@ export class RetryResolution {
       this.logger.verbose(
         `${
           this.constructor.name
-        }:  Retry-After header is present, retrying in ${
+        }: Retry-After header is present, retrying in ${
           error.headers['Retry-After']
         }`,
       );

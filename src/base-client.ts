@@ -95,10 +95,10 @@ export class BaseClient {
         onEnd: subscribeStrategyListeners.onEnd,
         onError: subscribeStrategyListeners.onError,
         onEvent: subscribeStrategyListeners.onEvent,
-        onOpen: headers => {
+        onOpen: subHeaders => {
           if (!opened) {
             opened = true;
-            subscribeStrategyListeners.onOpen(headers);
+            subscribeStrategyListeners.onOpen(subHeaders);
           }
           completeListeners.onSubscribe();
         },
@@ -136,10 +136,10 @@ export class BaseClient {
         onEnd: subscribeStrategyListeners.onEnd,
         onError: subscribeStrategyListeners.onError,
         onEvent: subscribeStrategyListeners.onEvent,
-        onOpen: headers => {
+        onOpen: subHeaders => {
           if (!opened) {
             opened = true;
-            subscribeStrategyListeners.onOpen(headers);
+            subscribeStrategyListeners.onOpen(subHeaders);
           }
           completeListeners.onSubscribe();
         },
