@@ -30,13 +30,14 @@ export let createRetryingStrategy: (
     retryOptions,
   );
   const retryResolution = new RetryResolution(enrichedRetryOptions, logger);
-  return (listeners, headers) => new RetryingSubscription(
-    logger,
-    headers,
-    listeners,
-    nextSubscribeStrategy,
-    retryResolution,
-  );
+  return (listeners, headers) =>
+    new RetryingSubscription(
+      logger,
+      headers,
+      listeners,
+      nextSubscribeStrategy,
+      retryResolution,
+    );
 };
 
 class RetryingSubscription implements Subscription {

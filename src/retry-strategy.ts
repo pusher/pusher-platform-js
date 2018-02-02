@@ -111,9 +111,7 @@ export class RetryResolution {
 
     if (error instanceof ErrorResponse && error.headers['Retry-After']) {
       this.logger.verbose(
-        `${
-          this.constructor.name
-        }: Retry-After header is present, retrying in ${
+        `${this.constructor.name}: Retry-After header is present, retrying in ${
           error.headers['Retry-After']
         }`,
       );

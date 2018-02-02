@@ -35,13 +35,14 @@ export let createResumingStrategy: (
   const retryResolution = new RetryResolution(completeRetryOptions, logger);
 
   // All the magic in the world.
-  return (listeners, headers) => new ResumingSubscription(
-    logger,
-    headers,
-    nextSubscribeStrategy,
-    listeners,
-    retryResolution,
-  );
+  return (listeners, headers) =>
+    new ResumingSubscription(
+      logger,
+      headers,
+      nextSubscribeStrategy,
+      listeners,
+      retryResolution,
+    );
 };
 
 class ResumingSubscription implements Subscription {
@@ -135,6 +136,7 @@ class OpeningSubscriptionState implements SubscriptionState {
       headers,
     );
   }
+
   unsubscribe() {
     this.onTransition(new EndingSubscriptionState(this.logger));
     this.underlyingSubscription.unsubscribe();
