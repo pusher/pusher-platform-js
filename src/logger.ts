@@ -7,11 +7,11 @@ export enum LogLevel {
 }
 
 export interface Logger {
-  verbose(message: string, error?: any): void;
-  debug(message: string, error?: any): void;
-  info(message: string, error?: any): void;
-  warn(message: string, error?: any): void;
-  error(message: string, error?: any): void;
+  verbose(...items: any[]): void;
+  debug(...items: any[]): void;
+  info(...items: any[]): void;
+  warn(...items: any[]): void;
+  error(...items: any[]): void;
 }
 
 /**
@@ -104,10 +104,10 @@ export class ConsoleLogger implements Logger {
 
 export class EmptyLogger implements Logger {
   /* tslint:disable:no-empty */
-  verbose(message: string, error?: any) {}
-  debug(message: string, error?: any) {}
-  info(message: string, error?: any) {}
-  warn(message: string, error?: any) {}
-  error(message: string, error?: any) {}
+  verbose(...items: any[]) {}
+  debug(...items: any[]) {}
+  info(...items: any[]) {}
+  warn(...items: any[]) {}
+  error(...items: any[]) {}
   /* tslint:enable:no-empty */
 }

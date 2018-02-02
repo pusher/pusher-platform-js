@@ -105,9 +105,7 @@ class ActiveState implements TokenProvidingSubscriptionState {
     private headers: ElementsHeaders,
     private nextSubscribeStrategy: SubscribeStrategy,
   ) {
-    logger.verbose(
-      `TokenProvidingSubscription: transitioning to TokenProvidingState`,
-    );
+    logger.verbose('TokenProvidingSubscription: transitioning to ActiveState');
   }
 
   subscribe(token: string, listeners: SubscribeStrategyListeners): void {
@@ -115,7 +113,7 @@ class ActiveState implements TokenProvidingSubscriptionState {
     this.underlyingSubscription = this.nextSubscribeStrategy(
       {
         onEnd: error => {
-          this.logger.verbose(`TokenProvidingSubscription: subscription ended`);
+          this.logger.verbose('TokenProvidingSubscription: subscription ended');
           listeners.onEnd(error);
         },
         onError: error => {
@@ -152,7 +150,7 @@ class ActiveState implements TokenProvidingSubscriptionState {
 class InactiveState implements TokenProvidingSubscriptionState {
   constructor(private logger: Logger) {
     logger.verbose(
-      `TokenProvidingSubscription: transitioning to OpenTokenProvidingSubscriptionState`,
+      'TokenProvidingSubscription: transitioning to InactiveState',
     );
   }
 
