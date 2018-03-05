@@ -2,6 +2,16 @@
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
+## Unreleased
+
+### Changes
+
+- `RequestOptions` and `RawRequestOptions` no longer have `logger` as an optional property
+
+### Fixes
+
+- Rejected promises arising from failed network requests now propogate as you'd expect
+
 ## [v0.14.0] 2017-12-07
 
 ### Changes
