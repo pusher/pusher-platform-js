@@ -50,20 +50,12 @@ export class BaseClient {
               ['Authorization']: `Bearer ${token}`,
             };
           }
-          return executeNetworkRequest(
-            () => this.httpTransport.request(options),
-            options,
-          );
+          return options;
         })
-        .catch(error => {
-          this.logger.error(error);
-        });
+        .then(optionsWithToken => this.makeRequest(optionsWithToken));
     }
 
-    return executeNetworkRequest(
-      () => this.httpTransport.request(options),
-      options,
-    );
+    return this.makeRequest(options);
   }
 
   subscribeResuming(
@@ -147,5 +139,15 @@ export class BaseClient {
       },
       headers,
     );
+  }
+
+  private makeRequest(options: RequestOptions): Promise<any> {
+    return executeNetworkRequest(
+      () => this.httpTransport.request(options),
+      options,
+    ).catch(error => {
+      this.logger.error(error);
+      throw error;
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Logger } from './logger';
+import { ConsoleLogger, Logger } from './logger';
 import { ElementsHeaders, ErrorResponse, NetworkError } from './network';
 import { TokenProvider } from './token-provider';
 
@@ -7,7 +7,6 @@ export interface BasicRequestOptions {
   path: string;
   jwt?: string;
   headers?: ElementsHeaders;
-  logger?: Logger;
   tokenProvider?: TokenProvider;
 }
 
@@ -26,7 +25,6 @@ export interface RawRequestOptions {
   url: string;
   headers?: ElementsHeaders;
   body?: any;
-  logger?: Logger;
 }
 
 // TODO: Could we make this generic and remove the `any`s?
