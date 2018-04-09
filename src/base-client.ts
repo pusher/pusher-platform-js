@@ -21,6 +21,8 @@ export interface BaseClientOptions {
   host: string;
   encrypted?: boolean;
   logger?: Logger;
+  sdkProduct?: string;
+  sdkVersion?: string;
 }
 
 export class BaseClient {
@@ -29,12 +31,20 @@ export class BaseClient {
   private logger: Logger;
   private websocketTransport: WebSocketTransport;
   private httpTransport: HttpTransport;
+  private sdkProduct: string;
+  private sdkVersion: string;
+  private sdkPlatform: string;
 
   constructor(private options: BaseClientOptions) {
     this.host = options.host.replace(/(\/)+$/, '');
     this.logger = options.logger || new ConsoleLogger();
     this.websocketTransport = new WebSocketTransport(this.host);
     this.httpTransport = new HttpTransport(this.host, options.encrypted);
+    this.sdkProduct = options.sdkProduct || 'unknown';
+    this.sdkVersion = options.sdkVersion || 'unknown';
+    this.sdkPlatform = navigator
+      ? navigator.product === 'ReactNative' ? 'react-native' : 'web'
+      : 'node';
   }
 
   request(options: RequestOptions, tokenParams?: any): Promise<any> {
@@ -96,7 +106,10 @@ export class BaseClient {
         },
         onRetrying: subscribeStrategyListeners.onRetrying,
       },
-      headers,
+      {
+        ...headers,
+        ...this.infoHeaders(),
+      },
     );
   }
 
@@ -137,13 +150,32 @@ export class BaseClient {
         },
         onRetrying: subscribeStrategyListeners.onRetrying,
       },
-      headers,
+      {
+        ...headers,
+        ...this.infoHeaders(),
+      },
     );
+  }
+
+  private infoHeaders(): { [key: string]: string } {
+    return {
+      'X-SDK-Language': 'javascript',
+      'X-SDK-Platform': this.sdkPlatform,
+      'X-SDK-Product': this.sdkProduct,
+      'X-SDK-Version': this.sdkVersion,
+    };
   }
 
   private makeRequest(options: RequestOptions): Promise<any> {
     return executeNetworkRequest(
-      () => this.httpTransport.request(options),
+      () =>
+        this.httpTransport.request({
+          ...options,
+          headers: {
+            ...options.headers,
+            ...this.infoHeaders(),
+          },
+        }),
       options,
     ).catch(error => {
       this.logger.error(error);
