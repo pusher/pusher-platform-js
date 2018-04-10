@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## Unreleased
 
+## [v0.15.1] 2018-04-10
+
+### Additions
+
+- `BaseClient` takes `sdkProduct` and `sdkVersion` options. Sends them as headers with every request (along with language and platform).
 
 ## [v0.15.0] 2018-03-07
 
