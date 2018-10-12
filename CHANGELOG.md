@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## Unreleased
 
+## [v0.15.2] 2018-10-12
+
+### Changes
+
+- Don't close websocket connection if received pong ID doesn't match last send ping ID
+
 ## [v0.15.1] 2018-04-10
 
 ### Additions

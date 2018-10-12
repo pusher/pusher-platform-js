@@ -282,7 +282,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID?: number,
   ) {
     if (subID === undefined) {
-      global.console.logger.debug(
+      global.console.log(
         `Subscription to path ${path} has an undefined ID`,
       );
       return;
@@ -513,8 +513,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [receviedPongID] = message;
 
     if (this.lastSentPingID !== receviedPongID) {
-      // Close with protocol error status code
-      this.close(new NetworkError(`Didn't received pong with proper ID`));
+      global.console.warn(`Received pong with ID ${receviedPongID} but lastSentPingID was ${this.lastSentPingID}`)
     }
 
     global.clearTimeout(this.pongTimeout);
