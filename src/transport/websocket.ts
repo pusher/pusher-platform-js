@@ -167,8 +167,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private connect() {
-    this.close();
-
     this.forcedClose = false;
     this.closedError = null;
 
@@ -257,6 +255,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return;
     }
 
+    const onClose = this.socket.onclose.bind(this);
+
+    delete this.socket.onclose;
+    delete this.socket.onerror;
+    delete this.socket.onmessage;
+    delete this.socket.onopen;
+
     this.forcedClose = true;
     this.closedError = error;
     this.socket.close();
@@ -265,14 +270,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
     global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
     this.lastSentPingID = null;
+
+    onClose();
   }
 
   private tryReconnectIfNeeded() {
-    if (this.socket.readyState !== WSReadyState.Closed) {
-      return;
+    if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
+      this.connect();
     }
-
-    this.connect();
   }
 
   private subscribePending(
