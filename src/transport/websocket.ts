@@ -255,6 +255,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return;
     }
 
+    // In Chrome there is a substantial delay between calling close on a broken
+    // websocket and the onclose method firing. When we're force closing the
+    // connection we can expedite the reconnect process by manually calling
+    // onclose. We then need to delete the socket's handlers so that we don't
+    // get extra calls from the dying socket.
     const onClose = this.socket.onclose.bind(this);
 
     delete this.socket.onclose;
@@ -275,6 +280,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private tryReconnectIfNeeded() {
+    // If we've force closed, the socket might not actually be in the Closed
+    // state yet but we should create a new one anyway.
     if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
       this.connect();
     }
