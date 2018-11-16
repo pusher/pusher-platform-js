@@ -3,7 +3,7 @@
   "description": "Pusher Platform client library for browsers and react native",
   "main": "dist/web/pusher-platform.js",
   "types": "dist/web/declarations/index.d.ts",
-  "version": "0.15.3",
+  "version": "0.15.4",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/pusher-platform-js",
@@ -16,7 +16,8 @@
   },
   "scripts": {
     "build": "yarn build:all",
-    "build:all": "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
+    "build:all":
+      "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
     "build:web": "webpack --config=webpack/config.web.js",
     "build:react-native": "webpack --config=webpack/config.react-native.js",
     "build:worker": "webpack --config=webpack/config.worker.js",
