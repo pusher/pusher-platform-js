@@ -167,8 +167,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private connect() {
-    this.close();
-
     this.forcedClose = false;
     this.closedError = null;
 
@@ -257,6 +255,18 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return;
     }
 
+    // In Chrome there is a substantial delay between calling close on a broken
+    // websocket and the onclose method firing. When we're force closing the
+    // connection we can expedite the reconnect process by manually calling
+    // onclose. We then need to delete the socket's handlers so that we don't
+    // get extra calls from the dying socket.
+    const onClose = this.socket.onclose.bind(this);
+
+    delete this.socket.onclose;
+    delete this.socket.onerror;
+    delete this.socket.onmessage;
+    delete this.socket.onopen;
+
     this.forcedClose = true;
     this.closedError = error;
     this.socket.close();
@@ -265,14 +275,16 @@ export default class WebSocketTransport implements SubscriptionTransport {
     global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
     this.lastSentPingID = null;
+
+    onClose();
   }
 
   private tryReconnectIfNeeded() {
-    if (this.socket.readyState !== WSReadyState.Closed) {
-      return;
+    // If we've force closed, the socket might not actually be in the Closed
+    // state yet but we should create a new one anyway.
+    if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
+      this.connect();
     }
-
-    this.connect();
   }
 
   private subscribePending(
