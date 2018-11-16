@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## Unreleased
 
+## [v0.15.3] 2018-11-16
+
+- Work around Chrome taking 60 seconds to close a broken websocket by disposing of
+  the registered callbacks and proceeding immediately with a new one
+
 ## [v0.15.2] 2018-10-12
 
 ### Changes
