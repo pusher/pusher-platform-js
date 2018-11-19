@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## Unreleased
 
+## [v0.15.5] 2018-11-19
+
+- Adopt package in to the pusher org as `@pusher/platform`
+
 ## [v0.15.3] 2018-11-16
 
 - Work around Chrome taking 60 seconds to close a broken websocket by disposing of
@@ -97,7 +101,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 - `request` no longer takes `tokenProvider` as a second parameter, it is now a part of the `options` parameter, of type `RequestOptions`
 - `TokenProvider`'s `fetchToken` now returns a normal a Promise instead of a PCancelable
 - `request` in `Instance` and `BaseClient` now return a normal `Promise` instead of a `PCancelable`
-- React Native support (use `pusher-platform/react-native`)
+- React Native support (use `@pusher/platform/react-native`)
 - Code formatted using prettier
 - Code linted using tslint
 - strict mode enabled in `tsconfig.json`

@@ -1,9 +1,9 @@
 {
-  "name": "pusher-platform",
+  "name": "@pusher/platform",
   "description": "Pusher Platform client library for browsers and react native",
   "main": "dist/web/pusher-platform.js",
   "types": "dist/web/declarations/index.d.ts",
-  "version": "0.15.4",
+  "version": "0.15.5",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/pusher-platform-js",
