@@ -1,7 +1,9 @@
+import { Logger } from '../logger';
 import {
   ElementsHeaders,
   ErrorResponse,
   NetworkError,
+  ProtocolError,
   responseToHeadersObject,
 } from '../network';
 import {
@@ -43,7 +45,6 @@ type WsSubscriptionsType = {
 
 class WsSubscriptions {
   private subscriptions: WsSubscriptionsType;
-  private pendingSubscriptions: WsSubscriptionsType;
 
   constructor() {
     this.subscriptions = {};
@@ -120,10 +121,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private pingInterval: any;
   private pongTimeout: any;
   private lastSentPingID: number | null;
+  private logger: Logger;
 
-  constructor(host: string) {
+  constructor(host: string, logger: Logger) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
     this.lastSubscriptionID = 0;
+    this.logger = logger;
     this.subscriptions = new WsSubscriptions();
     this.pendingSubscriptions = new WsSubscriptions();
 
@@ -207,7 +210,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
           }
 
           this.close(
-            new NetworkError(`Pong response wasn't received until timeout.`),
+            new NetworkError(`Pong response wasn't received within timeout`),
           );
         }, pingTimeoutMs);
       }, pingIntervalMs);
@@ -215,38 +218,24 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.socket.onmessage = (event: any) => this.receiveMessage(event);
     this.socket.onerror = (event: any) => {
-      this.close(new NetworkError('Connection was lost.'));
+      this.logger.verbose('WebSocket encountered an error event', event);
     };
     this.socket.onclose = (event: any) => {
-      if (!this.forcedClose) {
-        this.tryReconnectIfNeeded();
-        return;
-      }
+      this.logger.verbose('WebSocket encountered a close event', event);
 
-      const callback = this.closedError
-        ? (subscription: SubscriptionData) => {
-            if (subscription.listeners.onError) {
-              subscription.listeners.onError(this.closedError);
-            }
-          }
-        : (subscription: SubscriptionData) => {
-            if (subscription.listeners.onEnd) {
-              subscription.listeners.onEnd(null);
-            }
-          };
+      const allSubscriptions = this.subscriptions
+        .getAllAsArray()
+        .concat(this.pendingSubscriptions.getAllAsArray());
 
-      const allSubscriptions =
-        this.pendingSubscriptions.isEmpty() === false
-          ? this.pendingSubscriptions
-          : this.subscriptions;
+      allSubscriptions.forEach(sub => {
+        if (sub.listeners.onError) {
+          sub.listeners.onError(this.closedError);
+        }
+      });
+      this.subscriptions.removeAll();
+      this.pendingSubscriptions.removeAll();
 
-      allSubscriptions.getAllAsArray().forEach(callback);
-
-      allSubscriptions.removeAll();
-
-      if (this.closedError) {
-        this.tryReconnectIfNeeded();
-      }
+      this.tryReconnectIfNeeded();
     };
   }
 
@@ -259,13 +248,21 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // websocket and the onclose method firing. When we're force closing the
     // connection we can expedite the reconnect process by manually calling
     // onclose. We then need to delete the socket's handlers so that we don't
-    // get extra calls from the dying socket.
+    // get extra calls from the dying socket. Calling bind here means we get
+    // a copy of the onclose callback, rather than a reference to it.
     const onClose = this.socket.onclose.bind(this);
 
-    delete this.socket.onclose;
-    delete this.socket.onerror;
-    delete this.socket.onmessage;
-    delete this.socket.onopen;
+    // Set all callbacks to be noops because we don't care about them anymore.
+    // We need to set the callbacks to new values because just calling delete
+    // doesn't seem to actually remove the property on the socket, and so
+    // the onclose callback would end up being called twice, leading to sad
+    // times.
+    /* tslint:disable:no-empty */
+    this.socket.onclose = () => {};
+    this.socket.onerror = () => {};
+    this.socket.onmessage = () => {};
+    this.socket.onopen = () => {};
+    /* tslint:enable:no-empty */
 
     this.forcedClose = true;
     this.closedError = error;
@@ -273,7 +270,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     global.clearTimeout(this.pingInterval);
     global.clearTimeout(this.pongTimeout);
-    delete this.pongTimeout;
+    this.pongTimeout = null;
+    this.pingInterval = null;
     this.lastSentPingID = null;
 
     onClose();
@@ -294,7 +292,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID?: number,
   ) {
     if (subID === undefined) {
-      global.console.log(`Subscription to path ${path} has an undefined ID`);
+      this.logger.debug(`Subscription to path ${path} has an undefined ID`);
       return;
     }
 
@@ -317,9 +315,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private sendMessage(message: Message) {
     if (this.socket.readyState !== WSReadyState.Open) {
-      return global.console.warn(
-        `Can't send in "${WSReadyState[this.socket.readyState]}" state`,
+      this.logger.warn(
+        `Can't send on socket in "${
+          WSReadyState[this.socket.readyState]
+        }" state`,
       );
+      return;
     }
 
     this.socket.send(JSON.stringify(message));
@@ -338,7 +339,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
       message = JSON.parse(event.data);
     } catch (err) {
       this.close(
-        new Error(`Message is not valid JSON format. Getting ${event.data}`),
+        new ProtocolError(
+          `Message is not valid JSON format. Getting ${event.data}`,
+        ),
       );
       return;
     }
@@ -347,7 +350,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // Close connection if not valid.
     const nonValidMessageError = this.validateMessage(message);
     if (nonValidMessageError) {
-      this.close(new Error(nonValidMessageError.message));
+      this.close(nonValidMessageError);
       return;
     }
 
@@ -371,9 +374,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     if (!subscription) {
       this.close(
-        new Error(
-          `Received message for non existing subscription id: "${subID}"`,
-        ),
+        new Error(`Received message for unknown subscription ID: ${subID}`),
       );
       return;
     }
@@ -392,7 +393,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onEOSMessage(message, subID, listeners);
         break;
       default:
-        this.close(new Error('Received non existing type of message.'));
+        this.close(new ProtocolError('Received unknown type of message.'));
     }
   }
 
@@ -401,9 +402,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
    * @param message The message to check.
    * @returns null or error if the message is wrong.
    */
-  private validateMessage(message: Message): Error | null {
+  private validateMessage(message: Message): ProtocolError | null {
     if (!Array.isArray(message)) {
-      return new Error(
+      return new ProtocolError(
         `Message is expected to be an array. Getting: ${JSON.stringify(
           message,
         )}`,
@@ -411,7 +412,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     if (message.length < 1) {
-      return new Error(`Message is empty array: ${JSON.stringify(message)}`);
+      return new ProtocolError(
+        `Message is empty array: ${JSON.stringify(message)}`,
+      );
     }
 
     return null;
@@ -430,24 +433,41 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private onEventMessage(
     eventMessage: Message,
     subscriptionListeners: SubscriptionListeners,
-  ): Error | void {
+  ) {
     if (eventMessage.length !== 3) {
-      return new Error(
-        'Event message has ' + eventMessage.length + ' elements (expected 4)',
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            'Event message has ' +
+              eventMessage.length +
+              ' elements (expected 4)',
+          ),
+        );
+      }
+      return;
     }
 
     const [eventId, headers, body] = eventMessage;
     if (typeof eventId !== 'string') {
-      return new Error(
-        `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
+          ),
+        );
+      }
+      return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return new Error(
-        `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
+          ),
+        );
+      }
+      return;
     }
 
     if (subscriptionListeners.onEvent) {
@@ -459,13 +479,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
     eosMessage: Message,
     subID: number,
     subscriptionListeners: SubscriptionListeners,
-  ): void {
+  ) {
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
       if (subscriptionListeners.onError) {
         subscriptionListeners.onError(
-          new Error(
+          new ProtocolError(
             `EOS message has ${eosMessage.length} elements (expected 4)`,
           ),
         );
@@ -476,14 +496,18 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [statusCode, headers, body] = eosMessage;
     if (typeof statusCode !== 'number') {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+        subscriptionListeners.onError(
+          new ProtocolError('Invalid EOS Status Code'),
+        );
       }
       return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+        subscriptionListeners.onError(
+          new ProtocolError('Invalid EOS ElementsHeaders'),
+        );
       }
       return;
     }
@@ -507,13 +531,15 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private onCloseMessage(closeMessage: Message) {
     const [statusCode, headers, body] = closeMessage;
     if (typeof statusCode !== 'number') {
-      return this.close(new Error('Close message: Invalid EOS Status Code'));
+      this.close(new ProtocolError('Close message: Invalid EOS Status Code'));
+      return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return this.close(
-        new Error('Close message: Invalid EOS ElementsHeaders'),
+      this.close(
+        new ProtocolError('Close message: Invalid EOS ElementsHeaders'),
       );
+      return;
     }
 
     const errorInfo = {
@@ -528,10 +554,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [receviedPongID] = message;
 
     if (this.lastSentPingID !== receviedPongID) {
-      global.console.warn(
-        `Received pong with ID ${receviedPongID} but lastSentPingID was ${
-          this.lastSentPingID
-        }`,
+      this.close(
+        new ProtocolError(
+          `Received pong with ID ${receviedPongID} but last sent ping ID was ${
+            this.lastSentPingID
+          }`,
+        ),
       );
     }
 
