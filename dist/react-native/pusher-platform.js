@@ -1578,7 +1578,8 @@ var WebSocketTransport = (function () {
                     }
                 };
             global.console.log("Pending subscriptions empty?: " + _this.pendingSubscriptions.isEmpty());
-            global.console.log("this.subscriptions list: " + _this.subscriptions);
+            global.console.log("this.subscriptions list:");
+            global.console.log(_this.subscriptions);
             var allSubscriptions = _this.pendingSubscriptions.isEmpty() === false
                 ? _this.pendingSubscriptions
                 : _this.subscriptions;

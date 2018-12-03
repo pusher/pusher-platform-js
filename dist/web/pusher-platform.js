@@ -1555,7 +1555,8 @@ var WebSocketTransport = (function () {
                     }
                 };
             window.console.log("Pending subscriptions empty?: " + _this.pendingSubscriptions.isEmpty());
-            window.console.log("this.subscriptions list: " + _this.subscriptions);
+            window.console.log("this.subscriptions list:");
+            window.console.log(_this.subscriptions);
             var allSubscriptions = _this.pendingSubscriptions.isEmpty() === false
                 ? _this.pendingSubscriptions
                 : _this.subscriptions;

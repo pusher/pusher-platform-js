@@ -238,7 +238,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
           };
 
       global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
-      global.console.log(`this.subscriptions list: ${this.subscriptions}`);
+      global.console.log(`this.subscriptions list:`);
+      global.console.log(this.subscriptions);
 
       const allSubscriptions =
         this.pendingSubscriptions.isEmpty() === false
