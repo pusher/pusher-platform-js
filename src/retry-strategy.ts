@@ -1,5 +1,9 @@
 import { Logger } from './logger';
-import { ErrorResponse, NetworkError } from './network';
+import {
+  ErrorResponse,
+  NetworkError,
+  ProtocolError,
+} from './network';
 
 export interface RetryStrategyOptions {
   increaseTimeout?: (currentTimeout: number) => number;
@@ -109,6 +113,10 @@ export class RetryResolution {
       return new DoNotRetry(error);
     }
 
+    if (error == null) {
+      return new Retry(this.calulateMillisToRetry());
+    }
+
     if (error instanceof ErrorResponse && error.headers['Retry-After']) {
       this.logger.verbose(
         `${this.constructor.name}: Retry-After header is present, retrying in ${
@@ -118,43 +126,45 @@ export class RetryResolution {
       return new Retry(parseInt(error.headers['Retry-After'], 10) * 1000);
     }
 
-    if (
-      error instanceof NetworkError ||
-      (error instanceof ErrorResponse &&
-        requestMethodIsSafe(error.headers['Request-Method'])) ||
-      this.retryUnsafeRequests
-    ) {
-      return this.shouldSafeRetry(error);
-    }
-    if (error instanceof NetworkError) {
-      return this.shouldSafeRetry(error);
+    if (this.retryUnsafeRequests) {
+      return new Retry(this.calulateMillisToRetry());
     }
 
-    this.logger.verbose(
-      `${this.constructor.name}: Error is not retryable`,
-      error,
-    );
-    return new DoNotRetry(error);
-  }
+    switch (error.constructor) {
+    case ErrorResponse:
+      const { statusCode, headers } = error;
+      const requestMethod = headers['Request-Method'];
 
-  private shouldSafeRetry(error: any) {
-    if (error instanceof NetworkError) {
+      if ((statusCode >= 500 && statusCode < 600) && requestMethodIsSafe(requestMethod)) {
+        this.logger.verbose(`${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will retry`);
+        return new Retry(this.calulateMillisToRetry());
+      } else {
+        this.logger.verbose(
+          `${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will not retry`,
+          error,
+        );
+        return new DoNotRetry(error as any);
+      }
+    case NetworkError:
       this.logger.verbose(
-        `${this.constructor.name}: It's a Network Error, will retry`,
+        `${this.constructor.name}: Encountered a network error, will retry`,
         error,
       );
       return new Retry(this.calulateMillisToRetry());
-    } else if (error instanceof ErrorResponse) {
-      if (error.statusCode >= 500 && error.statusCode < 600) {
-        this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
-        return new Retry(this.calulateMillisToRetry());
-      }
+    case ProtocolError:
+      this.logger.verbose(
+        `${this.constructor.name}: Encountered a protocol error, will retry`,
+        error,
+      );
+      return new Retry(this.calulateMillisToRetry());
+    default:
+      this.logger.verbose(
+        `${this.constructor.name}: Encountered an error, will retry`,
+        error,
+      );
+
+      return new Retry(this.calulateMillisToRetry());
     }
-    this.logger.verbose(
-      `${this.constructor.name}: Error is not retryable`,
-      error,
-    );
-    return new DoNotRetry(error);
   }
 
   private calulateMillisToRetry(): number {

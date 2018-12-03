@@ -37,8 +37,12 @@ export class BaseClient {
 
   constructor(private options: BaseClientOptions) {
     this.host = options.host.replace(/(\/)+$/, '');
-    this.logger = options.logger || new ConsoleLogger();
-    this.websocketTransport = new WebSocketTransport(this.host);
+    const logger = options.logger || new ConsoleLogger();
+    this.logger = logger;
+    this.websocketTransport = new WebSocketTransport(
+      this.host,
+      logger,
+    );
     this.httpTransport = new HttpTransport(this.host, options.encrypted);
     this.sdkProduct = options.sdkProduct || 'unknown';
     this.sdkVersion = options.sdkVersion || 'unknown';
