@@ -142,11 +142,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     // Add subscription to pending if socket is not open
     if (this.socket.readyState !== WSReadyState.Open) {
+      global.console.log(`Adding PENDING subscription ${subID} for path: ${path}`);
       this.pendingSubscriptions.add(subID, path, listeners, headers);
       return new WsSubscription(this, subID);
     }
 
     // Add or select subscription
+    global.console.log(`Adding subscription ${subID} for path: ${path}`);
     this.subscriptions.add(subID, path, listeners, headers);
 
     this.sendMessage(
@@ -235,6 +237,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
             }
           };
 
+      global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
+      global.console.log(`this.subscriptions list: ${this.subscriptions}`);
+
       const allSubscriptions =
         this.pendingSubscriptions.isEmpty() === false
           ? this.pendingSubscriptions
@@ -254,6 +259,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     if (!(this.socket instanceof global.WebSocket)) {
       return;
     }
+
+    global.console.log(`Doing a forced close`);
 
     // In Chrome there is a substantial delay between calling close on a broken
     // websocket and the onclose method firing. When we're force closing the
@@ -283,6 +290,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // If we've force closed, the socket might not actually be in the Closed
     // state yet but we should create a new one anyway.
     if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
+      global.console.log(`About to try to (re)connect`);
       this.connect();
     }
   }
@@ -460,6 +468,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID: number,
     subscriptionListeners: SubscriptionListeners,
   ): void {
+    global.console.log(`Received EOS message for sub ${subID}`);
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
@@ -535,6 +544,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
       );
     }
 
+    global.console.log(`Received pong ID ${receviedPongID}`);
+
     global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
     this.lastSentPingID = null;
@@ -542,6 +553,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private onPingMessage(message: Message) {
     const [receviedPingID] = message;
+
+    global.console.log(`Received ping ID ${receviedPingID}`);
 
     this.sendMessage(this.getMessage(PongMessageType, receviedPingID));
   }
