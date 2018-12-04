@@ -88,9 +88,6 @@ export class ConsoleLogger implements Logger {
     loggerSignature: string,
   ): void {
     if (item !== undefined && item.info && item.info.error_uri) {
-      global.console.log("In the if of errorAwareLog");
-      global.console.log(item !== undefined);
-      global.console.log(item);
       const errorDesc = item.info.error_description;
       const errorIntro = errorDesc ? errorDesc : 'An error has occurred';
       logFunction(
@@ -100,7 +97,6 @@ export class ConsoleLogger implements Logger {
         item,
       );
     } else {
-      global.console.log("In the else of errorAwareLog");
       logFunction(`${loggerSignature}: `, item);
     }
   }

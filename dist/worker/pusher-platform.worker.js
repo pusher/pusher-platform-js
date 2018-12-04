@@ -210,15 +210,11 @@ var ConsoleLogger = (function () {
     };
     ConsoleLogger.prototype.errorAwareLog = function (logFunction, item, loggerSignature) {
         if (item !== undefined && item.info && item.info.error_uri) {
-            self.console.log("In the if of errorAwareLog");
-            self.console.log(item !== undefined);
-            self.console.log(item);
             var errorDesc = item.info.error_description;
             var errorIntro = errorDesc ? errorDesc : 'An error has occurred';
             logFunction(errorIntro + ". More information can be found at " + item.info.error_uri + ". Error object: ", item);
         }
         else {
-            self.console.log("In the else of errorAwareLog");
             logFunction(loggerSignature + ": ", item);
         }
     };
@@ -1477,6 +1473,7 @@ var WebSocketTransport = (function () {
         this.connect();
     }
     WebSocketTransport.prototype.subscribe = function (path, listeners, headers) {
+        self.console.log("At the top of subscribe");
         this.tryReconnectIfNeeded();
         var subID = this.lastSubscriptionID++;
         if (this.socket.readyState !== WSReadyState.Open) {
@@ -1499,11 +1496,15 @@ var WebSocketTransport = (function () {
     };
     WebSocketTransport.prototype.connect = function () {
         var _this = this;
+        self.console.log("At the top of connect");
         this.forcedClose = false;
         this.closedError = null;
         this.socket = new self.WebSocket(this.baseURL);
         this.socket.onopen = function (event) {
+            self.console.log("At the top of socket onopen");
             var allPendingSubscriptions = _this.pendingSubscriptions.getAllAsArray();
+            self.console.log("allPendingSubscriptions.length: " + allPendingSubscriptions.length);
+            self.console.log(allPendingSubscriptions);
             allPendingSubscriptions.forEach(function (subscription) {
                 var subID = subscription.subID, path = subscription.path, listeners = subscription.listeners, headers = subscription.headers;
                 _this.subscribePending(path, listeners, headers, subID);
@@ -1535,6 +1536,7 @@ var WebSocketTransport = (function () {
         };
         this.socket.onclose = function (event) {
             if (!_this.forcedClose) {
+                self.console.log("Not forced close in onclose so we will go to tryReconnectIfNeeded");
                 _this.tryReconnectIfNeeded();
                 return;
             }
@@ -1558,6 +1560,7 @@ var WebSocketTransport = (function () {
             allSubscriptions.getAllAsArray().forEach(callback);
             allSubscriptions.removeAll();
             if (_this.closedError) {
+                self.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
                 _this.tryReconnectIfNeeded();
             }
         };

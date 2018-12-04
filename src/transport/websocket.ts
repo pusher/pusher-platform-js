@@ -135,6 +135,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
   ): Subscription {
+    global.console.log("At the top of subscribe");
+
     // If connection was closed, try to reconnect
     this.tryReconnectIfNeeded();
 
@@ -169,13 +171,20 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private connect() {
+    global.console.log("At the top of connect");
+
     this.forcedClose = false;
     this.closedError = null;
 
     this.socket = new global.WebSocket(this.baseURL);
 
     this.socket.onopen = (event: any) => {
+      global.console.log("At the top of socket onopen");
+
       const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
+
+      global.console.log(`allPendingSubscriptions.length: ${allPendingSubscriptions.length}`);
+      global.console.log(allPendingSubscriptions);
 
       // Re-subscribe old subscriptions for new connection
       allPendingSubscriptions.forEach(subscription => {
@@ -221,6 +230,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     };
     this.socket.onclose = (event: any) => {
       if (!this.forcedClose) {
+        global.console.log("Not forced close in onclose so we will go to tryReconnectIfNeeded");
         this.tryReconnectIfNeeded();
         return;
       }
@@ -251,6 +261,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
       allSubscriptions.removeAll();
 
       if (this.closedError) {
+        global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
         this.tryReconnectIfNeeded();
       }
     };
