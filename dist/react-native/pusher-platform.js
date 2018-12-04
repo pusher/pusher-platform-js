@@ -237,11 +237,15 @@ var ConsoleLogger = (function () {
     };
     ConsoleLogger.prototype.errorAwareLog = function (logFunction, item, loggerSignature) {
         if (item !== undefined && item.info && item.info.error_uri) {
+            global.console.log("In the if of errorAwareLog");
+            global.console.log(item !== undefined);
+            global.console.log(item);
             var errorDesc = item.info.error_description;
             var errorIntro = errorDesc ? errorDesc : 'An error has occurred';
             logFunction(errorIntro + ". More information can be found at " + item.info.error_uri + ". Error object: ", item);
         }
         else {
+            global.console.log("In the else of errorAwareLog");
             logFunction(loggerSignature + ": ", item);
         }
     };

@@ -210,11 +210,15 @@ var ConsoleLogger = (function () {
     };
     ConsoleLogger.prototype.errorAwareLog = function (logFunction, item, loggerSignature) {
         if (item !== undefined && item.info && item.info.error_uri) {
+            self.console.log("In the if of errorAwareLog");
+            self.console.log(item !== undefined);
+            self.console.log(item);
             var errorDesc = item.info.error_description;
             var errorIntro = errorDesc ? errorDesc : 'An error has occurred';
             logFunction(errorIntro + ". More information can be found at " + item.info.error_uri + ". Error object: ", item);
         }
         else {
+            self.console.log("In the else of errorAwareLog");
             logFunction(loggerSignature + ": ", item);
         }
     };
