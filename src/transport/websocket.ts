@@ -226,6 +226,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.socket.onmessage = (event: any) => this.receiveMessage(event);
     this.socket.onerror = (event: any) => {
+      global.console.log("Received an error in onerror");
+      global.console.log(event);
       this.close(new NetworkError('Connection was lost.'));
     };
     this.socket.onclose = (event: any) => {
@@ -234,6 +236,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.tryReconnectIfNeeded();
         return;
       }
+
+      global.console.log(`Is there a closedError? ${this.closedError}`);
 
       const callback = this.closedError
         ? (subscription: SubscriptionData) => {

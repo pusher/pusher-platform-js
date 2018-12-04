@@ -1532,6 +1532,8 @@ var WebSocketTransport = (function () {
         };
         this.socket.onmessage = function (event) { return _this.receiveMessage(event); };
         this.socket.onerror = function (event) {
+            self.console.log("Received an error in onerror");
+            self.console.log(event);
             _this.close(new network_1.NetworkError('Connection was lost.'));
         };
         this.socket.onclose = function (event) {
@@ -1540,6 +1542,7 @@ var WebSocketTransport = (function () {
                 _this.tryReconnectIfNeeded();
                 return;
             }
+            self.console.log("Is there a closedError? " + _this.closedError);
             var callback = _this.closedError
                 ? function (subscription) {
                     if (subscription.listeners.onError) {
