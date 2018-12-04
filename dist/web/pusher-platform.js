@@ -1535,6 +1535,7 @@ var WebSocketTransport = (function () {
                         _this.pongTimeout = null;
                         return;
                     }
+                    window.console.log("Calling close because pong response timeout");
                     _this.close(new network_1.NetworkError("Pong response wasn't received until timeout."));
                 }, pingTimeoutMs);
             }, pingIntervalMs);
@@ -1589,6 +1590,7 @@ var WebSocketTransport = (function () {
         delete this.socket.onopen;
         this.forcedClose = true;
         this.closedError = error;
+        window.console.log("THIS.SOCKET.CLOSE ABOUT TO BE CALLED");
         this.socket.close();
         window.clearTimeout(this.pingInterval);
         window.clearTimeout(this.pongTimeout);
@@ -1629,11 +1631,13 @@ var WebSocketTransport = (function () {
             message = JSON.parse(event.data);
         }
         catch (err) {
+            window.console.log("Calling close because invalid JSON in message");
             this.close(new Error("Message is not valid JSON format. Getting " + event.data));
             return;
         }
         var nonValidMessageError = this.validateMessage(message);
         if (nonValidMessageError) {
+            window.console.log("Calling close because message is invalid");
             this.close(new Error(nonValidMessageError.message));
             return;
         }
@@ -1652,6 +1656,7 @@ var WebSocketTransport = (function () {
         var subID = message.shift();
         var subscription = this.subscription(subID);
         if (!subscription) {
+            window.console.log("Calling close because no subscription found for subID " + subID);
             this.close(new Error("Received message for non existing subscription id: \"" + subID + "\""));
             return;
         }
@@ -1667,6 +1672,7 @@ var WebSocketTransport = (function () {
                 this.onEOSMessage(message, subID, listeners);
                 break;
             default:
+                window.console.log("Calling close because of invalid message type");
                 this.close(new Error('Received non existing type of message.'));
         }
     };
@@ -1735,11 +1741,14 @@ var WebSocketTransport = (function () {
     WebSocketTransport.prototype.onCloseMessage = function (closeMessage) {
         var statusCode = closeMessage[0], headers = closeMessage[1], body = closeMessage[2];
         if (typeof statusCode !== 'number') {
+            window.console.log("Calling close because of invalid EOS Status Code");
             return this.close(new Error('Close message: Invalid EOS Status Code'));
         }
         if (typeof headers !== 'object' || Array.isArray(headers)) {
+            window.console.log("Calling close because of invalid EOS ElementsHeaders");
             return this.close(new Error('Close message: Invalid EOS ElementsHeaders'));
         }
+        window.console.log("Calling close because at end of onCloseMessage function");
         this.close();
     };
     WebSocketTransport.prototype.onPongMessage = function (message) {
