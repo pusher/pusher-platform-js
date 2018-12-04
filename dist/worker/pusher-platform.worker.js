@@ -1743,7 +1743,11 @@ var WebSocketTransport = (function () {
         self.console.log(closeMessage);
         self.console.log(body);
         self.console.log(typeof body);
-        this.close(body);
+        var errorInfo = {
+            error: body.error || 'network_error',
+            error_description: body.error_description || 'Network error'
+        };
+        this.close(new network_1.ErrorResponse(statusCode, headers, errorInfo));
     };
     WebSocketTransport.prototype.onPongMessage = function (message) {
         var receviedPongID = message[0];
