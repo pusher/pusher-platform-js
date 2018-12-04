@@ -1772,7 +1772,10 @@ var WebSocketTransport = (function () {
             return this.close(new Error('Close message: Invalid EOS ElementsHeaders'));
         }
         global.console.log("Calling close because at end of onCloseMessage function");
-        this.close();
+        global.console.log(closeMessage);
+        global.console.log(body);
+        global.console.log(typeof body);
+        this.close(body);
     };
     WebSocketTransport.prototype.onPongMessage = function (message) {
         var receviedPongID = message[0];
