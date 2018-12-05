@@ -548,14 +548,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
       );
     }
 
-    global.console.log(`Calling close because at end of onCloseMessage function`);
+    global.console.log(`NOT Calling close because at end of onCloseMessage function`);
 
     const errorInfo = {
       error: body.error || 'network_error',
       error_description: body.error_description || 'Network error',
     };
 
-    this.close(new ErrorResponse(statusCode, headers, errorInfo));
+    // this.close(new ErrorResponse(statusCode, headers, errorInfo));
   }
 
   private onPongMessage(message: Message) {
