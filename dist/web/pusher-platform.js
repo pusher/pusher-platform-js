@@ -1547,6 +1547,9 @@ var WebSocketTransport = (function () {
             _this.close(new network_1.NetworkError('Connection was lost.'));
         };
         this.socket.onclose = function (event) {
+            window.console.log("At the top of onclose, about to call trace");
+            window.console.trace();
+            window.console.log("Trace end");
             window.console.log("Is there a closedError?");
             window.console.log(_this.closedError);
             var callback = _this.closedError

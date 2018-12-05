@@ -232,6 +232,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
       this.close(new NetworkError('Connection was lost.'));
     };
     this.socket.onclose = (event: any) => {
+      global.console.log(`At the top of onclose, about to call trace`);
+      global.console.trace();
+      global.console.log(`Trace end`);
       global.console.log(`Is there a closedError?`);
       global.console.log(this.closedError);
 
