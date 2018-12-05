@@ -1397,6 +1397,14 @@ exports.default = HttpTransport;
 
 "use strict";
 
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 var SubscribeMessageType = 100;
@@ -1414,6 +1422,42 @@ var WSReadyState;
     WSReadyState[WSReadyState["Closing"] = 2] = "Closing";
     WSReadyState[WSReadyState["Closed"] = 3] = "Closed";
 })(WSReadyState = exports.WSReadyState || (exports.WSReadyState = {}));
+var WsSubscriptions = (function () {
+    function WsSubscriptions() {
+        this.subscriptions = {};
+    }
+    WsSubscriptions.prototype.add = function (subID, path, listeners, headers) {
+        this.subscriptions[subID] = {
+            headers: headers,
+            listeners: listeners,
+            path: path,
+        };
+        return subID;
+    };
+    WsSubscriptions.prototype.has = function (subID) {
+        return this.subscriptions[subID] !== undefined;
+    };
+    WsSubscriptions.prototype.isEmpty = function () {
+        return Object.keys(this.subscriptions).length === 0;
+    };
+    WsSubscriptions.prototype.remove = function (subID) {
+        return delete this.subscriptions[subID];
+    };
+    WsSubscriptions.prototype.get = function (subID) {
+        return this.subscriptions[subID];
+    };
+    WsSubscriptions.prototype.getAll = function () {
+        return this.subscriptions;
+    };
+    WsSubscriptions.prototype.getAllAsArray = function () {
+        var _this = this;
+        return Object.keys(this.subscriptions).map(function (subID) { return (__assign({ subID: parseInt(subID, 10) }, _this.subscriptions[parseInt(subID, 10)])); });
+    };
+    WsSubscriptions.prototype.removeAll = function () {
+        this.subscriptions = {};
+    };
+    return WsSubscriptions;
+}());
 var WsSubscription = (function () {
     function WsSubscription(wsTransport, subID) {
         this.wsTransport = wsTransport;
@@ -1433,13 +1477,32 @@ var WebSocketTransport = (function () {
         this.closedError = null;
         this.baseURL = "wss://" + host + this.webSocketPath;
         this.lastSubscriptionID = 0;
+        this.subscriptions = new WsSubscriptions();
+        this.pendingSubscriptions = new WsSubscriptions();
         this.connect();
     }
     WebSocketTransport.prototype.subscribe = function (path, listeners, headers) {
+        window.console.log("At the top of subscribe");
+        this.tryReconnectIfNeeded();
         var subID = this.lastSubscriptionID++;
+        if (this.socket.readyState !== WSReadyState.Open) {
+            window.console.log("Adding PENDING subscription " + subID + " for path: " + path);
+            this.pendingSubscriptions.add(subID, path, listeners, headers);
+            return new WsSubscription(this, subID);
+        }
+        window.console.log("Adding subscription " + subID + " for path: " + path);
+        this.subscriptions.add(subID, path, listeners, headers);
+        this.sendMessage(this.getMessage(SubscribeMessageType, subID, path, headers));
         return new WsSubscription(this, subID);
     };
-    WebSocketTransport.prototype.unsubscribe = function (subID) { };
+    WebSocketTransport.prototype.unsubscribe = function (subID) {
+        this.sendMessage(this.getMessage(UnsubscribeMessageType, subID));
+        var subscription = this.subscriptions.get(subID);
+        if (subscription.listeners.onEnd) {
+            subscription.listeners.onEnd(null);
+        }
+        this.subscriptions.remove(subID);
+    };
     WebSocketTransport.prototype.connect = function () {
         var _this = this;
         window.console.log("At the top of connect");
@@ -1448,6 +1511,14 @@ var WebSocketTransport = (function () {
         this.socket = new window.WebSocket(this.baseURL);
         this.socket.onopen = function (event) {
             window.console.log("At the top of socket onopen");
+            var allPendingSubscriptions = _this.pendingSubscriptions.getAllAsArray();
+            window.console.log("allPendingSubscriptions.length: " + allPendingSubscriptions.length);
+            window.console.log(allPendingSubscriptions);
+            allPendingSubscriptions.forEach(function (subscription) {
+                var subID = subscription.subID, path = subscription.path, listeners = subscription.listeners, headers = subscription.headers;
+                _this.subscribePending(path, listeners, headers, subID);
+            });
+            _this.pendingSubscriptions.removeAll();
             _this.pingInterval = window.setInterval(function () {
                 if (_this.pongTimeout) {
                     return;
@@ -1475,20 +1546,36 @@ var WebSocketTransport = (function () {
             window.console.log(event);
         };
         this.socket.onclose = function (event) {
-            window.console.log("At the top of onclose");
-            window.console.log("Trace start");
+            window.console.log("At the top of onclose, about to call trace");
             window.console.trace();
             window.console.log("Trace end");
-            window.console.log("Event in onclose");
-            window.console.log(event);
             window.console.log("Is there a closedError?");
             window.console.log(_this.closedError);
-            window.console.log("About to call tryReconnectIfNeeded");
+            var callback = _this.closedError
+                ? function (subscription) {
+                    if (subscription.listeners.onError) {
+                        subscription.listeners.onError(_this.closedError);
+                    }
+                }
+                : function (subscription) {
+                    if (subscription.listeners.onEnd) {
+                        subscription.listeners.onEnd(null);
+                    }
+                };
+            window.console.log("Pending subscriptions empty?: " + _this.pendingSubscriptions.isEmpty());
+            window.console.log(_this.pendingSubscriptions);
+            window.console.log("this.subscriptions list:");
+            window.console.log(_this.subscriptions);
+            var allSubscriptions = _this.pendingSubscriptions.isEmpty()
+                ? _this.subscriptions
+                : _this.pendingSubscriptions;
+            allSubscriptions.getAllAsArray().forEach(callback);
+            allSubscriptions.removeAll();
+            window.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
             _this.tryReconnectIfNeeded();
         };
     };
     WebSocketTransport.prototype.close = function (error) {
-        window.console.log("At the top of close()");
         if (!(this.socket instanceof window.WebSocket)) {
             return;
         }
@@ -1509,13 +1596,18 @@ var WebSocketTransport = (function () {
         onClose();
     };
     WebSocketTransport.prototype.tryReconnectIfNeeded = function () {
-        window.console.log("At the top of tryReconnectIfNeeded");
-        window.console.log("this.socket.readyState: " + this.socket.readyState);
-        window.console.log("this.forcedClose: " + this.forcedClose);
         if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
             window.console.log("About to try to (re)connect");
             this.connect();
         }
+    };
+    WebSocketTransport.prototype.subscribePending = function (path, listeners, headers, subID) {
+        if (subID === undefined) {
+            window.console.log("Subscription to path " + path + " has an undefined ID");
+            return;
+        }
+        this.subscriptions.add(subID, path, listeners, headers);
+        this.sendMessage(this.getMessage(SubscribeMessageType, subID, path, headers));
     };
     WebSocketTransport.prototype.getMessage = function (messageType, id, path, headers) {
         return [messageType, id, path, headers];
@@ -1525,6 +1617,9 @@ var WebSocketTransport = (function () {
             return window.console.warn("Can't send in \"" + WSReadyState[this.socket.readyState] + "\" state");
         }
         this.socket.send(JSON.stringify(message));
+    };
+    WebSocketTransport.prototype.subscription = function (subID) {
+        return this.subscriptions.get(subID);
     };
     WebSocketTransport.prototype.receiveMessage = function (event) {
         this.lastMessageReceivedTimestamp = new Date().getTime();
@@ -1555,6 +1650,28 @@ var WebSocketTransport = (function () {
                 this.onCloseMessage(message);
                 return;
         }
+        var subID = message.shift();
+        var subscription = this.subscription(subID);
+        if (!subscription) {
+            window.console.log("Calling close because no subscription found for subID " + subID);
+            this.close(new Error("Received message for non existing subscription id: \"" + subID + "\""));
+            return;
+        }
+        var listeners = subscription.listeners;
+        switch (messageType) {
+            case OpenMessageType:
+                this.onOpenMessage(message, subID, listeners);
+                break;
+            case EventMessageType:
+                this.onEventMessage(message, listeners);
+                break;
+            case EosMessageType:
+                this.onEOSMessage(message, subID, listeners);
+                break;
+            default:
+                window.console.log("Calling close because of invalid message type");
+                this.close(new Error('Received non existing type of message.'));
+        }
     };
     WebSocketTransport.prototype.validateMessage = function (message) {
         if (!Array.isArray(message)) {
@@ -1564,6 +1681,59 @@ var WebSocketTransport = (function () {
             return new Error("Message is empty array: " + JSON.stringify(message));
         }
         return null;
+    };
+    WebSocketTransport.prototype.onOpenMessage = function (message, subID, subscriptionListeners) {
+        if (subscriptionListeners.onOpen) {
+            subscriptionListeners.onOpen(message[1]);
+        }
+    };
+    WebSocketTransport.prototype.onEventMessage = function (eventMessage, subscriptionListeners) {
+        if (eventMessage.length !== 3) {
+            return new Error('Event message has ' + eventMessage.length + ' elements (expected 4)');
+        }
+        var eventId = eventMessage[0], headers = eventMessage[1], body = eventMessage[2];
+        if (typeof eventId !== 'string') {
+            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
+        }
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
+        }
+        if (subscriptionListeners.onEvent) {
+            subscriptionListeners.onEvent({ eventId: eventId, headers: headers, body: body });
+        }
+    };
+    WebSocketTransport.prototype.onEOSMessage = function (eosMessage, subID, subscriptionListeners) {
+        window.console.log("Received EOS message for sub " + subID);
+        this.subscriptions.remove(subID);
+        if (eosMessage.length !== 3) {
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error("EOS message has " + eosMessage.length + " elements (expected 4)"));
+            }
+            return;
+        }
+        var statusCode = eosMessage[0], headers = eosMessage[1], body = eosMessage[2];
+        if (typeof statusCode !== 'number') {
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+            }
+            return;
+        }
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+            if (subscriptionListeners.onError) {
+                subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+            }
+            return;
+        }
+        if (statusCode === 204) {
+            if (subscriptionListeners.onEnd) {
+                subscriptionListeners.onEnd(null);
+            }
+            return;
+        }
+        if (subscriptionListeners.onError) {
+            subscriptionListeners.onError(new network_1.ErrorResponse(statusCode, headers, body));
+        }
+        return;
     };
     WebSocketTransport.prototype.onCloseMessage = function (closeMessage) {
         var statusCode = closeMessage[0], headers = closeMessage[1], body = closeMessage[2];

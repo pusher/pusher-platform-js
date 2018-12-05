@@ -13,6 +13,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     private forcedClose;
     private closedError;
     private lastSubscriptionID;
+    private subscriptions;
+    private pendingSubscriptions;
     private lastMessageReceivedTimestamp;
     private pingInterval;
     private pongTimeout;
@@ -23,10 +25,15 @@ export default class WebSocketTransport implements SubscriptionTransport {
     private connect();
     private close(error?);
     private tryReconnectIfNeeded();
+    private subscribePending(path, listeners, headers, subID?);
     private getMessage(messageType, id, path?, headers?);
     private sendMessage(message);
+    private subscription(subID);
     private receiveMessage(event);
     private validateMessage(message);
+    private onOpenMessage(message, subID, subscriptionListeners);
+    private onEventMessage(eventMessage, subscriptionListeners);
+    private onEOSMessage(eosMessage, subID, subscriptionListeners);
     private onCloseMessage(closeMessage);
     private onPongMessage(message);
     private onPingMessage(message);
