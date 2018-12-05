@@ -516,7 +516,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
       );
     }
 
-    this.close();
+    const errorInfo = {
+      error: body.error || 'network_error',
+      error_description: body.error_description || 'Network error',
+    };
+
+    this.close(new ErrorResponse(statusCode, headers, errorInfo));
   }
 
   private onPongMessage(message: Message) {

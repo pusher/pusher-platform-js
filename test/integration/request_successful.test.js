@@ -40,7 +40,7 @@ describe('Instance Requests - Successful', () => {
     instance
       .request({
         method: 'post',
-        path: 'post_ok',
+        path: 'post_ok_echo',
         json: {
           test: '123',
         },
