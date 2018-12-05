@@ -176,7 +176,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
     global.console.log("At the top of tryReconnectIfNeeded");
     // If we've force closed, the socket might not actually be in the Closed
     // state yet but we should create a new one anyway.
-    if (this.socket.readyState === WSReadyState.Closed) {
+
+    global.console.log(`this.socket.readyState: ${this.socket.readyState}`);
+    global.console.log(`this.forcedClose: ${this.forcedClose}`);
+
+    if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
       global.console.log(`About to try to (re)connect`);
       this.connect();
     }

@@ -1533,7 +1533,9 @@ var WebSocketTransport = (function () {
     };
     WebSocketTransport.prototype.tryReconnectIfNeeded = function () {
         global.console.log("At the top of tryReconnectIfNeeded");
-        if (this.socket.readyState === WSReadyState.Closed) {
+        global.console.log("this.socket.readyState: " + this.socket.readyState);
+        global.console.log("this.forcedClose: " + this.forcedClose);
+        if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
             global.console.log("About to try to (re)connect");
             this.connect();
         }
