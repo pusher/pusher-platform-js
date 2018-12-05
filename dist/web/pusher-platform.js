@@ -1547,11 +1547,6 @@ var WebSocketTransport = (function () {
             _this.close(new network_1.NetworkError('Connection was lost.'));
         };
         this.socket.onclose = function (event) {
-            if (!_this.forcedClose) {
-                window.console.log("Not forced close in onclose so we will go to tryReconnectIfNeeded");
-                _this.tryReconnectIfNeeded();
-                return;
-            }
             window.console.log("Is there a closedError? " + _this.closedError);
             var callback = _this.closedError
                 ? function (subscription) {
@@ -1565,17 +1560,16 @@ var WebSocketTransport = (function () {
                     }
                 };
             window.console.log("Pending subscriptions empty?: " + _this.pendingSubscriptions.isEmpty());
+            window.console.log(_this.pendingSubscriptions);
             window.console.log("this.subscriptions list:");
             window.console.log(_this.subscriptions);
-            var allSubscriptions = _this.pendingSubscriptions.isEmpty() === false
-                ? _this.pendingSubscriptions
-                : _this.subscriptions;
+            var allSubscriptions = _this.pendingSubscriptions.isEmpty()
+                ? _this.subscriptions
+                : _this.pendingSubscriptions;
             allSubscriptions.getAllAsArray().forEach(callback);
             allSubscriptions.removeAll();
-            if (_this.closedError) {
-                window.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
-                _this.tryReconnectIfNeeded();
-            }
+            window.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
+            _this.tryReconnectIfNeeded();
         };
     };
     WebSocketTransport.prototype.close = function (error) {

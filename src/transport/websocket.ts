@@ -232,12 +232,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
       this.close(new NetworkError('Connection was lost.'));
     };
     this.socket.onclose = (event: any) => {
-      if (!this.forcedClose) {
-        global.console.log("Not forced close in onclose so we will go to tryReconnectIfNeeded");
-        this.tryReconnectIfNeeded();
-        return;
-      }
-
       global.console.log(`Is there a closedError? ${this.closedError}`);
 
       const callback = this.closedError
@@ -253,22 +247,20 @@ export default class WebSocketTransport implements SubscriptionTransport {
           };
 
       global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
+      global.console.log(this.pendingSubscriptions);
       global.console.log(`this.subscriptions list:`);
       global.console.log(this.subscriptions);
 
       const allSubscriptions =
-        this.pendingSubscriptions.isEmpty() === false
-          ? this.pendingSubscriptions
-          : this.subscriptions;
+        this.pendingSubscriptions.isEmpty()
+          ? this.subscriptions
+          : this.pendingSubscriptions;
 
       allSubscriptions.getAllAsArray().forEach(callback);
-
       allSubscriptions.removeAll();
 
-      if (this.closedError) {
-        global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
-        this.tryReconnectIfNeeded();
-      }
+      global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
+      this.tryReconnectIfNeeded();
     };
   }
 
