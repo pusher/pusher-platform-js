@@ -555,6 +555,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
       error_description: body.error_description || 'Network error',
     };
 
+    this.closedError = errorInfo;
+
     // this.close(new ErrorResponse(statusCode, headers, errorInfo));
   }
 
