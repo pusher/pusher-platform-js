@@ -1493,6 +1493,20 @@ var WebSocketTransport = (function () {
             return;
         }
         window.console.log("Doing a forced close");
+        var onClose = this.socket.onclose.bind(this);
+        delete this.socket.onclose;
+        delete this.socket.onerror;
+        delete this.socket.onmessage;
+        delete this.socket.onopen;
+        this.forcedClose = true;
+        this.closedError = error;
+        window.console.log("THIS.SOCKET.CLOSE ABOUT TO BE CALLED");
+        this.socket.close();
+        window.clearTimeout(this.pingInterval);
+        window.clearTimeout(this.pongTimeout);
+        delete this.pongTimeout;
+        this.lastSentPingID = null;
+        onClose();
     };
     WebSocketTransport.prototype.tryReconnectIfNeeded = function () {
         window.console.log("At the top of tryReconnectIfNeeded");
