@@ -30,72 +30,6 @@ export enum WSReadyState {
   Closed,
 }
 
-type SubscriptionData = {
-  path: string;
-  listeners: SubscriptionListeners;
-  headers: ElementsHeaders;
-  subID?: number;
-};
-
-type WsSubscriptionsType = {
-  [key: number]: SubscriptionData;
-};
-
-class WsSubscriptions {
-  private subscriptions: WsSubscriptionsType;
-  private pendingSubscriptions: WsSubscriptionsType;
-
-  constructor() {
-    this.subscriptions = {};
-  }
-
-  add(
-    subID: number,
-    path: string,
-    listeners: SubscriptionListeners,
-    headers: ElementsHeaders,
-  ): number {
-    this.subscriptions[subID] = {
-      headers,
-      listeners,
-      path,
-    };
-
-    return subID;
-  }
-
-  has(subID: number): boolean {
-    return this.subscriptions[subID] !== undefined;
-  }
-
-  isEmpty(): boolean {
-    return Object.keys(this.subscriptions).length === 0;
-  }
-
-  remove(subID: number): boolean {
-    return delete this.subscriptions[subID];
-  }
-
-  get(subID: number): SubscriptionData {
-    return this.subscriptions[subID];
-  }
-
-  getAll(): WsSubscriptionsType {
-    return this.subscriptions;
-  }
-
-  getAllAsArray(): SubscriptionData[] {
-    return Object.keys(this.subscriptions).map(subID => ({
-      subID: parseInt(subID, 10),
-      ...this.subscriptions[parseInt(subID, 10)],
-    }));
-  }
-
-  removeAll() {
-    this.subscriptions = {};
-  }
-}
-
 class WsSubscription implements Subscription {
   constructor(private wsTransport: WebSocketTransport, private subID: number) {}
 
@@ -114,8 +48,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private forcedClose: boolean = false;
   private closedError: any = null;
   private lastSubscriptionID: number;
-  private subscriptions: WsSubscriptions;
-  private pendingSubscriptions: WsSubscriptions;
   private lastMessageReceivedTimestamp: number;
   private pingInterval: any;
   private pongTimeout: any;
@@ -124,9 +56,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
   constructor(host: string) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
     this.lastSubscriptionID = 0;
-    this.subscriptions = new WsSubscriptions();
-    this.pendingSubscriptions = new WsSubscriptions();
-
     this.connect();
   }
 
@@ -135,40 +64,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
   ): Subscription {
-    global.console.log("At the top of subscribe");
-
-    // If connection was closed, try to reconnect
-    this.tryReconnectIfNeeded();
-
     const subID = this.lastSubscriptionID++;
-
-    // Add subscription to pending if socket is not open
-    if (this.socket.readyState !== WSReadyState.Open) {
-      global.console.log(`Adding PENDING subscription ${subID} for path: ${path}`);
-      this.pendingSubscriptions.add(subID, path, listeners, headers);
-      return new WsSubscription(this, subID);
-    }
-
-    // Add or select subscription
-    global.console.log(`Adding subscription ${subID} for path: ${path}`);
-    this.subscriptions.add(subID, path, listeners, headers);
-
-    this.sendMessage(
-      this.getMessage(SubscribeMessageType, subID, path, headers),
-    );
-
     return new WsSubscription(this, subID);
   }
 
-  unsubscribe(subID: number): void {
-    this.sendMessage(this.getMessage(UnsubscribeMessageType, subID));
-
-    const subscription = this.subscriptions.get(subID);
-    if (subscription.listeners.onEnd) {
-      subscription.listeners.onEnd(null);
-    }
-    this.subscriptions.remove(subID);
-  }
+  unsubscribe(subID: number): void {}
 
   private connect() {
     global.console.log("At the top of connect");
@@ -180,19 +80,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.socket.onopen = (event: any) => {
       global.console.log("At the top of socket onopen");
-
-      const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
-
-      global.console.log(`allPendingSubscriptions.length: ${allPendingSubscriptions.length}`);
-      global.console.log(allPendingSubscriptions);
-
-      // Re-subscribe old subscriptions for new connection
-      allPendingSubscriptions.forEach(subscription => {
-        const { subID, path, listeners, headers } = subscription;
-        this.subscribePending(path, listeners, headers, subID);
-      });
-
-      this.pendingSubscriptions.removeAll();
 
       this.pingInterval = global.setInterval(() => {
         if (this.pongTimeout) {
@@ -229,103 +116,70 @@ export default class WebSocketTransport implements SubscriptionTransport {
     this.socket.onerror = (event: any) => {
       global.console.log("Received an error in onerror");
       global.console.log(event);
-      this.close(new NetworkError('Connection was lost.'));
+
+      // TODO: Should we set closedError here?
+
+      // this.close(new NetworkError('Connection was lost.'));
     };
     this.socket.onclose = (event: any) => {
-      global.console.log(`At the top of onclose, about to call trace`);
+      global.console.log(`At the top of onclose`);
+
+      global.console.log(`Trace start`);
       global.console.trace();
       global.console.log(`Trace end`);
+
+      global.console.log(`Event in onclose`);
+      global.console.log(event);
+
       global.console.log(`Is there a closedError?`);
       global.console.log(this.closedError);
 
-      const callback = this.closedError
-        ? (subscription: SubscriptionData) => {
-            if (subscription.listeners.onError) {
-              subscription.listeners.onError(this.closedError);
-            }
-          }
-        : (subscription: SubscriptionData) => {
-            if (subscription.listeners.onEnd) {
-              subscription.listeners.onEnd(null);
-            }
-          };
-
-      global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
-      global.console.log(this.pendingSubscriptions);
-      global.console.log(`this.subscriptions list:`);
-      global.console.log(this.subscriptions);
-
-      const allSubscriptions =
-        this.pendingSubscriptions.isEmpty()
-          ? this.subscriptions
-          : this.pendingSubscriptions;
-
-      allSubscriptions.getAllAsArray().forEach(callback);
-      allSubscriptions.removeAll();
-
-      global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
+      global.console.log("About to call tryReconnectIfNeeded");
       this.tryReconnectIfNeeded();
     };
   }
 
   private close(error?: any) {
+    global.console.log("At the top of close()")
     if (!(this.socket instanceof global.WebSocket)) {
       return;
     }
 
     global.console.log(`Doing a forced close`);
 
-    // In Chrome there is a substantial delay between calling close on a broken
-    // websocket and the onclose method firing. When we're force closing the
-    // connection we can expedite the reconnect process by manually calling
-    // onclose. We then need to delete the socket's handlers so that we don't
-    // get extra calls from the dying socket.
-    const onClose = this.socket.onclose.bind(this);
+    // // In Chrome there is a substantial delay between calling close on a broken
+    // // websocket and the onclose method firing. When we're force closing the
+    // // connection we can expedite the reconnect process by manually calling
+    // // onclose. We then need to delete the socket's handlers so that we don't
+    // // get extra calls from the dying socket.
+    // const onClose = this.socket.onclose.bind(this);
 
-    delete this.socket.onclose;
-    delete this.socket.onerror;
-    delete this.socket.onmessage;
-    delete this.socket.onopen;
+    // delete this.socket.onclose;
+    // delete this.socket.onerror;
+    // delete this.socket.onmessage;
+    // delete this.socket.onopen;
 
-    this.forcedClose = true;
-    this.closedError = error;
-    global.console.log(`THIS.SOCKET.CLOSE ABOUT TO BE CALLED`);
-    this.socket.close();
+    // this.forcedClose = true;
+    // this.closedError = error;
+    // global.console.log(`THIS.SOCKET.CLOSE ABOUT TO BE CALLED`);
+    // this.socket.close();
 
-    global.clearTimeout(this.pingInterval);
-    global.clearTimeout(this.pongTimeout);
-    delete this.pongTimeout;
-    this.lastSentPingID = null;
+    // global.clearTimeout(this.pingInterval);
+    // global.clearTimeout(this.pongTimeout);
+    // delete this.pongTimeout;
+    // this.lastSentPingID = null;
 
-    onClose();
+    // onClose();
   }
 
   private tryReconnectIfNeeded() {
+    global.console.log("At the top of tryReconnectIfNeeded");
     // If we've force closed, the socket might not actually be in the Closed
     // state yet but we should create a new one anyway.
-    if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
+    if (this.socket.readyState === WSReadyState.Closed) {
       global.console.log(`About to try to (re)connect`);
       this.connect();
     }
-  }
-
-  private subscribePending(
-    path: string,
-    listeners: SubscriptionListeners,
-    headers: ElementsHeaders,
-    subID?: number,
-  ) {
-    if (subID === undefined) {
-      global.console.log(`Subscription to path ${path} has an undefined ID`);
-      return;
-    }
-
-    // Add or select subscription
-    this.subscriptions.add(subID, path, listeners, headers);
-
-    this.sendMessage(
-      this.getMessage(SubscribeMessageType, subID, path, headers),
-    );
   }
 
   private getMessage(
@@ -345,10 +199,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     this.socket.send(JSON.stringify(message));
-  }
-
-  private subscription(subID: number) {
-    return this.subscriptions.get(subID);
   }
 
   private receiveMessage(event: any) {
@@ -389,37 +239,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onCloseMessage(message);
         return;
     }
-
-    const subID = message.shift();
-    const subscription = this.subscription(subID);
-
-    if (!subscription) {
-      global.console.log(`Calling close because no subscription found for subID ${subID}`);
-      this.close(
-        new Error(
-          `Received message for non existing subscription id: "${subID}"`,
-        ),
-      );
-      return;
-    }
-
-    const { listeners } = subscription;
-
-    // Handle subscription level messages.
-    switch (messageType) {
-      case OpenMessageType:
-        this.onOpenMessage(message, subID, listeners);
-        break;
-      case EventMessageType:
-        this.onEventMessage(message, listeners);
-        break;
-      case EosMessageType:
-        this.onEOSMessage(message, subID, listeners);
-        break;
-      default:
-        global.console.log(`Calling close because of invalid message type`);
-        this.close(new Error('Received non existing type of message.'));
-    }
   }
 
   /**
@@ -441,94 +260,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     return null;
-  }
-
-  private onOpenMessage(
-    message: Message,
-    subID: number,
-    subscriptionListeners: SubscriptionListeners,
-  ) {
-    if (subscriptionListeners.onOpen) {
-      subscriptionListeners.onOpen(message[1]);
-    }
-  }
-
-  private onEventMessage(
-    eventMessage: Message,
-    subscriptionListeners: SubscriptionListeners,
-  ): Error | void {
-    if (eventMessage.length !== 3) {
-      return new Error(
-        'Event message has ' + eventMessage.length + ' elements (expected 4)',
-      );
-    }
-
-    const [eventId, headers, body] = eventMessage;
-    if (typeof eventId !== 'string') {
-      return new Error(
-        `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
-      );
-    }
-
-    if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return new Error(
-        `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
-      );
-    }
-
-    if (subscriptionListeners.onEvent) {
-      subscriptionListeners.onEvent({ eventId, headers, body });
-    }
-  }
-
-  private onEOSMessage(
-    eosMessage: Message,
-    subID: number,
-    subscriptionListeners: SubscriptionListeners,
-  ): void {
-    global.console.log(`Received EOS message for sub ${subID}`);
-    this.subscriptions.remove(subID);
-
-    if (eosMessage.length !== 3) {
-      if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(
-          new Error(
-            `EOS message has ${eosMessage.length} elements (expected 4)`,
-          ),
-        );
-      }
-      return;
-    }
-
-    const [statusCode, headers, body] = eosMessage;
-    if (typeof statusCode !== 'number') {
-      if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
-      }
-      return;
-    }
-
-    if (typeof headers !== 'object' || Array.isArray(headers)) {
-      if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
-      }
-      return;
-    }
-
-    if (statusCode === 204) {
-      if (subscriptionListeners.onEnd) {
-        subscriptionListeners.onEnd(null);
-      }
-      return;
-    }
-
-    if (subscriptionListeners.onError) {
-      subscriptionListeners.onError(
-        new ErrorResponse(statusCode, headers, body),
-      );
-    }
-
-    return;
   }
 
   private onCloseMessage(closeMessage: Message) {
