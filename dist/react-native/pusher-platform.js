@@ -1773,7 +1773,7 @@ var WebSocketTransport = (function () {
             error: body.error || 'network_error',
             error_description: body.error_description || 'Network error',
         };
-        this.closedError = errorInfo;
+        this.closedError = new network_1.ErrorResponse(statusCode, headers, errorInfo);
     };
     WebSocketTransport.prototype.onPongMessage = function (message) {
         var receviedPongID = message[0];
