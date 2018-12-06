@@ -113,6 +113,10 @@ export class RetryResolution {
       return new DoNotRetry(error);
     }
 
+    if (error == null) {
+      return new Retry(this.calulateMillisToRetry());
+    }
+
     if (error instanceof ErrorResponse && error.headers['Retry-After']) {
       this.logger.verbose(
         `${this.constructor.name}: Retry-After header is present, retrying in ${
@@ -123,7 +127,7 @@ export class RetryResolution {
     }
 
     if (this.retryUnsafeRequests) {
-      this.calulateMillisToRetry();
+      return new Retry(this.calulateMillisToRetry());
     }
 
     switch (error.constructor) {

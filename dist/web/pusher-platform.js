@@ -350,12 +350,15 @@ var RetryResolution = (function () {
             this.logger.verbose(this.constructor.name + ": Retry count is over the maximum limit: " + this.limit);
             return new DoNotRetry(error);
         }
+        if (error == null) {
+            return new Retry(this.calulateMillisToRetry());
+        }
         if (error instanceof network_1.ErrorResponse && error.headers['Retry-After']) {
             this.logger.verbose(this.constructor.name + ": Retry-After header is present, retrying in " + error.headers['Retry-After']);
             return new Retry(parseInt(error.headers['Retry-After'], 10) * 1000);
         }
         if (this.retryUnsafeRequests) {
-            this.calulateMillisToRetry();
+            return new Retry(this.calulateMillisToRetry());
         }
         switch (error.constructor) {
             case network_1.ErrorResponse:
