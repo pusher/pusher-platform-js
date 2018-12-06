@@ -1,3 +1,4 @@
+import { Logger } from '../logger';
 import { ElementsHeaders } from '../network';
 import { Subscription, SubscriptionListeners, SubscriptionTransport } from '../subscription';
 export declare enum WSReadyState {
@@ -19,7 +20,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     private pingInterval;
     private pongTimeout;
     private lastSentPingID;
-    constructor(host: string);
+    private logger;
+    constructor(host: string, logger: Logger);
     subscribe(path: string, listeners: SubscriptionListeners, headers: ElementsHeaders): Subscription;
     unsubscribe(subID: number): void;
     private connect();

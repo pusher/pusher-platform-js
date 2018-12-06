@@ -1,3 +1,4 @@
+import { Logger } from '../logger';
 import {
   ElementsHeaders,
   ErrorResponse,
@@ -121,10 +122,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private pingInterval: any;
   private pongTimeout: any;
   private lastSentPingID: number | null;
+  private logger: Logger;
 
-  constructor(host: string) {
+  constructor(host: string, logger: Logger) {
     this.baseURL = `wss://${host}${this.webSocketPath}`;
     this.lastSubscriptionID = 0;
+    this.logger = logger;
     this.subscriptions = new WsSubscriptions();
     this.pendingSubscriptions = new WsSubscriptions();
 
@@ -136,8 +139,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
   ): Subscription {
-    global.console.log("At the top of subscribe");
-
     // If connection was closed, try to reconnect
     this.tryReconnectIfNeeded();
 
@@ -145,13 +146,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     // Add subscription to pending if socket is not open
     if (this.socket.readyState !== WSReadyState.Open) {
-      global.console.log(`Adding PENDING subscription ${subID} for path: ${path}`);
       this.pendingSubscriptions.add(subID, path, listeners, headers);
       return new WsSubscription(this, subID);
     }
 
     // Add or select subscription
-    global.console.log(`Adding subscription ${subID} for path: ${path}`);
     this.subscriptions.add(subID, path, listeners, headers);
 
     this.sendMessage(
@@ -172,20 +171,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
   }
 
   private connect() {
-    global.console.log("At the top of connect");
-
     this.forcedClose = false;
     this.closedError = null;
 
     this.socket = new global.WebSocket(this.baseURL);
 
     this.socket.onopen = (event: any) => {
-      global.console.log("At the top of socket onopen");
-
       const allPendingSubscriptions = this.pendingSubscriptions.getAllAsArray();
-
-      global.console.log(`allPendingSubscriptions.length: ${allPendingSubscriptions.length}`);
-      global.console.log(allPendingSubscriptions);
 
       // Re-subscribe old subscriptions for new connection
       allPendingSubscriptions.forEach(subscription => {
@@ -218,9 +210,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
             return;
           }
 
-          global.console.log(`Calling close because pong response timeout`);
           this.close(
-            new NetworkError(`Pong response wasn't received until timeout.`),
+            new NetworkError(`Pong response wasn't received within timeout`),
           );
         }, pingTimeoutMs);
       }, pingIntervalMs);
@@ -248,23 +239,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
         }
       }
 
-      // const callback = this.closedError
-      //   ? (subscription: SubscriptionData) => {
-      //       if (subscription.listeners.onError) {
-      //         subscription.listeners.onError(this.closedError);
-      //       }
-      //     }
-      //   : (subscription: SubscriptionData) => {
-      //       if (subscription.listeners.onEnd) {
-      //         subscription.listeners.onEnd(null);
-      //       }
-      //     };
-
-      global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
-      global.console.log(this.pendingSubscriptions);
-      global.console.log(`this.subscriptions list:`);
-      global.console.log(this.subscriptions);
-
       // TODO: Maybe just concat the pending and existing subscriptions?
 
       const allSubscriptions =
@@ -275,7 +249,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
       allSubscriptions.getAllAsArray().forEach(subCallback);
       allSubscriptions.removeAll();
 
-      global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
       this.tryReconnectIfNeeded();
     };
   }
@@ -284,8 +257,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     if (!(this.socket instanceof global.WebSocket)) {
       return;
     }
-
-    global.console.log(`Doing a forced close`);
 
     // In Chrome there is a substantial delay between calling close on a broken
     // websocket and the onclose method firing. When we're force closing the
@@ -301,7 +272,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     this.forcedClose = true;
     this.closedError = error;
-    global.console.log(`THIS.SOCKET.CLOSE ABOUT TO BE CALLED`);
     this.socket.close();
 
     global.clearTimeout(this.pingInterval);
@@ -316,7 +286,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // If we've force closed, the socket might not actually be in the Closed
     // state yet but we should create a new one anyway.
     if (this.forcedClose || this.socket.readyState === WSReadyState.Closed) {
-      global.console.log(`About to try to (re)connect`);
       this.connect();
     }
   }
@@ -328,7 +297,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID?: number,
   ) {
     if (subID === undefined) {
-      global.console.log(`Subscription to path ${path} has an undefined ID`);
+      this.logger.debug(`Subscription to path ${path} has an undefined ID`);
       return;
     }
 
@@ -351,8 +320,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private sendMessage(message: Message) {
     if (this.socket.readyState !== WSReadyState.Open) {
-      return global.console.warn(
-        `Can't send in "${WSReadyState[this.socket.readyState]}" state`,
+      return this.logger.warn(
+        `Can't send on socket in "${WSReadyState[this.socket.readyState]}" state`,
       );
     }
 
@@ -371,7 +340,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     try {
       message = JSON.parse(event.data);
     } catch (err) {
-      global.console.log(`Calling close because invalid JSON in message`);
       this.close(
         new ProtocolError(`Message is not valid JSON format. Getting ${event.data}`),
       );
@@ -382,7 +350,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // Close connection if not valid.
     const nonValidMessageError = this.validateMessage(message);
     if (nonValidMessageError) {
-      global.console.log(`Calling close because message is invalid`);
       this.close(nonValidMessageError);
       return;
     }
@@ -406,10 +373,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      global.console.log(`Calling close because no subscription found for subID ${subID}`);
       this.close(
         new Error(
-          `Received message for non existing subscription id: "${subID}"`,
+          `Received message for unknown subscription ID: ${subID}`,
         ),
       );
       return;
@@ -429,7 +395,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onEOSMessage(message, subID, listeners);
         break;
       default:
-        global.console.log(`Calling close because of invalid message type`);
         this.close(new ProtocolError('Received non existing type of message.'));
     }
   }
@@ -498,7 +463,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subID: number,
     subscriptionListeners: SubscriptionListeners,
   ) {
-    global.console.log(`Received EOS message for sub ${subID}`);
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
@@ -546,18 +510,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private onCloseMessage(closeMessage: Message) {
     const [statusCode, headers, body] = closeMessage;
     if (typeof statusCode !== 'number') {
-      global.console.log(`Calling close because of invalid EOS Status Code`);
       return this.close(new ProtocolError('Close message: Invalid EOS Status Code'));
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      global.console.log(`Calling close because of invalid EOS ElementsHeaders`);
       return this.close(
         new ProtocolError('Close message: Invalid EOS ElementsHeaders'),
       );
     }
-
-    global.console.log(`NOT Calling close because at end of onCloseMessage function`);
 
     const errorInfo = {
       error: body.error || 'network_error',
@@ -567,21 +527,18 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // TODO: Do we want to wait for the server to close or should we try to close ourselves, ASAP?
     this.closedError = new ErrorResponse(statusCode, headers, errorInfo);
     // this.close(new ErrorResponse(statusCode, headers, errorInfo));
-
   }
 
   private onPongMessage(message: Message) {
     const [receviedPongID] = message;
 
     if (this.lastSentPingID !== receviedPongID) {
-      global.console.warn(
+      this.logger.warn(
         `Received pong with ID ${receviedPongID} but lastSentPingID was ${
           this.lastSentPingID
         }`,
       );
     }
-
-    global.console.log(`Received pong ID ${receviedPongID}`);
 
     global.clearTimeout(this.pongTimeout);
     delete this.pongTimeout;
@@ -590,8 +547,6 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private onPingMessage(message: Message) {
     const [receviedPingID] = message;
-
-    global.console.log(`Received ping ID ${receviedPingID}`);
 
     this.sendMessage(this.getMessage(PongMessageType, receviedPingID));
   }
