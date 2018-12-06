@@ -122,54 +122,45 @@ export class RetryResolution {
       return new Retry(parseInt(error.headers['Retry-After'], 10) * 1000);
     }
 
-    if (
-      error instanceof NetworkError ||
-      (error instanceof ErrorResponse &&
-        requestMethodIsSafe(error.headers['Request-Method'])) ||
-      this.retryUnsafeRequests
-    ) {
-      return this.shouldSafeRetry(error);
+    if (this.retryUnsafeRequests) {
+      this.calulateMillisToRetry();
     }
 
-    if (error instanceof NetworkError) {
-      return this.shouldSafeRetry(error);
-    }
+    switch (error.constructor) {
+    case ErrorResponse:
+      const { statusCode, headers } = error;
+      const requestMethod = headers['Request-Method'];
 
-    this.logger.verbose(
-      `${this.constructor.name}: Encountered an error, will retry`,
-      error,
-    );
-
-    return new Retry(this.calulateMillisToRetry());
-  }
-
-  private shouldSafeRetry(error: any): RetryStrategyResult {
-    if (error instanceof NetworkError) {
+      if ((statusCode >= 500 && statusCode < 600) && requestMethodIsSafe(requestMethod)) {
+        this.logger.verbose(`${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will retry`);
+        return new Retry(this.calulateMillisToRetry());
+      } else {
+        this.logger.verbose(
+          `${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will not retry`,
+          error,
+        );
+        return new DoNotRetry(error as any);
+      }
+    case NetworkError:
       this.logger.verbose(
         `${this.constructor.name}: Encountered a network error, will retry`,
         error,
       );
       return new Retry(this.calulateMillisToRetry());
-    } else if (error instanceof ProtocolError) {
+    case ProtocolError:
       this.logger.verbose(
         `${this.constructor.name}: Encountered a protocol error, will retry`,
         error,
       );
       return new Retry(this.calulateMillisToRetry());
-    } else if (error instanceof ErrorResponse) {
-      if (error.statusCode >= 500 && error.statusCode < 600) {
-        this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
-        return new Retry(this.calulateMillisToRetry());
-      } else {
-        this.logger.verbose(
-          `${this.constructor.name}: Error is not retryable`,
-          error,
-        );
-        return new DoNotRetry(error as any);
-      }
-    }
+    default:
+      this.logger.verbose(
+        `${this.constructor.name}: Encountered an error, will retry`,
+        error,
+      );
 
-    return new Retry(this.calulateMillisToRetry());
+      return new Retry(this.calulateMillisToRetry());
+    }
   }
 
   private calulateMillisToRetry(): number {

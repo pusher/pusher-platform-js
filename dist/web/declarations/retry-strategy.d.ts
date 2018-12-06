@@ -34,6 +34,5 @@ export declare class RetryResolution {
     private currentBackoffMillis;
     constructor(options: CompleteRetryStrategyOptions, logger: Logger, retryUnsafeRequests?: boolean | undefined);
     attemptRetry(error: any): RetryStrategyResult;
-    private shouldSafeRetry(error);
     private calulateMillisToRetry();
 }

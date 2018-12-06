@@ -345,38 +345,31 @@ var RetryResolution = (function () {
             this.logger.verbose(this.constructor.name + ": Retry-After header is present, retrying in " + error.headers['Retry-After']);
             return new Retry(parseInt(error.headers['Retry-After'], 10) * 1000);
         }
-        if (error instanceof network_1.NetworkError ||
-            (error instanceof network_1.ErrorResponse &&
-                requestMethodIsSafe(error.headers['Request-Method'])) ||
-            this.retryUnsafeRequests) {
-            return this.shouldSafeRetry(error);
+        if (this.retryUnsafeRequests) {
+            this.calulateMillisToRetry();
         }
-        if (error instanceof network_1.NetworkError) {
-            return this.shouldSafeRetry(error);
-        }
-        this.logger.verbose(this.constructor.name + ": Encountered an error, will retry", error);
-        return new Retry(this.calulateMillisToRetry());
-    };
-    RetryResolution.prototype.shouldSafeRetry = function (error) {
-        if (error instanceof network_1.NetworkError) {
-            this.logger.verbose(this.constructor.name + ": Encountered a network error, will retry", error);
-            return new Retry(this.calulateMillisToRetry());
-        }
-        else if (error instanceof network_1.ProtocolError) {
-            this.logger.verbose(this.constructor.name + ": Encountered a protocol error, will retry", error);
-            return new Retry(this.calulateMillisToRetry());
-        }
-        else if (error instanceof network_1.ErrorResponse) {
-            if (error.statusCode >= 500 && error.statusCode < 600) {
-                this.logger.verbose(this.constructor.name + ": Error 5xx, will retry");
+        switch (error.constructor) {
+            case network_1.ErrorResponse:
+                var statusCode = error.statusCode, headers = error.headers;
+                var requestMethod = headers['Request-Method'];
+                if ((statusCode >= 500 && statusCode < 600) && requestMethodIsSafe(requestMethod)) {
+                    this.logger.verbose(this.constructor.name + ": Encountered an error with status code " + statusCode + " and request method " + requestMethod + ", will retry");
+                    return new Retry(this.calulateMillisToRetry());
+                }
+                else {
+                    this.logger.verbose(this.constructor.name + ": Encountered an error with status code " + statusCode + " and request method " + requestMethod + ", will not retry", error);
+                    return new DoNotRetry(error);
+                }
+            case network_1.NetworkError:
+                this.logger.verbose(this.constructor.name + ": Encountered a network error, will retry", error);
                 return new Retry(this.calulateMillisToRetry());
-            }
-            else {
-                this.logger.verbose(this.constructor.name + ": Error is not retryable", error);
-                return new DoNotRetry(error);
-            }
+            case network_1.ProtocolError:
+                this.logger.verbose(this.constructor.name + ": Encountered a protocol error, will retry", error);
+                return new Retry(this.calulateMillisToRetry());
+            default:
+                this.logger.verbose(this.constructor.name + ": Encountered an error, will retry", error);
+                return new Retry(this.calulateMillisToRetry());
         }
-        return new Retry(this.calulateMillisToRetry());
     };
     RetryResolution.prototype.calulateMillisToRetry = function () {
         this.currentBackoffMillis = this.increaseTimeoutFunction(this.currentBackoffMillis);
@@ -1556,17 +1549,11 @@ var WebSocketTransport = (function () {
             self.console.log("Trace end");
             self.console.log("Is there a closedError?");
             self.console.log(_this.closedError);
-            var callback = _this.closedError
-                ? function (subscription) {
-                    if (subscription.listeners.onError) {
-                        subscription.listeners.onError(_this.closedError);
-                    }
+            var subCallback = function (subscription) {
+                if (subscription.listeners.onError) {
+                    subscription.listeners.onError(_this.closedError);
                 }
-                : function (subscription) {
-                    if (subscription.listeners.onEnd) {
-                        subscription.listeners.onEnd(null);
-                    }
-                };
+            };
             self.console.log("Pending subscriptions empty?: " + _this.pendingSubscriptions.isEmpty());
             self.console.log(_this.pendingSubscriptions);
             self.console.log("this.subscriptions list:");
@@ -1574,7 +1561,7 @@ var WebSocketTransport = (function () {
             var allSubscriptions = _this.pendingSubscriptions.isEmpty()
                 ? _this.subscriptions
                 : _this.pendingSubscriptions;
-            allSubscriptions.getAllAsArray().forEach(callback);
+            allSubscriptions.getAllAsArray().forEach(subCallback);
             allSubscriptions.removeAll();
             self.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
             _this.tryReconnectIfNeeded();

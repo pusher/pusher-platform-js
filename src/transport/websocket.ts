@@ -242,29 +242,37 @@ export default class WebSocketTransport implements SubscriptionTransport {
       global.console.log(`Is there a closedError?`);
       global.console.log(this.closedError);
 
-      const callback = this.closedError
-        ? (subscription: SubscriptionData) => {
-            if (subscription.listeners.onError) {
-              subscription.listeners.onError(this.closedError);
-            }
-          }
-        : (subscription: SubscriptionData) => {
-            if (subscription.listeners.onEnd) {
-              subscription.listeners.onEnd(null);
-            }
-          };
+      const subCallback = (subscription: SubscriptionData) => {
+        if (subscription.listeners.onError) {
+          subscription.listeners.onError(this.closedError);
+        }
+      }
+
+      // const callback = this.closedError
+      //   ? (subscription: SubscriptionData) => {
+      //       if (subscription.listeners.onError) {
+      //         subscription.listeners.onError(this.closedError);
+      //       }
+      //     }
+      //   : (subscription: SubscriptionData) => {
+      //       if (subscription.listeners.onEnd) {
+      //         subscription.listeners.onEnd(null);
+      //       }
+      //     };
 
       global.console.log(`Pending subscriptions empty?: ${this.pendingSubscriptions.isEmpty()}`);
       global.console.log(this.pendingSubscriptions);
       global.console.log(`this.subscriptions list:`);
       global.console.log(this.subscriptions);
 
+      // TODO: Maybe just concat the pending and existing subscriptions?
+
       const allSubscriptions =
         this.pendingSubscriptions.isEmpty()
           ? this.subscriptions
           : this.pendingSubscriptions;
 
-      allSubscriptions.getAllAsArray().forEach(callback);
+      allSubscriptions.getAllAsArray().forEach(subCallback);
       allSubscriptions.removeAll();
 
       global.console.log("Forced close and in onclose and there was a closedError so we will go to tryReconnectIfNeeded");
@@ -556,9 +564,10 @@ export default class WebSocketTransport implements SubscriptionTransport {
       error_description: body.error_description || 'Network error',
     };
 
+    // TODO: Do we want to wait for the server to close or should we try to close ourselves, ASAP?
     this.closedError = new ErrorResponse(statusCode, headers, errorInfo);
-
     // this.close(new ErrorResponse(statusCode, headers, errorInfo));
+
   }
 
   private onPongMessage(message: Message) {
