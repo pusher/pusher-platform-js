@@ -282,8 +282,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     global.console.log("BEFORE");
     global.console.log(this.pongTimeout);
+    global.console.log(this.pingInterval);
     delete this.pongTimeout;
+    delete this.pingInterval;
     global.console.log(this.pongTimeout);
+    global.console.log(this.pingInterval);
 
     this.lastSentPingID = null;
 
@@ -533,8 +536,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     };
 
     // TODO: Do we want to wait for the server to close or should we try to close ourselves, ASAP?
-    this.closedError = new ErrorResponse(statusCode, headers, errorInfo);
-    // this.close(new ErrorResponse(statusCode, headers, errorInfo));
+    // this.closedError = new ErrorResponse(statusCode, headers, errorInfo);
+    this.close(new ErrorResponse(statusCode, headers, errorInfo));
   }
 
   private onPongMessage(message: Message) {

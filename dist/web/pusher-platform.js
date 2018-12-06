@@ -1582,8 +1582,11 @@ var WebSocketTransport = (function () {
         window.clearTimeout(this.pongTimeout);
         window.console.log("BEFORE");
         window.console.log(this.pongTimeout);
+        window.console.log(this.pingInterval);
         delete this.pongTimeout;
+        delete this.pingInterval;
         window.console.log(this.pongTimeout);
+        window.console.log(this.pingInterval);
         this.lastSentPingID = null;
         onClose();
     };
@@ -1733,7 +1736,7 @@ var WebSocketTransport = (function () {
             error: body.error || 'network_error',
             error_description: body.error_description || 'Network error',
         };
-        this.closedError = new network_1.ErrorResponse(statusCode, headers, errorInfo);
+        this.close(new network_1.ErrorResponse(statusCode, headers, errorInfo));
     };
     WebSocketTransport.prototype.onPongMessage = function (message) {
         var receviedPongID = message[0];
