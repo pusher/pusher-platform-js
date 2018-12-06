@@ -1573,11 +1573,9 @@ var WebSocketTransport = (function () {
             global.console.log(event);
         };
         this.socket.onclose = function (event) {
-            global.console.log("At the top of onclose, about to call trace");
+            global.console.log("TRACE");
             global.console.trace();
-            global.console.log("Trace end");
-            global.console.log("Is there a closedError?");
-            global.console.log(_this.closedError);
+            global.console.log("Is there a closedError?", _this.closedError);
             var subCallback = function (subscription) {
                 if (subscription.listeners.onError) {
                     subscription.listeners.onError(_this.closedError);
@@ -1596,16 +1594,19 @@ var WebSocketTransport = (function () {
             return;
         }
         var onClose = this.socket.onclose.bind(this);
-        delete this.socket.onclose;
-        delete this.socket.onerror;
-        delete this.socket.onmessage;
-        delete this.socket.onopen;
+        this.socket.onclose = function () { };
+        this.socket.onerror = function () { };
+        this.socket.onmessage = function () { };
+        this.socket.onopen = function () { };
         this.forcedClose = true;
         this.closedError = error;
         this.socket.close();
         global.clearTimeout(this.pingInterval);
         global.clearTimeout(this.pongTimeout);
+        global.console.log("BEFORE");
+        global.console.log(this.pongTimeout);
         delete this.pongTimeout;
+        global.console.log(this.pongTimeout);
         this.lastSentPingID = null;
         onClose();
     };

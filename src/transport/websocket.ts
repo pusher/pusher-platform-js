@@ -226,12 +226,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
       // this.close(new NetworkError('Connection was lost.'));
     };
     this.socket.onclose = (event: any) => {
-      global.console.log(`At the top of onclose, about to call trace`);
+      global.console.log(`TRACE`);
       global.console.trace();
-      global.console.log(`Trace end`);
-
-      global.console.log(`Is there a closedError?`);
-      global.console.log(this.closedError);
+      global.console.log(`Is there a closedError?`, this.closedError);
 
       const subCallback = (subscription: SubscriptionData) => {
         if (subscription.listeners.onError) {
@@ -262,13 +259,19 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // websocket and the onclose method firing. When we're force closing the
     // connection we can expedite the reconnect process by manually calling
     // onclose. We then need to delete the socket's handlers so that we don't
-    // get extra calls from the dying socket.
+    // get extra calls from the dying socket. Calling bind here means we get
+    // a copy of the onclose callback, rather than a reference to it.
     const onClose = this.socket.onclose.bind(this);
 
-    delete this.socket.onclose;
-    delete this.socket.onerror;
-    delete this.socket.onmessage;
-    delete this.socket.onopen;
+    // Set all callbacks to be noops because we don't care about them anymore.
+    // We need to set the callbacks to new values because just calling delete
+    // doesn't seem to actually remove the property on the socket, and so
+    // the onclose callback would end up being called twice, leading to sad
+    // times.
+    this.socket.onclose = () => {};
+    this.socket.onerror = () => {};
+    this.socket.onmessage = () => {};
+    this.socket.onopen = () => {};
 
     this.forcedClose = true;
     this.closedError = error;
@@ -276,7 +279,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     global.clearTimeout(this.pingInterval);
     global.clearTimeout(this.pongTimeout);
+
+    global.console.log("BEFORE");
+    global.console.log(this.pongTimeout);
     delete this.pongTimeout;
+    global.console.log(this.pongTimeout);
+
     this.lastSentPingID = null;
 
     onClose();
