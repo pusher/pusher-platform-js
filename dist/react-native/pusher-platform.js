@@ -114,6 +114,13 @@ var NetworkError = (function () {
     return NetworkError;
 }());
 exports.NetworkError = NetworkError;
+var ProtocolError = (function () {
+    function ProtocolError(error) {
+        this.error = error;
+    }
+    return ProtocolError;
+}());
+exports.ProtocolError = ProtocolError;
 var XhrReadyState;
 (function (XhrReadyState) {
     XhrReadyState[XhrReadyState["UNSENT"] = 0] = "UNSENT";
@@ -375,12 +382,16 @@ var RetryResolution = (function () {
         if (error instanceof network_1.NetworkError) {
             return this.shouldSafeRetry(error);
         }
-        this.logger.verbose(this.constructor.name + ": Error is not retryable", error);
-        return new DoNotRetry(error);
+        this.logger.verbose(this.constructor.name + ": Encountered an error, will retry", error);
+        return new Retry(this.calulateMillisToRetry());
     };
     RetryResolution.prototype.shouldSafeRetry = function (error) {
         if (error instanceof network_1.NetworkError) {
-            this.logger.verbose(this.constructor.name + ": It's a Network Error, will retry", error);
+            this.logger.verbose(this.constructor.name + ": Encountered a network error, will retry", error);
+            return new Retry(this.calulateMillisToRetry());
+        }
+        else if (error instanceof network_1.ProtocolError) {
+            this.logger.verbose(this.constructor.name + ": Encountered a protocol error, will retry", error);
             return new Retry(this.calulateMillisToRetry());
         }
         else if (error instanceof network_1.ErrorResponse) {
@@ -388,9 +399,12 @@ var RetryResolution = (function () {
                 this.logger.verbose(this.constructor.name + ": Error 5xx, will retry");
                 return new Retry(this.calulateMillisToRetry());
             }
+            else {
+                this.logger.verbose(this.constructor.name + ": Error is not retryable", error);
+                return new DoNotRetry(error);
+            }
         }
-        this.logger.verbose(this.constructor.name + ": Error is not retryable", error);
-        return new DoNotRetry(error);
+        return new Retry(this.calulateMillisToRetry());
     };
     RetryResolution.prototype.calulateMillisToRetry = function () {
         this.currentBackoffMillis = this.increaseTimeoutFunction(this.currentBackoffMillis);
@@ -1652,13 +1666,13 @@ var WebSocketTransport = (function () {
         }
         catch (err) {
             global.console.log("Calling close because invalid JSON in message");
-            this.close(new Error("Message is not valid JSON format. Getting " + event.data));
+            this.close(new network_1.ProtocolError("Message is not valid JSON format. Getting " + event.data));
             return;
         }
         var nonValidMessageError = this.validateMessage(message);
         if (nonValidMessageError) {
             global.console.log("Calling close because message is invalid");
-            this.close(new Error(nonValidMessageError.message));
+            this.close(nonValidMessageError);
             return;
         }
         var messageType = message.shift();
@@ -1693,15 +1707,15 @@ var WebSocketTransport = (function () {
                 break;
             default:
                 global.console.log("Calling close because of invalid message type");
-                this.close(new Error('Received non existing type of message.'));
+                this.close(new network_1.ProtocolError('Received non existing type of message.'));
         }
     };
     WebSocketTransport.prototype.validateMessage = function (message) {
         if (!Array.isArray(message)) {
-            return new Error("Message is expected to be an array. Getting: " + JSON.stringify(message));
+            return new network_1.ProtocolError("Message is expected to be an array. Getting: " + JSON.stringify(message));
         }
         if (message.length < 1) {
-            return new Error("Message is empty array: " + JSON.stringify(message));
+            return new network_1.ProtocolError("Message is empty array: " + JSON.stringify(message));
         }
         return null;
     };
@@ -1712,14 +1726,14 @@ var WebSocketTransport = (function () {
     };
     WebSocketTransport.prototype.onEventMessage = function (eventMessage, subscriptionListeners) {
         if (eventMessage.length !== 3) {
-            return new Error('Event message has ' + eventMessage.length + ' elements (expected 4)');
+            new network_1.ProtocolError('Event message has ' + eventMessage.length + ' elements (expected 4)');
         }
         var eventId = eventMessage[0], headers = eventMessage[1], body = eventMessage[2];
         if (typeof eventId !== 'string') {
-            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
+            new network_1.ProtocolError("Invalid event ID in message: " + JSON.stringify(eventMessage));
         }
         if (typeof headers !== 'object' || Array.isArray(headers)) {
-            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
+            new network_1.ProtocolError("Invalid event headers in message: " + JSON.stringify(eventMessage));
         }
         if (subscriptionListeners.onEvent) {
             subscriptionListeners.onEvent({ eventId: eventId, headers: headers, body: body });
@@ -1730,20 +1744,20 @@ var WebSocketTransport = (function () {
         this.subscriptions.remove(subID);
         if (eosMessage.length !== 3) {
             if (subscriptionListeners.onError) {
-                subscriptionListeners.onError(new Error("EOS message has " + eosMessage.length + " elements (expected 4)"));
+                subscriptionListeners.onError(new network_1.ProtocolError("EOS message has " + eosMessage.length + " elements (expected 4)"));
             }
             return;
         }
         var statusCode = eosMessage[0], headers = eosMessage[1], body = eosMessage[2];
         if (typeof statusCode !== 'number') {
             if (subscriptionListeners.onError) {
-                subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+                subscriptionListeners.onError(new network_1.ProtocolError('Invalid EOS Status Code'));
             }
             return;
         }
         if (typeof headers !== 'object' || Array.isArray(headers)) {
             if (subscriptionListeners.onError) {
-                subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+                subscriptionListeners.onError(new network_1.ProtocolError('Invalid EOS ElementsHeaders'));
             }
             return;
         }
@@ -1762,11 +1776,11 @@ var WebSocketTransport = (function () {
         var statusCode = closeMessage[0], headers = closeMessage[1], body = closeMessage[2];
         if (typeof statusCode !== 'number') {
             global.console.log("Calling close because of invalid EOS Status Code");
-            return this.close(new Error('Close message: Invalid EOS Status Code'));
+            return this.close(new network_1.ProtocolError('Close message: Invalid EOS Status Code'));
         }
         if (typeof headers !== 'object' || Array.isArray(headers)) {
             global.console.log("Calling close because of invalid EOS ElementsHeaders");
-            return this.close(new Error('Close message: Invalid EOS ElementsHeaders'));
+            return this.close(new network_1.ProtocolError('Close message: Invalid EOS ElementsHeaders'));
         }
         global.console.log("NOT Calling close because at end of onCloseMessage function");
         var errorInfo = {

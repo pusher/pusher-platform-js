@@ -1,5 +1,9 @@
 import { Logger } from './logger';
-import { ErrorResponse, NetworkError } from './network';
+import {
+  ErrorResponse,
+  NetworkError,
+  ProtocolError,
+} from './network';
 
 export interface RetryStrategyOptions {
   increaseTimeout?: (currentTimeout: number) => number;
@@ -126,21 +130,29 @@ export class RetryResolution {
     ) {
       return this.shouldSafeRetry(error);
     }
+
     if (error instanceof NetworkError) {
       return this.shouldSafeRetry(error);
     }
 
     this.logger.verbose(
-      `${this.constructor.name}: Error is not retryable`,
+      `${this.constructor.name}: Encountered an error, will retry`,
       error,
     );
-    return new DoNotRetry(error);
+
+    return new Retry(this.calulateMillisToRetry());
   }
 
-  private shouldSafeRetry(error: any) {
+  private shouldSafeRetry(error: any): RetryStrategyResult {
     if (error instanceof NetworkError) {
       this.logger.verbose(
-        `${this.constructor.name}: It's a Network Error, will retry`,
+        `${this.constructor.name}: Encountered a network error, will retry`,
+        error,
+      );
+      return new Retry(this.calulateMillisToRetry());
+    } else if (error instanceof ProtocolError) {
+      this.logger.verbose(
+        `${this.constructor.name}: Encountered a protocol error, will retry`,
         error,
       );
       return new Retry(this.calulateMillisToRetry());
@@ -148,13 +160,16 @@ export class RetryResolution {
       if (error.statusCode >= 500 && error.statusCode < 600) {
         this.logger.verbose(`${this.constructor.name}: Error 5xx, will retry`);
         return new Retry(this.calulateMillisToRetry());
+      } else {
+        this.logger.verbose(
+          `${this.constructor.name}: Error is not retryable`,
+          error,
+        );
+        return new DoNotRetry(error as any);
       }
     }
-    this.logger.verbose(
-      `${this.constructor.name}: Error is not retryable`,
-      error,
-    );
-    return new DoNotRetry(error);
+
+    return new Retry(this.calulateMillisToRetry());
   }
 
   private calulateMillisToRetry(): number {

@@ -13,6 +13,10 @@ export declare class NetworkError {
     error: string;
     constructor(error: string);
 }
+export declare class ProtocolError {
+    error: string;
+    constructor(error: string);
+}
 export declare enum XhrReadyState {
     UNSENT = 0,
     OPENED = 1,

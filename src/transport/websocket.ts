@@ -2,6 +2,7 @@ import {
   ElementsHeaders,
   ErrorResponse,
   NetworkError,
+  ProtocolError,
   responseToHeadersObject,
 } from '../network';
 import {
@@ -364,7 +365,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     } catch (err) {
       global.console.log(`Calling close because invalid JSON in message`);
       this.close(
-        new Error(`Message is not valid JSON format. Getting ${event.data}`),
+        new ProtocolError(`Message is not valid JSON format. Getting ${event.data}`),
       );
       return;
     }
@@ -374,7 +375,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const nonValidMessageError = this.validateMessage(message);
     if (nonValidMessageError) {
       global.console.log(`Calling close because message is invalid`);
-      this.close(new Error(nonValidMessageError.message));
+      this.close(nonValidMessageError);
       return;
     }
 
@@ -421,7 +422,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
         break;
       default:
         global.console.log(`Calling close because of invalid message type`);
-        this.close(new Error('Received non existing type of message.'));
+        this.close(new ProtocolError('Received non existing type of message.'));
     }
   }
 
@@ -430,9 +431,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
    * @param message The message to check.
    * @returns null or error if the message is wrong.
    */
-  private validateMessage(message: Message): Error | null {
+  private validateMessage(message: Message): ProtocolError | null {
     if (!Array.isArray(message)) {
-      return new Error(
+      return new ProtocolError(
         `Message is expected to be an array. Getting: ${JSON.stringify(
           message,
         )}`,
@@ -440,7 +441,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     if (message.length < 1) {
-      return new Error(`Message is empty array: ${JSON.stringify(message)}`);
+      return new ProtocolError(`Message is empty array: ${JSON.stringify(message)}`);
     }
 
     return null;
@@ -459,22 +460,22 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private onEventMessage(
     eventMessage: Message,
     subscriptionListeners: SubscriptionListeners,
-  ): Error | void {
+  ) {
     if (eventMessage.length !== 3) {
-      return new Error(
+      new ProtocolError(
         'Event message has ' + eventMessage.length + ' elements (expected 4)',
       );
     }
 
     const [eventId, headers, body] = eventMessage;
     if (typeof eventId !== 'string') {
-      return new Error(
+      new ProtocolError(
         `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
       );
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return new Error(
+      new ProtocolError(
         `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
       );
     }
@@ -488,14 +489,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
     eosMessage: Message,
     subID: number,
     subscriptionListeners: SubscriptionListeners,
-  ): void {
+  ) {
     global.console.log(`Received EOS message for sub ${subID}`);
     this.subscriptions.remove(subID);
 
     if (eosMessage.length !== 3) {
       if (subscriptionListeners.onError) {
         subscriptionListeners.onError(
-          new Error(
+          new ProtocolError(
             `EOS message has ${eosMessage.length} elements (expected 4)`,
           ),
         );
@@ -506,14 +507,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [statusCode, headers, body] = eosMessage;
     if (typeof statusCode !== 'number') {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+        subscriptionListeners.onError(new ProtocolError('Invalid EOS Status Code'));
       }
       return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+        subscriptionListeners.onError(new ProtocolError('Invalid EOS ElementsHeaders'));
       }
       return;
     }
@@ -538,13 +539,13 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [statusCode, headers, body] = closeMessage;
     if (typeof statusCode !== 'number') {
       global.console.log(`Calling close because of invalid EOS Status Code`);
-      return this.close(new Error('Close message: Invalid EOS Status Code'));
+      return this.close(new ProtocolError('Close message: Invalid EOS Status Code'));
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
       global.console.log(`Calling close because of invalid EOS ElementsHeaders`);
       return this.close(
-        new Error('Close message: Invalid EOS ElementsHeaders'),
+        new ProtocolError('Close message: Invalid EOS ElementsHeaders'),
       );
     }
 
