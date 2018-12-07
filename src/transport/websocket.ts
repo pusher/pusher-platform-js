@@ -316,9 +316,10 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
   private sendMessage(message: Message) {
     if (this.socket.readyState !== WSReadyState.Open) {
-      return this.logger.warn(
+      this.logger.warn(
         `Can't send on socket in "${WSReadyState[this.socket.readyState]}" state`,
       );
+      return;
     }
 
     this.socket.send(JSON.stringify(message));
@@ -391,7 +392,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
         this.onEOSMessage(message, subID, listeners);
         break;
       default:
-        this.close(new ProtocolError('Received non existing type of message.'));
+        this.close(new ProtocolError('Received unknown type of message.'));
     }
   }
 
@@ -431,22 +432,37 @@ export default class WebSocketTransport implements SubscriptionTransport {
     subscriptionListeners: SubscriptionListeners,
   ) {
     if (eventMessage.length !== 3) {
-      new ProtocolError(
-        'Event message has ' + eventMessage.length + ' elements (expected 4)',
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            'Event message has ' + eventMessage.length + ' elements (expected 4)',
+          )
+        )
+      }
+      return;
     }
 
     const [eventId, headers, body] = eventMessage;
     if (typeof eventId !== 'string') {
-      new ProtocolError(
-        `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
+          )
+        )
+      }
+      return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      new ProtocolError(
-        `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
-      );
+      if (subscriptionListeners.onError) {
+        subscriptionListeners.onError(
+          new ProtocolError(
+            `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
+          )
+        )
+      }
+      return;
     }
 
     if (subscriptionListeners.onEvent) {
@@ -506,13 +522,15 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private onCloseMessage(closeMessage: Message) {
     const [statusCode, headers, body] = closeMessage;
     if (typeof statusCode !== 'number') {
-      return this.close(new ProtocolError('Close message: Invalid EOS Status Code'));
+      this.close(new ProtocolError('Close message: Invalid EOS Status Code'));
+      return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
-      return this.close(
+      this.close(
         new ProtocolError('Close message: Invalid EOS ElementsHeaders'),
       );
+      return;
     }
 
     const errorInfo = {
@@ -527,10 +545,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [receviedPongID] = message;
 
     if (this.lastSentPingID !== receviedPongID) {
-      this.logger.warn(
-        `Received pong with ID ${receviedPongID} but lastSentPingID was ${
-          this.lastSentPingID
-        }`,
+      this.close(
+        new ProtocolError(
+          `Received pong with ID ${receviedPongID} but last sent ping ID was ${
+            this.lastSentPingID
+          }`
+        )
       );
     }
 
