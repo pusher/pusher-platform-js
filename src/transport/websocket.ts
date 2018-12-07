@@ -45,7 +45,6 @@ type WsSubscriptionsType = {
 
 class WsSubscriptions {
   private subscriptions: WsSubscriptionsType;
-  private pendingSubscriptions: WsSubscriptionsType;
 
   constructor() {
     this.subscriptions = {};
@@ -224,18 +223,17 @@ export default class WebSocketTransport implements SubscriptionTransport {
     this.socket.onclose = (event: any) => {
       this.logger.verbose('WebSocket encountered a close event', event);
 
-      const subCallback = (subscription: SubscriptionData) => {
-        if (subscription.listeners.onError) {
-          subscription.listeners.onError(this.closedError);
+      const allSubscriptions = this.subscriptions
+        .getAllAsArray()
+        .concat(this.pendingSubscriptions.getAllAsArray());
+
+      allSubscriptions.forEach(sub => {
+        if (sub.listeners.onError) {
+          sub.listeners.onError(this.closedError);
         }
-      };
-
-      const allSubscriptions = this.pendingSubscriptions.isEmpty()
-        ? this.subscriptions
-        : this.pendingSubscriptions;
-
-      allSubscriptions.getAllAsArray().forEach(subCallback);
-      allSubscriptions.removeAll();
+      });
+      this.subscriptions.removeAll();
+      this.pendingSubscriptions.removeAll();
 
       this.tryReconnectIfNeeded();
     };
