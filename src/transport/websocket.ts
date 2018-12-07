@@ -228,12 +228,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
         if (subscription.listeners.onError) {
           subscription.listeners.onError(this.closedError);
         }
-      }
+      };
 
-      const allSubscriptions =
-        this.pendingSubscriptions.isEmpty()
-          ? this.subscriptions
-          : this.pendingSubscriptions;
+      const allSubscriptions = this.pendingSubscriptions.isEmpty()
+        ? this.subscriptions
+        : this.pendingSubscriptions;
 
       allSubscriptions.getAllAsArray().forEach(subCallback);
       allSubscriptions.removeAll();
@@ -260,10 +259,12 @@ export default class WebSocketTransport implements SubscriptionTransport {
     // doesn't seem to actually remove the property on the socket, and so
     // the onclose callback would end up being called twice, leading to sad
     // times.
+    /* tslint:disable:no-empty */
     this.socket.onclose = () => {};
     this.socket.onerror = () => {};
     this.socket.onmessage = () => {};
     this.socket.onopen = () => {};
+    /* tslint:enable:no-empty */
 
     this.forcedClose = true;
     this.closedError = error;
@@ -317,7 +318,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
   private sendMessage(message: Message) {
     if (this.socket.readyState !== WSReadyState.Open) {
       this.logger.warn(
-        `Can't send on socket in "${WSReadyState[this.socket.readyState]}" state`,
+        `Can't send on socket in "${
+          WSReadyState[this.socket.readyState]
+        }" state`,
       );
       return;
     }
@@ -338,7 +341,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
       message = JSON.parse(event.data);
     } catch (err) {
       this.close(
-        new ProtocolError(`Message is not valid JSON format. Getting ${event.data}`),
+        new ProtocolError(
+          `Message is not valid JSON format. Getting ${event.data}`,
+        ),
       );
       return;
     }
@@ -371,9 +376,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
 
     if (!subscription) {
       this.close(
-        new Error(
-          `Received message for unknown subscription ID: ${subID}`,
-        ),
+        new Error(`Received message for unknown subscription ID: ${subID}`),
       );
       return;
     }
@@ -411,7 +414,9 @@ export default class WebSocketTransport implements SubscriptionTransport {
     }
 
     if (message.length < 1) {
-      return new ProtocolError(`Message is empty array: ${JSON.stringify(message)}`);
+      return new ProtocolError(
+        `Message is empty array: ${JSON.stringify(message)}`,
+      );
     }
 
     return null;
@@ -435,9 +440,11 @@ export default class WebSocketTransport implements SubscriptionTransport {
       if (subscriptionListeners.onError) {
         subscriptionListeners.onError(
           new ProtocolError(
-            'Event message has ' + eventMessage.length + ' elements (expected 4)',
-          )
-        )
+            'Event message has ' +
+              eventMessage.length +
+              ' elements (expected 4)',
+          ),
+        );
       }
       return;
     }
@@ -448,8 +455,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
         subscriptionListeners.onError(
           new ProtocolError(
             `Invalid event ID in message: ${JSON.stringify(eventMessage)}`,
-          )
-        )
+          ),
+        );
       }
       return;
     }
@@ -459,8 +466,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
         subscriptionListeners.onError(
           new ProtocolError(
             `Invalid event headers in message: ${JSON.stringify(eventMessage)}`,
-          )
-        )
+          ),
+        );
       }
       return;
     }
@@ -491,14 +498,18 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const [statusCode, headers, body] = eosMessage;
     if (typeof statusCode !== 'number') {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new ProtocolError('Invalid EOS Status Code'));
+        subscriptionListeners.onError(
+          new ProtocolError('Invalid EOS Status Code'),
+        );
       }
       return;
     }
 
     if (typeof headers !== 'object' || Array.isArray(headers)) {
       if (subscriptionListeners.onError) {
-        subscriptionListeners.onError(new ProtocolError('Invalid EOS ElementsHeaders'));
+        subscriptionListeners.onError(
+          new ProtocolError('Invalid EOS ElementsHeaders'),
+        );
       }
       return;
     }
@@ -549,8 +560,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
         new ProtocolError(
           `Received pong with ID ${receviedPongID} but last sent ping ID was ${
             this.lastSentPingID
-          }`
-        )
+          }`,
+        ),
       );
     }
 

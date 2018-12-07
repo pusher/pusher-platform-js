@@ -1,9 +1,5 @@
 import { Logger } from './logger';
-import {
-  ErrorResponse,
-  NetworkError,
-  ProtocolError,
-} from './network';
+import { ErrorResponse, NetworkError, ProtocolError } from './network';
 
 export interface RetryStrategyOptions {
   increaseTimeout?: (currentTimeout: number) => number;
@@ -131,39 +127,49 @@ export class RetryResolution {
     }
 
     switch (error.constructor) {
-    case ErrorResponse:
-      const { statusCode, headers } = error;
-      const requestMethod = headers['Request-Method'];
+      case ErrorResponse:
+        const { statusCode, headers } = error;
+        const requestMethod = headers['Request-Method'];
 
-      if ((statusCode >= 500 && statusCode < 600) && requestMethodIsSafe(requestMethod)) {
-        this.logger.verbose(`${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will retry`);
-        return new Retry(this.calulateMillisToRetry());
-      } else {
+        if (
+          statusCode >= 500 &&
+          statusCode < 600 &&
+          requestMethodIsSafe(requestMethod)
+        ) {
+          this.logger.verbose(
+            `${this.constructor.name}: Encountered an error with status code ${
+              statusCode
+            } and request method ${requestMethod}, will retry`,
+          );
+          return new Retry(this.calulateMillisToRetry());
+        } else {
+          this.logger.verbose(
+            `${this.constructor.name}: Encountered an error with status code ${
+              statusCode
+            } and request method ${requestMethod}, will not retry`,
+            error,
+          );
+          return new DoNotRetry(error as any);
+        }
+      case NetworkError:
         this.logger.verbose(
-          `${this.constructor.name}: Encountered an error with status code ${statusCode} and request method ${requestMethod}, will not retry`,
+          `${this.constructor.name}: Encountered a network error, will retry`,
           error,
         );
-        return new DoNotRetry(error as any);
-      }
-    case NetworkError:
-      this.logger.verbose(
-        `${this.constructor.name}: Encountered a network error, will retry`,
-        error,
-      );
-      return new Retry(this.calulateMillisToRetry());
-    case ProtocolError:
-      this.logger.verbose(
-        `${this.constructor.name}: Encountered a protocol error, will retry`,
-        error,
-      );
-      return new Retry(this.calulateMillisToRetry());
-    default:
-      this.logger.verbose(
-        `${this.constructor.name}: Encountered an error, will retry`,
-        error,
-      );
+        return new Retry(this.calulateMillisToRetry());
+      case ProtocolError:
+        this.logger.verbose(
+          `${this.constructor.name}: Encountered a protocol error, will retry`,
+          error,
+        );
+        return new Retry(this.calulateMillisToRetry());
+      default:
+        this.logger.verbose(
+          `${this.constructor.name}: Encountered an error, will retry`,
+          error,
+        );
 
-      return new Retry(this.calulateMillisToRetry());
+        return new Retry(this.calulateMillisToRetry());
     }
   }
 
