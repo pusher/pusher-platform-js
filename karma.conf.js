@@ -72,7 +72,7 @@ module.exports = function(config) {
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['Chrome_without_security'],
 
- // you can define custom flags 
+ // you can define custom flags
     customLaunchers: {
       Chrome_without_security: {
         base: 'Chrome',
@@ -86,6 +86,12 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: 1
+    concurrency: 1,
+
+    // Makes things work on Travis where the timeouts are otherwise too low
+    captureTimeout: 210000,
+    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout : 210000,
+    browserNoActivityTimeout : 210000
   })
 }

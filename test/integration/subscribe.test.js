@@ -2,6 +2,8 @@ const {
   default: PusherPlatform,
 } = require('../../dist/web/pusher-platform.js');
 
+const { INSTANCE_HOST } = require('./config');
+
 const PATH_10_AND_EOS = 'subscribe10';
 const PATH_3_AND_OPEN = 'subscribe_3_continuous';
 const PATH_0_EOS = 'subscribe_0_eos';
@@ -16,7 +18,7 @@ describe('Instance Subscribe', () => {
       locator: 'v1:api-ceres:test',
       serviceName: 'platform_sdk_tester',
       serviceVersion: 'v1',
-      host: 'localhost:10443',
+      host: INSTANCE_HOST,
       logger: logger,
     });
 

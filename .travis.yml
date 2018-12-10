@@ -1,0 +1,19 @@
+language: node_js
+node_js:
+  - "node"
+
+addons:
+  apt:
+    packages:
+      - xvfb
+
+install:
+  - export DISPLAY=':99.0'
+  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+before_script:
+  - yarn
+  - sed -i -e "s|localhost:10443|$SDK_TESTER_HOST|g" test/integration/config.js
+
+script:
+  - yarn test

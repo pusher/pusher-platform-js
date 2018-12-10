@@ -2,6 +2,8 @@ const {
   default: PusherPlatform,
 } = require('../../dist/web/pusher-platform.js');
 
+const { INSTANCE_HOST } = require('./config');
+
 const PATH_NOT_EXISTING = 'subscribe_missing';
 const PATH_FORBIDDEN = 'subscribe_forbidden';
 
@@ -13,7 +15,7 @@ describe('Instance Subscribe errors nicely', () => {
       locator: 'v1:api-ceres:1',
       serviceName: 'platform_sdk_tester',
       serviceVersion: 'v1',
-      host: 'localhost:10443',
+      host: INSTANCE_HOST,
       logger: logger,
     });
 
