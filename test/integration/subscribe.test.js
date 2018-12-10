@@ -80,8 +80,10 @@ describe('Instance Subscribe', () => {
     });
   });
 
+
+
   it('subscribes with resuming subscription but retry strategy that says 0 retries, terminates on EOS, and triggers onEnd callback exactly once', done => {
-    instance.subscribeNonResuming({
+    instance.subscribeResuming({
       path: PATH_10_AND_EOS,
       retryStrategyOptions: neverRetryOptions,
       listeners: {
@@ -90,6 +92,26 @@ describe('Instance Subscribe', () => {
         onEnd: () => {
           endCount += 1;
           expect(endCount).toBe(1);
+          done();
+        },
+        onError: err => {
+          fail();
+        },
+      },
+    });
+  });
+
+  it('subscribes with resuming subscription and terminates on EOS after receiving all events', done => {
+    instance.subscribeResuming({
+      path: PATH_10_AND_EOS,
+      listeners: {
+        onOpen: headers => {},
+        onEvent: event => {
+          eventCount += 1;
+        },
+        onRetrying: () => console.log('onRetrying'),
+        onEnd: () => {
+          expect(eventCount).toBe(10);
           done();
         },
         onError: err => {
