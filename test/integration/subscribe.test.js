@@ -39,7 +39,6 @@ describe('Instance Subscribe', () => {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
   });
 
-
   it('subscribes and terminates on EOS after receiving all events', done => {
     instance.subscribeNonResuming({
       path: PATH_10_AND_EOS,
@@ -79,8 +78,6 @@ describe('Instance Subscribe', () => {
       },
     });
   });
-
-
 
   it('subscribes with resuming subscription but retry strategy that says 0 retries, terminates on EOS, and triggers onEnd callback exactly once', done => {
     instance.subscribeResuming({
@@ -226,22 +223,35 @@ describe('Instance Subscribe', () => {
               expect(event.body.test_id).toBe(99);
               // Send a message to request the websocket connection be closed by
               // the server
-              instance.client.websocketTransport.sendMessage([999, 123]);
+              const shuttingDownErr = {
+                error: 'shutting_down',
+                error_description: 'Shutting down',
+              };
+              instance.client.websocketTransport.sendMessage([
+                99,
+                503,
+                { 'x-pusher-echo': 'true' },
+                shuttingDownErr,
+              ]);
               break;
             case 2:
               expect(event.body.test_id).toBe(100);
               done();
               break;
             default:
-              fail('Received too many events from the server')
+              fail('Received too many events from the server');
               break;
           }
         },
         onEnd: () => {
-          fail('We should get an error that is handled internally and then close ourselves');
+          fail(
+            'We should get an error that is handled internally and then close ourselves',
+          );
         },
         onError: err => {
-          fail('We should not see an error - it should be handled internally because the subscription is resuming')
+          fail(
+            'We should not see an error - it should be handled internally because the subscription is resuming',
+          );
         },
       },
     });
