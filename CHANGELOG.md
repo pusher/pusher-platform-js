@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.15.6...HEAD)
 
+### Fixes
+
+- Makes WebSockets and subscriptions reconnect more reliably
+
 ## [0.15.6](https://github.com/pusher/pusher-platform-js/compare/0.15.5...0.15.6) - 2018-12-05
 
 ### Fixes
