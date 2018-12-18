@@ -138,6 +138,8 @@ export default class WebSocketTransport implements SubscriptionTransport {
     listeners: SubscriptionListeners,
     headers: ElementsHeaders,
   ): Subscription {
+    this.logger.verbose(`About to try and subscribe to path: ${path}`);
+
     // If connection was closed, try to reconnect
     this.tryReconnectIfNeeded();
 
@@ -227,13 +229,32 @@ export default class WebSocketTransport implements SubscriptionTransport {
         .getAllAsArray()
         .concat(this.pendingSubscriptions.getAllAsArray());
 
+      this.logger.warn("111111111");
+      this.logger.warn(allSubscriptions);
+      this.logger.warn("222222222");
+      this.logger.warn(this.subscriptions);
+      this.logger.warn("333333333");
+      this.logger.warn(this.pendingSubscriptions);
+      this.logger.warn("444444444");
+
+      this.subscriptions.removeAll();
+      this.pendingSubscriptions.removeAll();
+
+      debugger
+
+      this.logger.warn("555555555");
+      this.logger.warn(allSubscriptions);
+      this.logger.warn("666666666");
+      this.logger.warn(this.subscriptions);
+      this.logger.warn("777777777");
+      this.logger.warn(this.pendingSubscriptions);
+      this.logger.warn("888888888");
+
       allSubscriptions.forEach(sub => {
         if (sub.listeners.onError) {
           sub.listeners.onError(this.closedError);
         }
       });
-      this.subscriptions.removeAll();
-      this.pendingSubscriptions.removeAll();
 
       this.tryReconnectIfNeeded();
     };
