@@ -4,11 +4,17 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.15.6...HEAD)
+## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.16.0...HEAD)
+
+## [0.16.0](https://github.com/pusher/pusher-platform-js/compare/0.15.6...0.16.0) - 2018-12-18
 
 ### Fixes
 
 - Makes WebSockets and subscriptions reconnect more reliably
+
+### Changes
+
+- Subscriptions will now default to retrying, rather than not, if the error that caused the close isn't of an expected form
 
 ## [0.15.6](https://github.com/pusher/pusher-platform-js/compare/0.15.5...0.15.6) - 2018-12-05
 
