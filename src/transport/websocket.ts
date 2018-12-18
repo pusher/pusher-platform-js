@@ -111,16 +111,16 @@ const pingTimeoutMs: number = 10000;
 export default class WebSocketTransport implements SubscriptionTransport {
   private baseURL: string;
   private webSocketPath: string = '/ws';
-  private socket: WebSocket;
+  private socket!: WebSocket;
   private forcedClose: boolean = false;
   private closedError: any = null;
   private lastSubscriptionID: number;
   private subscriptions: WsSubscriptions;
   private pendingSubscriptions: WsSubscriptions;
-  private lastMessageReceivedTimestamp: number;
+  private lastMessageReceivedTimestamp!: number;
   private pingInterval: any;
   private pongTimeout: any;
-  private lastSentPingID: number | null;
+  private lastSentPingID: number | null = null;
   private logger: Logger;
 
   constructor(host: string, logger: Logger) {
@@ -245,13 +245,16 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return;
     }
 
+    let onClose = (event?: any) => {};
     // In Chrome there is a substantial delay between calling close on a broken
     // websocket and the onclose method firing. When we're force closing the
     // connection we can expedite the reconnect process by manually calling
     // onclose. We then need to delete the socket's handlers so that we don't
     // get extra calls from the dying socket. Calling bind here means we get
     // a copy of the onclose callback, rather than a reference to it.
-    const onClose = this.socket.onclose.bind(this);
+    if (this.socket.onclose != null) {
+      onClose = this.socket.onclose.bind(this);
+    }
 
     // Set all callbacks to be noops because we don't care about them anymore.
     // We need to set the callbacks to new values because just calling delete

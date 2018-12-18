@@ -124,7 +124,7 @@ class OpeningSubscriptionState implements SubscriptionState {
 }
 
 class RetryingSubscriptionState implements SubscriptionState {
-  private timeout: number;
+  private timeout: number = -1;
 
   constructor(
     error: any,
