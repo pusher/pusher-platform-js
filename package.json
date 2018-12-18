@@ -16,18 +16,20 @@
   },
   "scripts": {
     "build": "yarn build:all",
-    "build:all":
-      "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
+    "build:all": "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
     "build:web": "webpack --config=webpack/config.web.js",
     "build:react-native": "webpack --config=webpack/config.react-native.js",
     "build:worker": "webpack --config=webpack/config.worker.js",
     "clean": "rm -rf dist",
     "format": "yarn prettier --write",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "lint:build:test": "yarn lint && yarn test",
     "prettier": "prettier 'src/**/*.ts' 'test/**/*.js'",
     "test-jest": "jest test/unit/*.test.js",
     "test-integration": "karma start --single-run",
-    "test": "yarn build && yarn test-jest && yarn test-integration"
+    "test": "yarn build && yarn test-jest && yarn test-integration",
+    "publish-please": "publish-please",
+    "prepublishOnly": "publish-please guard"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
@@ -41,6 +43,7 @@
     "karma-webpack": "^2.0.3",
     "lodash": "^4.17.4",
     "prettier": "^1.8.1",
+    "publish-please": "^5.4.3",
     "ts-loader": "^2.1.0",
     "tslint": "^5.8.0",
     "typescript": "^2.6.1",

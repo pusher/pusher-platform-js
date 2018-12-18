@@ -98,7 +98,7 @@ class TokenProvidingSubscription implements Subscription {
 }
 
 class ActiveState implements TokenProvidingSubscriptionState {
-  private underlyingSubscription: Subscription;
+  private underlyingSubscription!: Subscription;
 
   constructor(
     private logger: Logger,
@@ -137,7 +137,9 @@ class ActiveState implements TokenProvidingSubscriptionState {
   }
 
   unsubscribe() {
-    this.underlyingSubscription.unsubscribe();
+    if (this.underlyingSubscription != null) {
+      this.underlyingSubscription.unsubscribe();
+    }
   }
 
   private putTokenIntoHeader(token: string) {

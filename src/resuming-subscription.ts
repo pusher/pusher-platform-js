@@ -76,7 +76,7 @@ class ResumingSubscription implements Subscription {
 }
 
 class OpeningSubscriptionState implements SubscriptionState {
-  private underlyingSubscription: Subscription;
+  private underlyingSubscription!: Subscription;
 
   constructor(
     private onTransition: (newState: SubscriptionState) => void,
@@ -139,7 +139,9 @@ class OpeningSubscriptionState implements SubscriptionState {
 
   unsubscribe() {
     this.onTransition(new EndingSubscriptionState(this.logger));
-    this.underlyingSubscription.unsubscribe();
+    if (this.underlyingSubscription != null) {
+      this.underlyingSubscription.unsubscribe();
+    }
   }
 }
 
@@ -164,8 +166,8 @@ class OpenSubscriptionState implements SubscriptionState {
 }
 
 class ResumingSubscriptionState implements SubscriptionState {
-  private timeout: number;
-  private underlyingSubscription: Subscription;
+  private timeout: number = -1;
+  private underlyingSubscription!: Subscription;
 
   constructor(
     error: any,
@@ -250,7 +252,9 @@ class ResumingSubscriptionState implements SubscriptionState {
   unsubscribe() {
     this.onTransition(new EndingSubscriptionState(this.logger));
     global.clearTimeout(this.timeout);
-    this.underlyingSubscription.unsubscribe();
+    if (this.underlyingSubscription != null) {
+      this.underlyingSubscription.unsubscribe();
+    }
   }
 }
 
