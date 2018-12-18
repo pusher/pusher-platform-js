@@ -2,7 +2,9 @@ const {
   default: PusherPlatform,
 } = require('../../dist/web/pusher-platform.js');
 
-//these just test GET - everything else should just work.
+const { INSTANCE_HOST } = require('./config');
+
+// these just test GET - everything else should just work.
 describe('Instance requests - failing', () => {
   let instance;
   let instanceWithTokenProvider;
@@ -12,7 +14,7 @@ describe('Instance requests - failing', () => {
       locator: 'v1:api-ceres:1',
       serviceName: 'platform_sdk_tester',
       serviceVersion: 'v1',
-      host: 'localhost:10443',
+      host: INSTANCE_HOST,
     });
 
     class DummyTokenProvider {
@@ -27,7 +29,7 @@ describe('Instance requests - failing', () => {
       locator: 'v1:api-ceres:1',
       serviceName: 'platform_sdk_tester',
       serviceVersion: 'v1',
-      host: 'localhost:10443',
+      host: INSTANCE_HOST,
       tokenProvider: new DummyTokenProvider(),
     });
   });

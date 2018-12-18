@@ -50,6 +50,10 @@ export class NetworkError {
   constructor(public error: string) {}
 }
 
+export class ProtocolError {
+  constructor(public error: string) {}
+}
+
 // Follows https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
 export enum XhrReadyState {
   UNSENT = 0,
