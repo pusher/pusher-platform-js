@@ -1,0 +1,154 @@
+<!--
+This example connects to the Chatkit service (pusher.com/chatkit).
+
+Provide a test token provider URL, instance locator, and user id, all
+of which you can get from the Chatkit getting stated on the dashboard
+(dash.pusher.com).
+-->
+
+<html>
+  <head></head>
+  <body>
+    <script type="text/javascript" src="../dist/web/pusher-platform.js"></script>
+
+    <input name="testfile" type="file">
+    <button>Upload file</button>
+
+    <script type="text/javascript">
+      class TokenProvider {
+        constructor(options) {
+          this.url = options.url;
+          this.userId = options.userId;
+          this.authContext = options.authContext || {};
+        }
+
+        fetchToken(tokenParams) {
+          return this.makeAuthRequest().then(responseBody => {
+            return responseBody.access_token;
+          });
+        }
+
+        clearToken(token) {}
+
+        makeAuthRequest() {
+          return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            var url;
+            if (this.userId === undefined) {
+              url = this.mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
+            } else {
+              const authContextWithUserId = Object.assign(
+                {},
+                this.authContext.queryParams,
+                { user_id: this.userId },
+              );
+              url = this.mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
+            }
+
+            xhr.open("POST", url);
+            if (this.authContext.headers !== undefined) {
+              Object.keys(this.authContext.headers).forEach(key => {
+                xhr.setRequestHeader(key, this.authContext.headers[key]);
+              });
+            }
+            xhr.timeout = 30 * 1000; // 30 seconds
+            xhr.onload = () => {
+              if (xhr.status === 200) {
+                resolve(JSON.parse(xhr.responseText));
+              } else {
+                reject(new Error(`Couldn't fetch token from ${
+                  this.url
+                }; got ${ xhr.status } ${ xhr.statusText }.`));
+              }
+            };
+            xhr.ontimeout = () => {
+              reject(new Error(`Request timed out while fetching token from ${
+                this.url
+              }`));
+            };
+            xhr.onerror = error => {
+              reject(error);
+            };
+            xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+            xhr.send(this.urlEncode({
+              grant_type: "client_credentials",
+            }));
+          });
+        }
+
+        unixTimeNow() {
+          return Math.floor(Date.now() / 1000);
+        }
+
+        urlEncode(data) {
+          return Object.keys(data)
+            .filter(key => data[key] !== undefined)
+            .map(key => `${ key }=${ encodeURIComponent(data[key]) }`)
+            .join("&");
+        }
+
+        queryString(data) {
+          const encodedData = this.urlEncode(data);
+          return encodedData ? `?${ encodedData }` : "";
+        }
+
+        querylessUrlAndQueryObjectFromFullUrl(urlString) {
+          if (urlString.indexOf('?') === -1) {
+            return {
+              querylessUrl: urlString,
+              queryObject: {},
+            };
+          }
+
+          const splitUrl = urlString.split("?");
+          const querylessUrl = splitUrl[0];
+          const queryString = splitUrl.slice(1).join("&");
+
+          return {
+            querylessUrl,
+            queryObject: this.queryParamObject(queryString),
+          };
+        }
+
+        queryParamObject(queryParamString) {
+          return queryParamString
+            .split("&")
+            .map(str => {
+              let [key, value] = str.split('=');
+              return {[key]: decodeURI(value)};
+            })
+            .reduce((prev, curr) => Object.assign(prev, curr));
+        }
+
+        mergeQueryParamsIntoUrl(urlString, queryParams) {
+          const { querylessUrl, queryObject } = this.querylessUrlAndQueryObjectFromFullUrl(urlString);
+          const fullQueryString = this.queryString(Object.assign(queryObject, queryParams));
+          const t = `${querylessUrl}${fullQueryString}`;
+          return t;
+        }
+      }
+
+      const tokenProvider = new TokenProvider({
+        url: "YOUR_TOKEN_PROVIDER_URL",
+        userId: "YOUR_USER_ID"
+      });
+
+      const instance = new PusherPlatform.Instance({
+        locator: 'YOUR_INSTANCE_LOCATOR',
+        serviceName: 'chatkit',
+        serviceVersion: 'v1',
+        tokenProvider: tokenProvider,
+      });
+
+      instance.subscribeResuming({
+        path: '/users',
+        listeners: {
+          onOpen: (headers) => { console.log("Open", headers) },
+          onEvent: (event) => { console.log("Event", event) },
+          onError: (error) => { console.log("Error", error) },
+        }
+      });
+    </script>
+  </body>
+</html>
+
