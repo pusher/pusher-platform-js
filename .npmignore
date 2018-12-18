@@ -1,3 +1,11 @@
-test/
-yarn-error.log
-.vscode/
+# This file is written to be a whitelist instead of a blacklist. Start by
+# ignoring everything, then add back the files we want to be included in the
+# final NPM package.
+*
+
+# And these are the files that are allowed.
+!/LICENSE.md
+!/package.json
+!/react-native.js
+!/worker.js
+!/dist/**/*
