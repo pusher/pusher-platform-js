@@ -245,6 +245,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
       return;
     }
 
+    /* tslint:disable-next-line:no-empty */
     let onClose = (event?: any) => {};
     // In Chrome there is a substantial delay between calling close on a broken
     // websocket and the onclose method firing. When we're force closing the
