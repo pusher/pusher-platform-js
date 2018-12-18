@@ -110,7 +110,7 @@ export class RetryResolution {
     }
 
     if (error == null) {
-      return new Retry(this.calulateMillisToRetry());
+      return new Retry(this.calculateMillisToRetry());
     }
 
     if (error instanceof ErrorResponse && error.headers['Retry-After']) {
@@ -123,7 +123,7 @@ export class RetryResolution {
     }
 
     if (this.retryUnsafeRequests) {
-      return new Retry(this.calulateMillisToRetry());
+      return new Retry(this.calculateMillisToRetry());
     }
 
     switch (error.constructor) {
@@ -141,7 +141,7 @@ export class RetryResolution {
               statusCode
             } and request method ${requestMethod}, will retry`,
           );
-          return new Retry(this.calulateMillisToRetry());
+          return new Retry(this.calculateMillisToRetry());
         } else {
           this.logger.verbose(
             `${this.constructor.name}: Encountered an error with status code ${
@@ -156,24 +156,24 @@ export class RetryResolution {
           `${this.constructor.name}: Encountered a network error, will retry`,
           error,
         );
-        return new Retry(this.calulateMillisToRetry());
+        return new Retry(this.calculateMillisToRetry());
       case ProtocolError:
         this.logger.verbose(
           `${this.constructor.name}: Encountered a protocol error, will retry`,
           error,
         );
-        return new Retry(this.calulateMillisToRetry());
+        return new Retry(this.calculateMillisToRetry());
       default:
         this.logger.verbose(
           `${this.constructor.name}: Encountered an error, will retry`,
           error,
         );
 
-        return new Retry(this.calulateMillisToRetry());
+        return new Retry(this.calculateMillisToRetry());
     }
   }
 
-  private calulateMillisToRetry(): number {
+  private calculateMillisToRetry(): number {
     this.currentBackoffMillis = this.increaseTimeoutFunction(
       this.currentBackoffMillis,
     );

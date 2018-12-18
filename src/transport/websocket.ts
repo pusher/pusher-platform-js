@@ -227,13 +227,14 @@ export default class WebSocketTransport implements SubscriptionTransport {
         .getAllAsArray()
         .concat(this.pendingSubscriptions.getAllAsArray());
 
+      this.subscriptions.removeAll();
+      this.pendingSubscriptions.removeAll();
+
       allSubscriptions.forEach(sub => {
         if (sub.listeners.onError) {
           sub.listeners.onError(this.closedError);
         }
       });
-      this.subscriptions.removeAll();
-      this.pendingSubscriptions.removeAll();
 
       this.tryReconnectIfNeeded();
     };
