@@ -84,7 +84,7 @@ export class BaseClient {
     const subscriptionStrategy = createResumingStrategy(
       retryStrategyOptions,
       createTokenProvidingStrategy(
-        createTransportStrategy(path, this.websocketTransport, this.logger),
+        createTransportStrategy(path, this.httpTransport, this.logger),
         this.logger,
         tokenProvider,
       ),
@@ -129,7 +129,7 @@ export class BaseClient {
     const subscriptionStrategy = createRetryingStrategy(
       retryStrategyOptions,
       createTokenProvidingStrategy(
-        createTransportStrategy(path, this.websocketTransport, this.logger),
+        createTransportStrategy(path, this.httpTransport, this.logger),
         this.logger,
         tokenProvider,
       ),
