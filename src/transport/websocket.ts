@@ -378,9 +378,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      this.close(
-        new Error(`Received message for unknown subscription ID: ${subID}`),
-      );
+      this.logger.debug(`Received message for unknown subscription ID: ${subID}`);
       return;
     }
 
