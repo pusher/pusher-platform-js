@@ -360,11 +360,7 @@ export default class WebSocketTransport implements SubscriptionTransport {
     const subscription = this.subscription(subID);
 
     if (!subscription) {
-      this.close(
-        new Error(
-          `Received message for non existing subscription id: "${subID}"`,
-        ),
-      );
+      global.console.logger.debug(`Received message for non existing subscription id: "${subID}"`);
       return;
     }
 
