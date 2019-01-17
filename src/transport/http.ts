@@ -75,9 +75,6 @@ class HttpSubscription implements Subscription {
       // Check if we just transitioned to the open state
       if (this.state === HttpTransportState.OPENING) {
         this.state = HttpTransportState.OPEN;
-        global.console.log(
-          responseToHeadersObject(this.xhr.getAllResponseHeaders()),
-        );
         if (this.listeners.onOpen) {
           this.listeners.onOpen(
             responseToHeadersObject(this.xhr.getAllResponseHeaders()),
