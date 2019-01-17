@@ -265,12 +265,13 @@ The repository for it is [here](https://github.com/pusher/platform-sdk-tester), 
 Then hopefully just run from the main directory of that test library:
 
 ```bash
-glide install
-./scripts/build
-./scripts/run
+dep ensure
+./script/build
+./target/server
 ```
 
 Then run tests (from this dir): `yarn test-integration`.
+
 This will run tests and watch the `src/` and `test/` dirs to rebuild every time a file is changed. Good for development.
 
 Once we have some sort of CI setup we'll be able to run just `yarn test` to get everything going and run just once.

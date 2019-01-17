@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.16.0...HEAD)
+## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.16.1...HEAD)
+
+## [0.16.1](https://github.com/pusher/pusher-platform-js/compare/0.16.0...0.16.1) - 2018-01-17
+
+### Fixes
+
+- Remove some rogue logging that shouldn't have been there
+- Make receiving an event for a subscription that the client doesn't know about not be considered an error that is worth re-establishing the websocket connection for
 
 ## [0.16.0](https://github.com/pusher/pusher-platform-js/compare/0.15.6...0.16.0) - 2018-12-18
 
