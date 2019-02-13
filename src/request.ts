@@ -25,6 +25,7 @@ export interface RawRequestOptions {
   url: string;
   headers?: ElementsHeaders;
   body?: any;
+  withCredentials?: boolean;
 }
 
 // TODO: Could we make this generic and remove the `any`s?
@@ -53,6 +54,7 @@ export function sendRawRequest(options: RawRequestOptions): Promise<any> {
       resolve,
       reject,
     );
+    xhr.withCredentials = Boolean(options.withCredentials);
 
     xhr.open(options.method.toUpperCase(), options.url, true);
 
