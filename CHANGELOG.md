@@ -10,8 +10,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ### Additions
 
-- The `TokenProvider` now accepts a `withCredentials` option which it forwards
-  to `XMLHttpRequest` internally. [See
+- `RawRequestOptions` now includes a `withCredentials` option which gets
+  forwarded to `XMLHttpRequest` internally. [See
   here.](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
 
 ## [0.16.1](https://github.com/pusher/pusher-platform-js/compare/0.16.0...0.16.1) - 2018-01-17
