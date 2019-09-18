@@ -21,6 +21,7 @@ export interface BaseClientOptions {
   host: string;
   encrypted?: boolean;
   logger?: Logger;
+  sdkLanguage?: string;
   sdkProduct?: string;
   sdkVersion?: string;
 }
@@ -33,6 +34,7 @@ export class BaseClient {
   private httpTransport: HttpTransport;
   private sdkProduct: string;
   private sdkVersion: string;
+  private sdkLanguage: string;
   private sdkPlatform: string;
 
   constructor(private options: BaseClientOptions) {
@@ -43,8 +45,11 @@ export class BaseClient {
     this.httpTransport = new HttpTransport(this.host, options.encrypted);
     this.sdkProduct = options.sdkProduct || 'unknown';
     this.sdkVersion = options.sdkVersion || 'unknown';
+    this.sdkLanguage = options.sdkLanguage || 'javascript';
     this.sdkPlatform = navigator
-      ? navigator.product === 'ReactNative' ? 'react-native' : 'web'
+      ? navigator.product === 'ReactNative'
+        ? 'react-native'
+        : 'web'
       : 'node';
   }
 
@@ -160,7 +165,7 @@ export class BaseClient {
 
   private infoHeaders(): { [key: string]: string } {
     return {
-      'X-SDK-Language': 'javascript',
+      'X-SDK-Language': this.sdkLanguage,
       'X-SDK-Platform': this.sdkPlatform,
       'X-SDK-Product': this.sdkProduct,
       'X-SDK-Version': this.sdkVersion,
