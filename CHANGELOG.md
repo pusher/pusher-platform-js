@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.16.1...HEAD)
+## [Unreleased](https://github.com/pusher/pusher-platform-js/compare/0.17.0...HEAD)
+
+## [0.17.0](https://github.com/pusher/pusher-platform-js/compare/0.16.2...0.17.0) - 2019-09-18
+
+### Additions
+
+- `BaseClientOptions` now takes an `sdkLanguage` parameter to allow the
+  `X-SDK-Language` header to be overwritten.
 
 ## [0.16.2](https://github.com/pusher/pusher-platform-js/compare/0.16.1...0.16.2) - 2019-02-14
 
